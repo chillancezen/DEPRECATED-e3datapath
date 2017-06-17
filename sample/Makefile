@@ -44,7 +44,7 @@ APP = helloworld
 # all source are stored in SRCS-y
 SRCS-y := main.c
 
-CFLAGS += -O3 -I/mnt/projects/E3vswitch/E3datapath/include 
+CFLAGS += -O3 -I/mnt/projects/e3datapath/include 
 CFLAGS += $(WERROR_FLAGS) -L/mnt/projects/E3switch/E3datapath -I/root/jzheng/userspace-rcu-master/src -L/root/mywork/userspace-rcu/src/.libs
 
 LDFLAGS += -lurcu-qsbr -le3datapath 

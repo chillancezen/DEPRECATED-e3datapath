@@ -49,9 +49,9 @@
 #include <node_class.h>
 #include <node_adjacency.h>
 #include <lcore_extension.h>
+#if 0
 #include <device.h>
 //#include <l2-input.h>
-
 #include <mbuf_delivery.h>
 #include <mq-device.h>
 #include <lb-common.h>
@@ -63,6 +63,7 @@
 #include <lb-instance.h>
 #include <device-wrapper.h>
 #include <l4-tunnel-process.h>
+#endif 
 int
 main(int argc, char **argv)
 {
@@ -72,7 +73,8 @@ main(int argc, char **argv)
 	ret = rte_eal_init(argc, argv);
 	if (ret < 0)
 		rte_panic("Cannot init EAL\n");
-
+	
+	#if 0
 	printf("tsc HZ:%"PRIu64"\n",rte_get_tsc_hz());
 	init_registered_tasks();
 
@@ -88,7 +90,7 @@ main(int argc, char **argv)
 		rte_eal_remote_launch(lcore_default_entry, NULL, lcore_id);
 	}
 	
-	add_e3_interface("eth_tap",NIC_VIRTUAL_DEV,PORT_TYPE_VLINK,NULL);
+	add_e3_interface("eth_tap0",NIC_VIRTUAL_DEV,PORT_TYPE_VLINK,NULL);
 	add_e3_interface("0000:82:00.0",NIC_INTEL_82599,PORT_TYPE_LB_EXTERNAL,NULL);
 	add_e3_interface("0000:03:00.0",NIC_INTEL_XL710,PORT_TYPE_LB_INTERNAL,NULL);
 	add_e3_interface("0000:01:00.1",NIC_INTEL_82599,PORT_TYPE_LB_EXTERNAL,NULL);
@@ -206,7 +208,7 @@ main(int argc, char **argv)
 	start_e3_interface(2);
 	start_e3_interface(3);
 	start_e3_interface(4);
-	#if 0
+	
 
 
 	
@@ -596,11 +598,12 @@ main(int argc, char **argv)
 		/*inbound nodes stats*/
 		dump_e3iface_node_stats(1);
 		dump_e3iface_node_stats(2);
-		#endif
+		
 		
 		dump_e3iface_node_stats(2);
-	//	dump_e3iface_node_stats(3);
+		//dump_e3iface_node_stats(3);
 		//dump_e3iface_node_stats(4);
+		#endif
 		/*
 
 		{

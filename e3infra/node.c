@@ -143,7 +143,7 @@ void clear_node_ring_buffer(struct node * pnode)
 	int idx=0,iptr; 
 	int cnt_mbufs=0; 
 	for(idx=0;idx<DEFAULT_NR_RING_PERNODE/32;idx++){ 
-		nr_bufs=rte_ring_sc_dequeue_burst((pnode)->node_ring,(void**)mbufs,32); 
+		nr_bufs=rte_ring_sc_dequeue_burst((pnode)->node_ring,(void**)mbufs,32,NULL); 
 		if(!nr_bufs) 
 			break; 
 		cnt_mbufs+=nr_bufs; 

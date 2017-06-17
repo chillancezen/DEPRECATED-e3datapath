@@ -30,7 +30,7 @@ __attribute__((always_inline))
 		pnext=find_node_by_index(pe3iface->output_node_arrar[queue_id]);
 		if(PREDICT_FALSE(!pnext))
 			continue;
-		rc=rte_ring_mp_enqueue_burst(pnext->node_ring,(void**)&mbufs[iptr],nr_left);
+		rc=rte_ring_mp_enqueue_burst(pnext->node_ring,(void**)&mbufs[iptr],nr_left,NULL);
 		iptr+=rc;
 		nr_left-=rc;
 		nr_delivered+=rc;
@@ -48,7 +48,7 @@ __attribute__((always_inline))
 
 	if(!pnode_dst) 
 		goto ret;
-	nr_delivered=rte_ring_mp_enqueue_burst(pnode_dst->node_ring,(void**)mbufs,nr_mbufs);
+	nr_delivered=rte_ring_mp_enqueue_burst(pnode_dst->node_ring,(void**)mbufs,nr_mbufs,NULL);
 	ret:
 	return nr_delivered;
 }
@@ -74,7 +74,7 @@ __attribute__((always_inline))
 		if(!e3_bitmap_is_bit_set(pclass->bitmap_avail,node_idx)
 			||!(pnext=find_node_by_index(pclass->nodes_pool[node_idx])))
 			continue;
-		rc=rte_ring_mp_enqueue_burst(pnext->node_ring,(void**)&mbufs[iptr],nr_left);
+		rc=rte_ring_mp_enqueue_burst(pnext->node_ring,(void**)&mbufs[iptr],nr_left,NULL);
 		iptr+=rc;
 		nr_left-=rc;
 		nr_delivered+=rc;
@@ -94,7 +94,7 @@ __attribute__((always_inline))
 	pnext=find_node_by_index(next_forwarding_node(pnode,next_entry));
 	if(!pnext)
 		goto ret;
-	nr_delivered=rte_ring_mp_enqueue_burst(pnext->node_ring,(void**)mbufs,nr_mbufs);
+	nr_delivered=rte_ring_mp_enqueue_burst(pnext->node_ring,(void**)mbufs,nr_mbufs,NULL);
 	if(PREDICT_FALSE((nr_mbufs-nr_delivered)>0)){
 		nr_delivered+=deliver_mbufs_by_next_entry_public_pool(pnode,
 			next_entry,

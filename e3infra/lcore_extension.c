@@ -82,8 +82,7 @@ void init_lcore_extension(void)
 		#endif
 		max_available_lcores++;
 	}
-	nr_io_lcores=6;//max_available_lcores/2;
-	
+	nr_io_lcores=2;//max_available_lcores/2;	
 
 	RTE_LCORE_FOREACH(lcore_id){
 		#if defined(PRESERVE_MASTER_LCORE)

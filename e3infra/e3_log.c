@@ -2,7 +2,7 @@
 
 
 FILE * fp_log=NULL;
-
+time_t log_time;
 
 __attribute__((constructor)) void e3_log_module_init(void)
 {
