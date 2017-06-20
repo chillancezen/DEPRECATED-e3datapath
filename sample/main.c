@@ -64,6 +64,60 @@
 #include <device-wrapper.h>
 #include <l4-tunnel-process.h>
 #endif 
+#include <init.h>
+#include <e3interface.h>
+int pre_setup(struct E3Interface * pe3iface)
+{
+	struct rte_eth_dev_info dev_info;
+	
+	pe3iface->hwiface_model=e3_hwiface_model_virtio;
+	rte_eth_dev_info_get(pe3iface->port_id,&dev_info);
+	pe3iface->nr_queues=E3_MIN(dev_info.max_rx_queues,dev_info.max_tx_queues);
+	pe3iface->nr_queues=E3_MIN(pe3iface->nr_queues,2);
+	pe3iface->nr_queues=E3_MIN(pe3iface->nr_queues,MAX_QUEUES_TO_POLL);
+	printf("finished presetup\n");
+	return 0;
+}
+int port_config(struct E3Interface * piface,struct rte_eth_conf * port_config)
+{
+	struct rte_eth_dev_info dev_info;
+	rte_eth_dev_info_get(piface->port_id,&dev_info);
+	printf("RX oflags:%p\n",dev_info.rx_offload_capa);
+	printf("TX oflags:%p\n",dev_info.tx_offload_capa);
+	port_config->rxmode.mq_mode=ETH_MQ_RX_RSS;
+	port_config->rxmode.max_rx_pkt_len=ETHER_MAX_LEN;
+	port_config->rxmode.header_split=0;
+	port_config->rxmode.hw_ip_checksum=1;
+	port_config->rxmode.hw_vlan_filter=0;
+	port_config->rxmode.hw_vlan_strip=0;
+	port_config->rxmode.hw_vlan_extend=0;
+	port_config->rxmode.jumbo_frame=0;
+	port_config->rxmode.hw_strip_crc=0;
+	port_config->rxmode.enable_scatter=0;
+	port_config->rxmode.enable_lro=0;
+	port_config->txmode.mq_mode=ETH_MQ_TX_NONE;
+	port_config->rx_adv_conf.rss_conf.rss_key=NULL;
+	port_config->rx_adv_conf.rss_conf.rss_hf=ETH_RSS_IP;
+	port_config->fdir_conf.mode=RTE_FDIR_MODE_PERFECT;/*enable ptype classification*/
+	return 0;
+}
+
+int input_node_process_func(void * arg)
+{
+	struct node * pnode=(struct node * )arg;
+	int port_id=HIGH_UINT64((uint64_t)pnode->node_priv);
+	int queue_id=LOW_UINT64((uint64_t)pnode->node_priv);
+	printf("input:port %d queue %d\n",port_id,queue_id);
+	sleep(1);
+}
+int output_node_process_func(void * arg)
+{
+	struct node * pnode=(struct node *)arg;
+	int port_id=HIGH_UINT64((uint64_t)pnode->node_priv);
+	int queue_id=LOW_UINT64((uint64_t)pnode->node_priv);
+	printf("output:port %d queue %d\n",port_id,queue_id);
+	sleep(1);
+}
 int
 main(int argc, char **argv)
 {
@@ -73,7 +127,28 @@ main(int argc, char **argv)
 	ret = rte_eal_init(argc, argv);
 	if (ret < 0)
 		rte_panic("Cannot init EAL\n");
+	init_registered_tasks();
+
+
+	RTE_LCORE_FOREACH_SLAVE(lcore_id) {
+		rte_eal_remote_launch(lcore_default_entry, NULL, lcore_id);
+	}
 	
+	struct E3Interface_ops ops={
+		.priv_size=64,
+		.numa_socket_id=0,
+		.pre_setup=pre_setup,
+		.port_setup=port_config,
+		.input_node_process_func=input_node_process_func,
+		.output_node_process_func=output_node_process_func,
+		.edges={
+			{.edge_entry=-1,.fwd_behavior=NODE_TO_CLASS_FWD,.next_ref="dummy-node"},
+			{.edge_entry=-1},
+		},
+	};
+	dump_nodes(fp_log);
+	printf("%d\n",register_e3interface("0000:00:04.0",&ops,NULL));
+	dump_nodes(fp_log);
 	#if 0
 	printf("tsc HZ:%"PRIu64"\n",rte_get_tsc_hz());
 	init_registered_tasks();
