@@ -53,7 +53,7 @@ char * link_speed_to_string(uint32_t speed)
 	
 	return ret;
 }
-int register_e3interface(const char * params,struct E3Interface_ops * dev_ops,int **pport_id)
+int register_e3interface(const char * params,struct E3Interface_ops * dev_ops,int *pport_id)
 {
 	int rc;
 	int idx=0;
@@ -416,8 +416,8 @@ int correlate_e3interfaces(struct E3Interface * pif1,struct E3Interface *pif2)
 		return -1;
 	if(pif_phy->has_tap_device)
 		return -1;
-	pif_tap->correspoding_port_id=pif_phy->port_id;
-	pif_phy->correspoding_port_id=pif_tap->port_id;
+	pif_tap->peer_port_id=pif_phy->port_id;
+	pif_phy->peer_port_id=pif_tap->port_id;
 	__sync_synchronize();
 	pif_tap->has_phy_device=1;
 	pif_phy->has_tap_device=1;
@@ -432,20 +432,20 @@ int correlate_e3interfaces(struct E3Interface * pif1,struct E3Interface *pif2)
 int dissociate_e3interface(struct E3Interface * pif)
 {
 	struct E3Interface * pcorresponding_if=NULL;
-	if(!pif->has_corresponding_device)
+	if(!pif->has_peer_device)
 		return -1;
-	pcorresponding_if=find_e3interface_by_index(pif->correspoding_port_id);
+	pcorresponding_if=find_e3interface_by_index(pif->peer_port_id);
 	if(!pcorresponding_if)
 		return -2;
-	if(!pcorresponding_if->has_corresponding_device)
+	if(!pcorresponding_if->has_peer_device)
 		return -3;
-	if(pcorresponding_if->correspoding_port_id!=pif->port_id)
+	if(pcorresponding_if->peer_port_id!=pif->port_id)
 		return -4;
-	pif->has_corresponding_device=0;
-	pcorresponding_if->has_corresponding_device=0;
+	pif->has_peer_device=0;
+	pcorresponding_if->has_peer_device=0;
 	__sync_synchronize();
-	pif->correspoding_port_id=0;
-	pcorresponding_if->correspoding_port_id=0;
+	pif->peer_port_id=0;
+	pcorresponding_if->peer_port_id=0;
 	_mm_sfence();
 	E3_LOG("dissociate device:%s from device:%s\n",
 		(char*)pif->name,

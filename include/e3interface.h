@@ -9,6 +9,7 @@
 #define MAX_E3INTERFACE_NAME_SIZE 64
 enum e3_hwiface_model{
 	e3_hwiface_model_none,
+	e3_hwiface_model_vlink,
 	e3_hwiface_model_tap,
 	e3_hwiface_model_virtio,
 	e3_hwiface_model_intel_xl710,
@@ -33,7 +34,7 @@ struct E3Interface{
 	uint8_t  nr_queues:3;
 	uint8_t  under_releasing:1;
 	union{
-		uint8_t  has_corresponding_device:1;
+		uint8_t  has_peer_device:1;
 		uint8_t  has_phy_device:1;
 		uint8_t  has_tap_device:1;/*indicate whether 
 							  	 it has corresponding tap devide*/
@@ -41,7 +42,7 @@ struct E3Interface{
 	
 	
 	uint16_t port_id;
-	uint16_t correspoding_port_id;
+	uint16_t peer_port_id;
 	uint8_t  mac_addrs[6];
 	
 	uint16_t input_node[MAX_QUEUES_TO_POLL];
@@ -87,7 +88,7 @@ extern struct E3Interface * global_e3iface_array[MAX_NUMBER_OF_E3INTERFACE];
 })
 
 struct E3Interface * alloc_e3interface(int priv_size,int socket_id);
-int register_e3interface(const char * params,struct E3Interface_ops * dev_ops,int **pport_id);
+int register_e3interface(const char * params,struct E3Interface_ops * dev_ops,int *pport_id);
 void unregister_e3interface(int port_id);
 
 
@@ -105,6 +106,5 @@ void dump_e3interfaces(FILE* fp);
 
 int correlate_e3interfaces(struct E3Interface * pif1,struct E3Interface *pif2);
 int dissociate_e3interface(struct E3Interface * pif);
-
 
 #endif

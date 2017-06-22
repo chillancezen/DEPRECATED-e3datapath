@@ -73,7 +73,7 @@ int pre_setup(struct E3Interface * pe3iface)
 	pe3iface->hwiface_model=e3_hwiface_model_virtio;
 	rte_eth_dev_info_get(pe3iface->port_id,&dev_info);
 	pe3iface->nr_queues=E3_MIN(dev_info.max_rx_queues,dev_info.max_tx_queues);
-	pe3iface->nr_queues=E3_MIN(pe3iface->nr_queues,2);
+	pe3iface->nr_queues=E3_MIN(pe3iface->nr_queues,4);
 	pe3iface->nr_queues=E3_MIN(pe3iface->nr_queues,MAX_QUEUES_TO_POLL);
 	printf("max rx queues:%d\n",dev_info.max_rx_queues);
 	return 0;
@@ -81,7 +81,7 @@ int pre_setup(struct E3Interface * pe3iface)
 int tap_pre_setup(struct E3Interface * pe3iface)
 {
 	struct rte_eth_dev_info dev_info;
-	pe3iface->hwiface_model=e3_hwiface_model_tap;
+	pe3iface->hwiface_model=e3_hwiface_model_vlink;
 	pe3iface->nr_queues=1;
 	printf("max rx queues:%d\n",dev_info.max_rx_queues);
 	return 0;
@@ -188,21 +188,29 @@ main(int argc, char **argv)
 			{.edge_entry=-1},
 		},
 	};
-	printf("%d\n",register_e3interface("0000:00:04.0",&ops,NULL));
-	start_e3interface(find_e3interface_by_index(0));
-	
-	register_e3interface("net_pcap,iface=veth0",&tap_ops,NULL);
-	register_e3interface("net_pcap1,iface=veth1",&tap_ops,NULL);
-	start_e3interface(find_e3interface_by_index(1));
-	
+	printf("%d\n",create_e3iface_with_slowpath("0000:00:04.0",&ops,NULL));
+	printf("%d\n",create_e3iface_with_slowpath("eth_pcap0,iface=veth0",&tap_ops,NULL));
 	getchar();
-	printf("correlation:%d\n",correlate_e3interfaces(find_e3interface_by_index(0),find_e3interface_by_index(1)));
-	printf("correlation:%d\n",correlate_e3interfaces(find_e3interface_by_index(0),find_e3interface_by_index(1)));
-	getchar();
-	printf("dissociate:%d\n",dissociate_e3interface(find_e3interface_by_index(2)));
-	printf("dissociate:%d\n",dissociate_e3interface(find_e3interface_by_index(1)));
-	printf("dissociate:%d\n",dissociate_e3interface(find_e3interface_by_index(0)));
+	release_e3iface_with_slowpath(2);
+	release_e3iface_with_slowpath(1);
+	//printf("%d\n",register_e3interface("0000:00:04.0",&ops,NULL));
+	//start_e3interface(find_e3interface_by_index(0));
 
+	//register_e3interface("net_tap,iface=tap0",&tap_ops,NULL);
+	//register_e3interface("net_tap,iface=tap1",&tap_ops,NULL);
+	//register_e3interface("net_pcap,iface=veth0",&tap_ops,NULL);
+	//register_e3interface("net_pcap1,iface=veth1",&tap_ops,NULL);
+	//start_e3interface(find_e3interface_by_index(1));
+	
+	//getchar();
+	//printf("correlation:%d\n",correlate_e3interfaces(find_e3interface_by_index(0),find_e3interface_by_index(1)));
+	//printf("correlation:%d\n",correlate_e3interfaces(find_e3interface_by_index(0),find_e3interface_by_index(1)));
+	//getchar();
+	//printf("dissociate:%d\n",dissociate_e3interface(find_e3interface_by_index(2)));
+	//printf("dissociate:%d\n",dissociate_e3interface(find_e3interface_by_index(1)));
+	//printf("dissociate:%d\n",dissociate_e3interface(find_e3interface_by_index(0)));
+	getchar();
+	dump_e3interfaces(fp_log);
 	#if 0
 	
 	printf("tsc HZ:%"PRIu64"\n",rte_get_tsc_hz());
