@@ -69,6 +69,26 @@ int register_node(struct node *node)
 	
 	return 0;
 }
+
+void _unregister_node_callback_func(struct rcu_head * rcu)
+{
+	struct node * pnode=container_of(rcu,struct node,rcu);
+	
+	switch(pnode->node_type)
+	{
+		case node_type_input:
+			break;
+		default:
+			if(pnode->node_ring){
+				clear_node_ring_buffer(pnode);
+				rte_ring_free(pnode->node_ring);
+				pnode->node_ring=NULL;
+			}
+			break;
+	}
+	if(pnode->node_reclaim_func)
+		pnode->node_reclaim_func(rcu);
+}
 void unregister_node(struct node * node)
 {
 	int idx=0;
@@ -81,6 +101,9 @@ void unregister_node(struct node * node)
 	}
 	
 	rcu_assign_pointer(gnode_array[idx],NULL);
+	call_rcu(&node->rcu,_unregister_node_callback_func);
+	
+	#if 0
 	switch(node->node_type)
 	{
 		case node_type_input:
@@ -95,6 +118,8 @@ void unregister_node(struct node * node)
 	}
 	if(node->node_reclaim_func)
 		call_rcu(&node->rcu,node->node_reclaim_func);
+
+	#endif
 }
 
 void dump_nodes(FILE*fp)

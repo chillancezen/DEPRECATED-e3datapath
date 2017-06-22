@@ -4,6 +4,7 @@
 #include <rte_ethdev.h>
 #include <e3_log.h>
 #include <util.h>
+#include <urcu-qsbr.h>
 
 #define MAX_E3INTERFACE_NAME_SIZE 64
 enum e3_hwiface_model{
@@ -30,17 +31,21 @@ struct E3Interface{
 							 I found it can crash when application starts up
 							 with burst traffic already on the wire*/
 	uint8_t  nr_queues:3;
+	uint8_t  under_releasing:1;
 	union{
 		uint8_t  has_phy_device:1;
 		uint8_t  has_tap_device:1;/*indicate whether 
 							  	 it has corresponding tap devide*/
 	};
+	
+	
 	uint16_t port_id;
 	uint16_t correspoding_port_id;
 	uint8_t  mac_addrs[6];
 	
 	uint16_t input_node[MAX_QUEUES_TO_POLL];
 	uint16_t output_node[MAX_QUEUES_TO_POLL];
+	struct rcu_head rcu;
 	__attribute__((aligned(64)))
 		void * private[0];
 };
@@ -71,17 +76,30 @@ struct E3Interface_ops{
 	struct next_edge_item edges[MAX_PREDEFINED_EDGE];
 };
 
+extern struct E3Interface * global_e3iface_array[MAX_NUMBER_OF_E3INTERFACE];
+
+#define find_e3interface_by_index(idx) ({\
+	struct E3Interface * _pif=NULL; \
+	if(((idx)<MAX_NUMBER_OF_E3INTERFACE)&&((idx)>=0)) \
+		_pif=rcu_dereference(global_e3iface_array[(idx)]); \
+	_pif; \
+})
 
 struct E3Interface * alloc_e3interface(int priv_size,int socket_id);
 int register_e3interface(const char * params,struct E3Interface_ops * dev_ops,int **pport_id);
+void unregister_e3interface(int port_id);
 
-#define set_down_e3iface(pif) {\
+
+#define set_status_down_e3iface(pif) {\
 	(pif)->iface_status=E3INTERFACE_STATUS_DOWN; \
 	_mm_sfence(); \
 }
 
-#define set_up_e3iface(pif) {\
+#define set_status_up_e3iface(pif) {\
 	(pif)->iface_status=E3INTERFACE_STATUS_UP; \
 	_mm_sfence(); \
 }
+
+void dump_e3interfaces(FILE* fp);
+
 #endif

@@ -146,9 +146,20 @@ main(int argc, char **argv)
 			{.edge_entry=-1},
 		},
 	};
-	dump_nodes(fp_log);
+	
 	printf("%d\n",register_e3interface("0000:00:04.0",&ops,NULL));
-	dump_nodes(fp_log);
+	start_e3interface(find_e3interface_by_index(0));
+	//dump_nodes(fp_log);
+	
+
+	getchar();
+
+
+	unregister_e3interface(0);
+
+	getchar();
+	register_e3interface("0000:00:04.0",&ops,NULL);
+	
 	#if 0
 	printf("tsc HZ:%"PRIu64"\n",rte_get_tsc_hz());
 	init_registered_tasks();

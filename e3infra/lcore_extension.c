@@ -298,7 +298,7 @@ int lcore_extension_test()
 	
 	return 0;
 }
-static int lcore_should_stop(void)
+static inline int lcore_should_stop(void)
 {
 	return 0;
 }
@@ -315,7 +315,6 @@ int lcore_default_entry(__attribute__((unused)) void *arg)
 		foreach_node_in_lcore(pnode,lcore_id){
 			cnt++;
 			pnode->node_process_func(pnode);
-			//rcu_quiescent_state();
 		}
 		
 		if(cnt!=last_cnt){
@@ -325,7 +324,6 @@ int lcore_default_entry(__attribute__((unused)) void *arg)
 			#endif
 		}
 		
-		//if(!cnt)
 		rcu_quiescent_state();
 	}
 	rcu_thread_offline();

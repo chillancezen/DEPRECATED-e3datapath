@@ -22,6 +22,11 @@ struct E3Interface * alloc_e3interface(int priv_size,int socket_id)
 	
 	return e3iface;
 }
+void dealloc_e3interface(struct E3Interface * pif)
+{
+	if(pif)
+		rte_free(pif);
+}
 char * link_speed_to_string(uint32_t speed)
 {
 	char *ret="Ethernet";
@@ -218,7 +223,7 @@ int register_e3interface(const char * params,struct E3Interface_ops * dev_ops,in
 		memcpy(pe3iface->mac_addrs,mac_addr.addr_bytes,6);
 	}
 	/*9.prepare the nodes to RUN*/
-	set_down_e3iface(pe3iface);
+	set_status_down_e3iface(pe3iface);
 	for(idx=0;idx<pe3iface->nr_queues;idx++){
 		if(attach_node_to_lcore(pinput_nodes[idx]))
 			break;
@@ -277,6 +282,7 @@ int register_e3interface(const char * params,struct E3Interface_ops * dev_ops,in
 		dev_ops->post_setup(pe3iface);
 	if(pport_id)
 		*pport_id=(int)port_id;
+	pe3iface->under_releasing=0;
 	/*13.publish this E3interface*/
 	rcu_assign_pointer(global_e3iface_array[port_id],pe3iface);
 	return 0;
@@ -317,6 +323,117 @@ int register_e3interface(const char * params,struct E3Interface_ops * dev_ops,in
 				E3_LOG("error occurs during releasing %s \n",dev_name);
 		}
 		return -1;
+}
+void _unregister_e3interface_rcu_callback(struct rcu_head * rcu)
+{
+	int idx=0;
+	char dev_name[128];
+	int rc;
+	struct E3Interface * pe3iface=container_of(rcu,struct E3Interface,rcu);
+	struct node * pinput_nodes[MAX_QUEUES_TO_POLL];
+	struct node * poutput_nodes[MAX_QUEUES_TO_POLL];
+	for(idx=0;idx<pe3iface->nr_queues;idx++){
+		pinput_nodes[idx]=find_node_by_index(pe3iface->input_node[idx]);
+		poutput_nodes[idx]=find_node_by_index(pe3iface->output_node[idx]);
+		E3_ASSERT(pinput_nodes[idx]);
+		E3_ASSERT(poutput_nodes[idx]);
+	}
+	for(idx=0;idx<pe3iface->nr_queues;idx++){
+		unregister_node(pinput_nodes[idx]);
+		unregister_node(poutput_nodes[idx]);
+	}
+	rte_eth_dev_stop(pe3iface->port_id);
+	rte_eth_dev_close(pe3iface->port_id);
+	rc=rte_eth_dev_detach(pe3iface->port_id,dev_name);
+	if(rc)
+		E3_WARN("detaching port:%s fails\n",(char*)pe3iface->name);
+	E3_LOG("successfully delete interface:%s\n",(char*)pe3iface->name);
+	dealloc_e3interface(pe3iface);
+}
+void unregister_e3interface(int port_id)
+{
+	int rc;
+	struct node * pinput_nodes[MAX_QUEUES_TO_POLL];
+	struct node * poutput_nodes[MAX_QUEUES_TO_POLL];
+	int idx=0;
+	struct E3Interface * pe3iface=find_e3interface_by_index(port_id);
+	if(!pe3iface){
+		E3_WARN("iface:%d to be released does not exist\n",port_id);
+		return ;
+	}
+	if(pe3iface->under_releasing)
+		return ;
+	pe3iface->under_releasing=1;
+	
+	for(idx=0;idx<pe3iface->nr_queues;idx++){
+		pinput_nodes[idx]=find_node_by_index(pe3iface->input_node[idx]);
+		poutput_nodes[idx]=find_node_by_index(pe3iface->output_node[idx]);
+		E3_ASSERT(pinput_nodes[idx]);
+		E3_ASSERT(poutput_nodes[idx]);
+	}
+
+	for(idx=0;idx<pe3iface->nr_queues;idx++){
+		rc=detach_node_from_lcore(pinput_nodes[idx]);
+		if(rc){
+			E3_WARN("errors occur during detaching node:%s from lcore:%d\n",
+				(char*)pinput_nodes[idx]->name,
+				pinput_nodes[idx]->lcore_id);
+		}else
+			put_lcore(pinput_nodes[idx]->lcore_id,1);
+		
+		rc=detach_node_from_lcore(poutput_nodes[idx]);
+		if(rc){
+			E3_WARN("errors occur during detaching node:%s from lcore:%d\n",
+				(char*)poutput_nodes[idx]->name,
+				poutput_nodes[idx]->lcore_id);
+		}else
+			put_lcore(poutput_nodes[idx]->lcore_id,1);
+	}
+	
+	
+	/*not referrable any more*/
+	rcu_assign_pointer(global_e3iface_array[pe3iface->port_id],NULL);
+	call_rcu(&pe3iface->rcu,_unregister_e3interface_rcu_callback);
+}
+int start_e3interface(struct E3Interface * pif)
+{
+	int rc;
+	if(!pif || pif->iface_status==E3INTERFACE_STATUS_UP)
+		return -1;
+	rc=rte_eth_dev_start(pif->port_id);
+	if(!rc)
+		set_status_up_e3iface(pif);
+	return rc;
+}
+
+int stop_e3interface(struct E3Interface * pif)
+{
+	if(!pif || pif->iface_status==E3INTERFACE_STATUS_DOWN)
+		return -1;
+	rte_eth_dev_stop(pif->port_id);
+	set_status_down_e3iface(pif);
+	return 0;
+}
+
+void dump_e3interfaces(FILE* fp)
+{
+	struct E3Interface * pif;
+	int idx=0;
+	for(idx=0;idx<MAX_NUMBER_OF_E3INTERFACE;idx++){
+		pif=find_e3interface_by_index(idx);
+		if(!pif)
+			continue;
+		if(fp!=fp_log)
+			fprintf(fp,"%d: ifname:%s with %d queues\n",
+				pif->port_id,
+				(char*)pif->name,
+				pif->nr_queues);
+		else 
+			E3_LOG("%d: ifname:%s with %d queues\n",
+				pif->port_id,
+				(char*)pif->name,
+				pif->nr_queues);
+	}
 }
 __attribute__((constructor))
 	void e3iface_module_init(void)
