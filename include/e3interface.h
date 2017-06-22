@@ -9,7 +9,7 @@
 #define MAX_E3INTERFACE_NAME_SIZE 64
 enum e3_hwiface_model{
 	e3_hwiface_model_none,
-	e3_hwiface_model_vlink,
+	e3_hwiface_model_tap,
 	e3_hwiface_model_virtio,
 	e3_hwiface_model_intel_xl710,
 	e3_hwiface_model_intel_x710,
@@ -33,6 +33,7 @@ struct E3Interface{
 	uint8_t  nr_queues:3;
 	uint8_t  under_releasing:1;
 	union{
+		uint8_t  has_corresponding_device:1;
 		uint8_t  has_phy_device:1;
 		uint8_t  has_tap_device:1;/*indicate whether 
 							  	 it has corresponding tap devide*/
@@ -101,5 +102,9 @@ void unregister_e3interface(int port_id);
 }
 
 void dump_e3interfaces(FILE* fp);
+
+int correlate_e3interfaces(struct E3Interface * pif1,struct E3Interface *pif2);
+int dissociate_e3interface(struct E3Interface * pif);
+
 
 #endif

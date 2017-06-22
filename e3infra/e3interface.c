@@ -395,6 +395,64 @@ void unregister_e3interface(int port_id)
 	rcu_assign_pointer(global_e3iface_array[pe3iface->port_id],NULL);
 	call_rcu(&pe3iface->rcu,_unregister_e3interface_rcu_callback);
 }
+
+int correlate_e3interfaces(struct E3Interface * pif1,struct E3Interface *pif2)
+{
+	
+	struct E3Interface * pif_tap=NULL;
+	struct E3Interface * pif_phy=NULL;
+	if(pif1->hwiface_model==e3_hwiface_model_tap)
+		pif_tap=pif1;
+	else
+		pif_phy=pif1;
+	if(pif2->hwiface_model==e3_hwiface_model_tap)
+		pif_tap=pif2;
+	else
+		pif_phy=pif2;
+	
+	if(!pif_tap || !pif_phy)
+		return -1;
+	if(pif_tap->has_phy_device)
+		return -1;
+	if(pif_phy->has_tap_device)
+		return -1;
+	pif_tap->correspoding_port_id=pif_phy->port_id;
+	pif_phy->correspoding_port_id=pif_tap->port_id;
+	__sync_synchronize();
+	pif_tap->has_phy_device=1;
+	pif_phy->has_tap_device=1;
+	_mm_sfence();
+
+	
+	E3_LOG("correlate device:%s with tap device:%s\n",
+		(char*)pif_phy->name,
+		(char*)pif_tap->name);
+	return 0;
+}
+int dissociate_e3interface(struct E3Interface * pif)
+{
+	struct E3Interface * pcorresponding_if=NULL;
+	if(!pif->has_corresponding_device)
+		return -1;
+	pcorresponding_if=find_e3interface_by_index(pif->correspoding_port_id);
+	if(!pcorresponding_if)
+		return -2;
+	if(!pcorresponding_if->has_corresponding_device)
+		return -3;
+	if(pcorresponding_if->correspoding_port_id!=pif->port_id)
+		return -4;
+	pif->has_corresponding_device=0;
+	pcorresponding_if->has_corresponding_device=0;
+	__sync_synchronize();
+	pif->correspoding_port_id=0;
+	pcorresponding_if->correspoding_port_id=0;
+	_mm_sfence();
+	E3_LOG("dissociate device:%s from device:%s\n",
+		(char*)pif->name,
+		(char*)pcorresponding_if->name);
+	
+	return 0;
+}
 int start_e3interface(struct E3Interface * pif)
 {
 	int rc;

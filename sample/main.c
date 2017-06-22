@@ -75,9 +75,18 @@ int pre_setup(struct E3Interface * pe3iface)
 	pe3iface->nr_queues=E3_MIN(dev_info.max_rx_queues,dev_info.max_tx_queues);
 	pe3iface->nr_queues=E3_MIN(pe3iface->nr_queues,2);
 	pe3iface->nr_queues=E3_MIN(pe3iface->nr_queues,MAX_QUEUES_TO_POLL);
-	printf("finished presetup\n");
+	printf("max rx queues:%d\n",dev_info.max_rx_queues);
 	return 0;
 }
+int tap_pre_setup(struct E3Interface * pe3iface)
+{
+	struct rte_eth_dev_info dev_info;
+	pe3iface->hwiface_model=e3_hwiface_model_tap;
+	pe3iface->nr_queues=1;
+	printf("max rx queues:%d\n",dev_info.max_rx_queues);
+	return 0;
+}
+
 int port_config(struct E3Interface * piface,struct rte_eth_conf * port_config)
 {
 	struct rte_eth_dev_info dev_info;
@@ -99,6 +108,27 @@ int port_config(struct E3Interface * piface,struct rte_eth_conf * port_config)
 	port_config->rx_adv_conf.rss_conf.rss_key=NULL;
 	port_config->rx_adv_conf.rss_conf.rss_hf=ETH_RSS_IP;
 	port_config->fdir_conf.mode=RTE_FDIR_MODE_PERFECT;/*enable ptype classification*/
+	return 0;
+}
+
+int tap_port_config(struct E3Interface * piface,struct rte_eth_conf * port_config)
+{
+	struct rte_eth_dev_info dev_info;
+	rte_eth_dev_info_get(piface->port_id,&dev_info);
+	printf("RX oflags:%p\n",dev_info.rx_offload_capa);
+	printf("TX oflags:%p\n",dev_info.tx_offload_capa);
+	port_config->rxmode.mq_mode=ETH_MQ_RX_NONE;
+	port_config->rxmode.max_rx_pkt_len=ETHER_MAX_LEN;
+	port_config->rxmode.header_split=0;
+	port_config->rxmode.hw_ip_checksum=1;
+	port_config->rxmode.hw_vlan_filter=0;
+	port_config->rxmode.hw_vlan_strip=0;
+	port_config->rxmode.hw_vlan_extend=0;
+	port_config->rxmode.jumbo_frame=0;
+	port_config->rxmode.hw_strip_crc=0;
+	port_config->rxmode.enable_scatter=0;
+	port_config->rxmode.enable_lro=0;
+	port_config->txmode.mq_mode=ETH_MQ_TX_NONE;
 	return 0;
 }
 
@@ -146,21 +176,35 @@ main(int argc, char **argv)
 			{.edge_entry=-1},
 		},
 	};
-	
+
+	struct E3Interface_ops tap_ops={
+		.priv_size=64,
+		.numa_socket_id=0,
+		.pre_setup=tap_pre_setup,
+		.port_setup=tap_port_config,
+		.input_node_process_func=input_node_process_func,
+		.output_node_process_func=output_node_process_func,
+		.edges={
+			{.edge_entry=-1},
+		},
+	};
 	printf("%d\n",register_e3interface("0000:00:04.0",&ops,NULL));
 	start_e3interface(find_e3interface_by_index(0));
-	//dump_nodes(fp_log);
 	
-
-	getchar();
-
-
-	unregister_e3interface(0);
-
-	getchar();
-	register_e3interface("0000:00:04.0",&ops,NULL);
+	register_e3interface("net_pcap,iface=veth0",&tap_ops,NULL);
+	register_e3interface("net_pcap1,iface=veth1",&tap_ops,NULL);
+	start_e3interface(find_e3interface_by_index(1));
 	
+	getchar();
+	printf("correlation:%d\n",correlate_e3interfaces(find_e3interface_by_index(0),find_e3interface_by_index(1)));
+	printf("correlation:%d\n",correlate_e3interfaces(find_e3interface_by_index(0),find_e3interface_by_index(1)));
+	getchar();
+	printf("dissociate:%d\n",dissociate_e3interface(find_e3interface_by_index(2)));
+	printf("dissociate:%d\n",dissociate_e3interface(find_e3interface_by_index(1)));
+	printf("dissociate:%d\n",dissociate_e3interface(find_e3interface_by_index(0)));
+
 	#if 0
+	
 	printf("tsc HZ:%"PRIu64"\n",rte_get_tsc_hz());
 	init_registered_tasks();
 
