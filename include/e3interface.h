@@ -66,7 +66,7 @@ struct E3Interface_ops{
 	int (*capability_check)(int port_id);/*check the offload ability 
 										  of the target port,0 indicates 
 										  success.*/
-	int (*pre_setup)(struct E3Interface * iface);/*model specific setup,
+	int (*queue_setup)(struct E3Interface * iface);/*model specific setup,
 										  called during registeration,
 										  this emulates the proceedure the Linux netdevice does*/
 	int (*port_setup)(struct E3Interface * iface,
@@ -106,5 +106,11 @@ void dump_e3interfaces(FILE* fp);
 
 int correlate_e3interfaces(struct E3Interface * pif1,struct E3Interface *pif2);
 int dissociate_e3interface(struct E3Interface * pif);
+int start_e3interface(struct E3Interface * pif);
+int stop_e3interface(struct E3Interface * pif);
+void start_e3interface_with_slow_path(int any_port_id);
+void stop_e3interface_with_slow_path(int any_port_id);
+
+
 
 #endif

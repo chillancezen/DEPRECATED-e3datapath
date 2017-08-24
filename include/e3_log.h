@@ -22,7 +22,7 @@
 #define E3_ASSERT(condition)  \
 do{ \
         if(!(condition)){\
-                fprintf(fp_log,"%s[assert]%s:%d %s() %s\n",current_time(),__FILE__,__LINE__,__FUNCTION__,#condition); \
+                fprintf(fp_log,"%s [assert] %s:%d %s() %s\n",current_time(),__FILE__,__LINE__,__FUNCTION__,#condition); \
                 fflush(fp_log); \
                 exit(-1); \
         }\
@@ -30,17 +30,17 @@ do{ \
 
 
 #define E3_LOG(format,...) {\
-	fprintf(fp_log,"%s[log]%s:%d %s() ",current_time(),__FILE__,__LINE__,__FUNCTION__); \
+	fprintf(fp_log,"%s [log] %s:%d %s() ",current_time(),__FILE__,__LINE__,__FUNCTION__); \
 	fprintf(fp_log,(format),##__VA_ARGS__);} \
 	fflush(fp_log);
 
 #define E3_WARN(format,...) {\
-	fprintf(fp_log,"%s[warn]%s:%d %s() ",current_time(),__FILE__,__LINE__,__FUNCTION__); \
+	fprintf(fp_log,"%s [warn] %s:%d %s() ",current_time(),__FILE__,__LINE__,__FUNCTION__); \
 	fprintf(fp_log,(format),##__VA_ARGS__);} \
 	fflush(fp_log);
 
 #define E3_ERROR(format,...) {\
-	fprintf(fp_log,"%s[error]%s:%d %s() ",current_time(),__FILE__,__LINE__,__FUNCTION__); \
+	fprintf(fp_log,"%s [error] %s:%d %s() ",current_time(),__FILE__,__LINE__,__FUNCTION__); \
 	fprintf(fp_log,(format),##__VA_ARGS__);} \
 	fflush(fp_log);
 

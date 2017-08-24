@@ -66,7 +66,7 @@ int  get_lcore(void);
 int  get_io_lcore_by_socket_id(int socket_id);
 int  get_io_lcore(void);
 void put_lcore(int lcore_id,int  is_io);
-inline int  lcore_to_socket_id(int lcore_id);
+int  lcore_to_socket_id(int lcore_id);
 struct rte_mempool * get_mempool_by_socket_id(int socket_id);
 
 

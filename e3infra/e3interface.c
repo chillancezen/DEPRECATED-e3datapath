@@ -4,6 +4,11 @@
 #include <node.h>
 #include <lcore_extension.h>
 #include <node_adjacency.h>
+#define USE_NUMA_NODE 
+/*when allocating lcore resource to io nodes,
+if we define this macro,as a matter of optimization,user should know which socket 
+their pci device belongs to,
+that's to say,user must priviously decide the numa node,often through the EAL output*/
 
 struct E3Interface * global_e3iface_array[MAX_NUMBER_OF_E3INTERFACE];
 
@@ -88,15 +93,16 @@ int register_e3interface(const char * params,struct E3Interface_ops * dev_ops,in
 		goto error_iface_dealloc;
 	}
 	/*2.do setup before go further*/
-	dev_ops->pre_setup(pe3iface);
+	dev_ops->queue_setup(pe3iface);
 	if(pe3iface->nr_queues<=0 || pe3iface->nr_queues>MAX_QUEUES_TO_POLL){
-		E3_ERROR("invalid number of queues to poll during pre-setup\n");
+		E3_ERROR("invalid number of queues to poll during queue setup\n");
 		goto error_iface_dealloc;
 	}
 	/*3.allocate nodes*/
 	for(idx=0;idx<MAX_QUEUES_TO_POLL;idx++){
 		pe3iface->input_node[idx]=0;
 		pe3iface->output_node[idx]=0;
+		pinput_nodes[idx]=NULL;
 	}
 	for(idx=0;idx<pe3iface->nr_queues;idx++){
 		pinput_nodes[idx]=rte_zmalloc(NULL,sizeof(struct node),64);
@@ -132,10 +138,18 @@ int register_e3interface(const char * params,struct E3Interface_ops * dev_ops,in
 		int node_socket_id;
 		pinput_nodes[idx]->lcore_id=0xff;
 		poutput_nodes[idx]->lcore_id=0xff;
-
-		input_lcore_id=get_io_lcore();
-		if(!validate_lcore_id(input_lcore_id))
+		#if !defined(USE_NUMA_NODE)
+			input_lcore_id=get_io_lcore();
+		#else
+			input_lcore_id=get_io_lcore_by_socket_id(dev_ops->numa_socket_id);
+		#endif
+		if(!validate_lcore_id(input_lcore_id)){
+			for(iptr=0;iptr<idx;iptr++){
+				put_lcore(pinput_nodes[iptr]->lcore_id,1);
+				put_lcore(poutput_nodes[iptr]->lcore_id,1);
+			}
 			break;
+		}
 		node_socket_id=lcore_to_socket_id(input_lcore_id);
 		output_lcore_id=get_io_lcore_by_socket_id(node_socket_id);
 		if(!validate_lcore_id(output_lcore_id)){
@@ -173,7 +187,10 @@ int register_e3interface(const char * params,struct E3Interface_ops * dev_ops,in
 		E3_ERROR("errors occur during configuring dpdk port\n");
 		goto error_nodes_unregister;
 	}
-	rte_eth_promiscuous_enable(port_id);
+	/*rte_eth_promiscuous_enable(port_id); 
+	not all the iterfaces work in promiscuous state,
+	if we really need this, please do it in post_setup
+	*/
 	rte_eth_dev_info_get(port_id,&dev_info);
 	dev_info.default_txconf.txq_flags=0;
 	
@@ -231,7 +248,7 @@ int register_e3interface(const char * params,struct E3Interface_ops * dev_ops,in
 			break;
 	}
 	if(idx<pe3iface->nr_queues){
-		E3_ERROR("errors occur during lcore attachment phaze\n");
+		E3_ERROR("errors occur during lcore attaching phaze\n");
 		goto error_lcore_detach;
 	}
 	/*10.set next edges for input nodes*/
@@ -269,7 +286,8 @@ int register_e3interface(const char * params,struct E3Interface_ops * dev_ops,in
 		pe3iface->input_node[idx]=pinput_nodes[idx]->node_index;
 		pe3iface->output_node[idx]=poutput_nodes[idx]->node_index;
 	}
-	E3_LOG("register E3interface:%s with\n",(char*)pe3iface->name);
+	E3_LOG("register E3interface:%s with ifindex:%d\n",(char*)pe3iface->name,
+			pe3iface->port_id);
 	for(idx=0;idx<pe3iface->nr_queues;idx++){
 		E3_LOG("\tnode %s on %d and node %s on %d\n",
 			(char*)pinput_nodes[idx]->name,
@@ -285,6 +303,7 @@ int register_e3interface(const char * params,struct E3Interface_ops * dev_ops,in
 	pe3iface->under_releasing=0;
 	/*13.publish this E3interface*/
 	rcu_assign_pointer(global_e3iface_array[port_id],pe3iface);
+
 	return 0;
 	error_lcore_detach:
 		for(idx=0;idx<pe3iface->nr_queues;idx++){
@@ -422,7 +441,6 @@ int correlate_e3interfaces(struct E3Interface * pif1,struct E3Interface *pif2)
 	pif_tap->has_phy_device=1;
 	pif_phy->has_tap_device=1;
 	_mm_sfence();
-
 	
 	E3_LOG("correlate device:%s with tap device:%s\n",
 		(char*)pif_phy->name,
@@ -463,6 +481,31 @@ int start_e3interface(struct E3Interface * pif)
 		set_status_up_e3iface(pif);
 	return rc;
 }
+
+void start_e3interface_with_slow_path(int any_port_id)
+{
+	struct E3Interface * pif;
+	struct E3Interface * pif_peer;
+	pif=find_e3interface_by_index(any_port_id);
+	start_e3interface(pif);
+	if(pif&&pif->has_peer_device){
+		pif_peer=find_e3interface_by_index(pif->peer_port_id);
+		start_e3interface(pif_peer);
+	}
+}
+
+void stop_e3interface_with_slow_path(int any_port_id)
+{
+	struct E3Interface * pif;
+	struct E3Interface * pif_peer;
+	pif=find_e3interface_by_index(any_port_id);
+	stop_e3interface(pif);
+	if(pif&&pif->has_peer_device){
+		pif_peer=find_e3interface_by_index(pif->peer_port_id);
+		stop_e3interface(pif_peer);
+	}
+}
+
 
 int stop_e3interface(struct E3Interface * pif)
 {

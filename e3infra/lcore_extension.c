@@ -99,7 +99,7 @@ void init_lcore_extension(void)
 }
 E3_init(init_lcore_extension,TASK_PRIORITY_HIGH);
 
-inline int  lcore_to_socket_id(int lcore_id)
+int  lcore_to_socket_id(int lcore_id)
 {
 	return rte_lcore_to_socket_id(lcore_id);
 }

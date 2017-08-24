@@ -69,13 +69,13 @@
 int pre_setup(struct E3Interface * pe3iface)
 {
 	struct rte_eth_dev_info dev_info;
-	
 	pe3iface->hwiface_model=e3_hwiface_model_virtio;
 	rte_eth_dev_info_get(pe3iface->port_id,&dev_info);
 	pe3iface->nr_queues=E3_MIN(dev_info.max_rx_queues,dev_info.max_tx_queues);
 	pe3iface->nr_queues=E3_MIN(pe3iface->nr_queues,4);
 	pe3iface->nr_queues=E3_MIN(pe3iface->nr_queues,MAX_QUEUES_TO_POLL);
-	printf("max rx queues:%d\n",dev_info.max_rx_queues);
+	
+	pe3iface->nr_queues=1;
 	return 0;
 }
 int tap_pre_setup(struct E3Interface * pe3iface)
@@ -83,7 +83,6 @@ int tap_pre_setup(struct E3Interface * pe3iface)
 	struct rte_eth_dev_info dev_info;
 	pe3iface->hwiface_model=e3_hwiface_model_vlink;
 	pe3iface->nr_queues=1;
-	printf("max rx queues:%d\n",dev_info.max_rx_queues);
 	return 0;
 }
 
@@ -91,17 +90,15 @@ int port_config(struct E3Interface * piface,struct rte_eth_conf * port_config)
 {
 	struct rte_eth_dev_info dev_info;
 	rte_eth_dev_info_get(piface->port_id,&dev_info);
-	printf("RX oflags:%p\n",dev_info.rx_offload_capa);
-	printf("TX oflags:%p\n",dev_info.tx_offload_capa);
 	port_config->rxmode.mq_mode=ETH_MQ_RX_RSS;
 	port_config->rxmode.max_rx_pkt_len=ETHER_MAX_LEN;
 	port_config->rxmode.header_split=0;
 	port_config->rxmode.hw_ip_checksum=1;
 	port_config->rxmode.hw_vlan_filter=0;
-	port_config->rxmode.hw_vlan_strip=0;
+	port_config->rxmode.hw_vlan_strip=1;
 	port_config->rxmode.hw_vlan_extend=0;
 	port_config->rxmode.jumbo_frame=0;
-	port_config->rxmode.hw_strip_crc=0;
+	port_config->rxmode.hw_strip_crc=1;
 	port_config->rxmode.enable_scatter=0;
 	port_config->rxmode.enable_lro=0;
 	port_config->txmode.mq_mode=ETH_MQ_TX_NONE;
@@ -115,8 +112,6 @@ int tap_port_config(struct E3Interface * piface,struct rte_eth_conf * port_confi
 {
 	struct rte_eth_dev_info dev_info;
 	rte_eth_dev_info_get(piface->port_id,&dev_info);
-	printf("RX oflags:%p\n",dev_info.rx_offload_capa);
-	printf("TX oflags:%p\n",dev_info.tx_offload_capa);
 	port_config->rxmode.mq_mode=ETH_MQ_RX_NONE;
 	port_config->rxmode.max_rx_pkt_len=ETHER_MAX_LEN;
 	port_config->rxmode.header_split=0;
@@ -166,8 +161,8 @@ main(int argc, char **argv)
 	
 	struct E3Interface_ops ops={
 		.priv_size=64,
-		.numa_socket_id=0,
-		.pre_setup=pre_setup,
+		.numa_socket_id=1,
+		.queue_setup=pre_setup,
 		.port_setup=port_config,
 		.input_node_process_func=input_node_process_func,
 		.output_node_process_func=output_node_process_func,
@@ -180,7 +175,7 @@ main(int argc, char **argv)
 	struct E3Interface_ops tap_ops={
 		.priv_size=64,
 		.numa_socket_id=0,
-		.pre_setup=tap_pre_setup,
+		.queue_setup=tap_pre_setup,
 		.port_setup=tap_port_config,
 		.input_node_process_func=input_node_process_func,
 		.output_node_process_func=output_node_process_func,
@@ -188,12 +183,21 @@ main(int argc, char **argv)
 			{.edge_entry=-1},
 		},
 	};
-	printf("%d\n",create_e3iface_with_slowpath("0000:00:04.0",&ops,NULL));
-	printf("%d\n",create_e3iface_with_slowpath("eth_pcap0,iface=veth0",&tap_ops,NULL));
+	int port_id;
+	printf("%d\n",create_e3iface_with_slowpath("0000:41:00.1",&ops,&port_id));
 	getchar();
-	release_e3iface_with_slowpath(2);
-	release_e3iface_with_slowpath(1);
-	//printf("%d\n",register_e3interface("0000:00:04.0",&ops,NULL));
+	start_e3interface_with_slow_path(port_id);
+	
+	//printf("%d\n",create_e3iface_with_slowpath("0000:41:02.0",&ops,&port_id));
+	//printf("port id:%d\n",port_id);
+	//
+	//printf("%d\n",create_e3iface_with_slowpath("eth_pcap0,iface=p1p1",&tap_ops,NULL));
+	//getchar();
+	//release_e3iface_with_slowpath(2);
+	//release_e3iface_with_slowpath(1);
+	//getchar();
+	//printf("%d\n",create_e3iface_with_slowpath("0000:41:00.1",&ops,NULL));
+	//printf("%d\n",register_e3interface("0000:41:02.0",&ops,NULL));
 	//start_e3interface(find_e3interface_by_index(0));
 
 	//register_e3interface("net_tap,iface=tap0",&tap_ops,NULL);
@@ -211,6 +215,9 @@ main(int argc, char **argv)
 	//printf("dissociate:%d\n",dissociate_e3interface(find_e3interface_by_index(0)));
 	getchar();
 	dump_e3interfaces(fp_log);
+
+	//getchar();
+	//printf("%d\n",create_e3iface_with_slowpath("0000:00:04.0",&ops,NULL));
 	#if 0
 	
 	printf("tsc HZ:%"PRIu64"\n",rte_get_tsc_hz());

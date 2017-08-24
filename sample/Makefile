@@ -45,7 +45,8 @@ APP = helloworld
 SRCS-y := main.c
 
 CFLAGS += -O3 -I/mnt/projects/e3datapath/include -include /mnt/projects/e3datapath/config/e3_config.h 
-CFLAGS += $(WERROR_FLAGS) -L/mnt/projects/E3switch/E3datapath -I/root/jzheng/userspace-rcu-master/src -L/root/mywork/userspace-rcu/src/.libs
+CFLAGS +=  -L/mnt/projects/e3datapath/ -I/root/jzheng/userspace-rcu-master/src -L/root/mywork/userspace-rcu/src/.libs
+CFLAGS += -L/lib64
 
 LDFLAGS += -lurcu-qsbr -le3datapath 
 include $(RTE_SDK)/mk/rte.extapp.mk

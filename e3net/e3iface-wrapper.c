@@ -37,7 +37,7 @@ int tap_output_process_func(void * argv)
 struct E3Interface_ops tapiface_ops={
 	.priv_size=0,
 	.numa_socket_id=0,
-	.pre_setup=tap_pre_setup,
+	.queue_setup=tap_pre_setup,
 	.port_setup=tap_port_config,
 	.input_node_process_func=tap_input_process_func,
 	.output_node_process_func=tap_output_process_func,
@@ -50,16 +50,23 @@ int create_e3iface_with_slowpath(char * params,struct E3Interface_ops * ops,int 
 	char tap_params[64];
 	int phy_port_id=0;
 	int tap_port_id=0;
+	struct E3Interface * pe3if_phy=NULL;
 	int rc=register_e3interface(params,ops,&phy_port_id);
 	if(rc)
 		return rc;
+	E3_ASSERT(pe3if_phy=find_e3interface_by_index(phy_port_id));
 	memset(tap_params,0x0,sizeof(tap_params));
-	sprintf(tap_params,"eth_tap%d,iface=e3tap%d",tap_number,tap_number);
+	sprintf(tap_params,"eth_tap%d,iface=e3tap%d"
+		,tap_number
+		,tap_number);
 	rc=register_e3interface(tap_params,&tapiface_ops,&tap_port_id);
 	if(rc){
 		unregister_e3interface(phy_port_id);
 		return rc;
 	}
+	/*after creating the tap device, set its mac same with physical one*/
+	rte_eth_dev_default_mac_addr_set(tap_port_id,(struct ether_addr *)pe3if_phy->mac_addrs);
+	
 	E3_ASSERT(!correlate_e3interfaces(find_e3interface_by_index(phy_port_id),find_e3interface_by_index(tap_port_id)));
 	tap_number++;
 	if(pport_id)
@@ -82,3 +89,8 @@ int release_e3iface_with_slowpath(int any_port_id)
 		unregister_e3interface(peer_port_id);
 	return 0;
 }
+
+
+
+/*helper functions to be exported*/
+
