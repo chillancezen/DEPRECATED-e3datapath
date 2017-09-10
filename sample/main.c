@@ -183,6 +183,10 @@ main(int argc, char **argv)
 			{.edge_entry=-1},
 		},
 	};
+
+	//label_fib_module_test();
+	label_nhlfe_module_test();
+	return 0;
 	int port_id;
 	printf("%d\n",create_e3iface_with_slowpath("0000:41:00.1",&ops,&port_id));
 	getchar();
