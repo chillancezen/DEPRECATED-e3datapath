@@ -10,7 +10,7 @@
 *non-overlapped address space is strongly recommeded
 */
 struct topological_neighbor{
-	uint32_t neighbour_ip_as_le;
+	uint32_t neighbour_ip_as_le; //simply,ip as key
 	uint8_t  mac[6];
 	uint8_t is_valid;
 }__attribute__((aligned(4)));
@@ -21,7 +21,7 @@ struct topological_neighbor{
 */
 
 struct next_hop{
-	int local_e3iface_index;
+	int local_e3iface_index; //both fields as the key
 	int remote_neighbor_index;
 	uint8_t is_valid;
 }__attribute__((aligned(4)));
@@ -30,6 +30,24 @@ struct next_hop{
 extern struct topological_neighbor * topological_neighbor_base;
 extern struct next_hop             * next_hop_base;
 
-#define topological_neighbour_at(index)
+#define topological_neighbour_at(index) ((((index)>=0)&&((index)<MAX_TOPOLOGICAL_NEIGHBOURS))?\
+										&topological_neighbor_base[(index)]: \
+										NULL)
+										
+#define topological_neighbour_is_valid(neigh) (!!(neigh)->is_valid)
+
+int register_topological_neighbour(uint32_t le_ip_as_key,uint8_t *mac);
+
+int search_topological_neighbour(uint32_t le_ip_as_key);
+
+
+#define next_hop_at(index) ((((index)>=0)&&((index)<MAX_NEXT_HOPS))?\
+										&next_hop_base[(index)]: \
+										NULL)
+										
+#define next_hop_is_valid(nhop) (!!(nhop)->is_valid)
+
+
+
 
 #endif
