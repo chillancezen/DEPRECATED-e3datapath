@@ -64,7 +64,7 @@
 #include <device-wrapper.h>
 #include <l4-tunnel-process.h>
 #endif 
-#include <init.h>
+#include <e3_init.h>
 #include <e3interface.h>
 int pre_setup(struct E3Interface * pe3iface)
 {

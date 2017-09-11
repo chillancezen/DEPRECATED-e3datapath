@@ -2,7 +2,7 @@
 #include <e3_log.h>
 #include <stdio.h>
 #include <string.h>
-#include <init.h>
+#include <e3_init.h>
 struct node * lcore_task_list[MAX_LCORE_SUPPORTED];
 struct e3_lcore lcore_records[MAX_LCORE_SUPPORTED];
 struct rte_mempool * gmempool_array[MAX_SOCKET_SUPPORTED];
@@ -97,7 +97,7 @@ void init_lcore_extension(void)
 	#endif
 	
 }
-E3_init(init_lcore_extension,TASK_PRIORITY_HIGH);
+E3_init(init_lcore_extension,TASK_PRIORITY_SYSTEM_INIT);
 
 int  lcore_to_socket_id(int lcore_id)
 {

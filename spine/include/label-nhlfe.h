@@ -26,4 +26,10 @@ struct next_hop{
 	uint8_t is_valid;
 }__attribute__((aligned(4)));
 
+
+extern struct topological_neighbor * topological_neighbor_base;
+extern struct next_hop             * next_hop_base;
+
+#define topological_neighbour_at(index)
+
 #endif
