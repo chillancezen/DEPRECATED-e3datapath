@@ -4,7 +4,7 @@
 #include <node.h>
 #include <lcore_extension.h>
 #include <node_adjacency.h>
-#define USE_NUMA_NODE 
+//#define USE_NUMA_NODE 
 /*when allocating lcore resource to io nodes,
 if we define this macro,as a matter of optimization,user should know which socket 
 their pci device belongs to,

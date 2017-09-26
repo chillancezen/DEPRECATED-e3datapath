@@ -67,13 +67,13 @@ int search_topological_neighbour(uint32_t le_ip_as_key)
 
 void label_nhlfe_module_test(void)
 {
-	printf("%d\n",register_topological_neighbour(0x122,"dsdssds"));
-	printf("%d\n",register_topological_neighbour(0x1221,"dsdssds"));
+	//printf("%d\n",register_topological_neighbour(0x122,"dsdssds"));
+	//printf("%d\n",register_topological_neighbour(0x1221,"dsdssds"));
 	//topological_neighbour_at(1)->is_valid=0;
-	printf("%d\n",register_topological_neighbour(0x123,"dsdssds"));
+	//printf("%d\n",register_topological_neighbour(0x123,"dsdssds"));
 
-	printf("found:%d\n",search_topological_neighbour(0x123));
-	printf("found:%d\n",search_topological_neighbour(0x1213));
+	//printf("found:%d\n",search_topological_neighbour(0x123));
+	//printf("found:%d\n",search_topological_neighbour(0x1213));
 	//topological_neighbour_at(2)->is_valid=1;
 	//printf("%p\n",topological_neighbour_is_valid(topological_neighbour_at(0)));
 	//printf("%p\n",topological_neighbour_is_valid(topological_neighbour_at(1)));
