@@ -47,5 +47,5 @@ SRCS-y := main.c
 CFLAGS += -O3 -I/$(E3_SDK)/include -include $(E3_SDK)/config/e3_config.h 
 CFLAGS += -I/root/jzheng/userspace-rcu-master/src -L/root/mywork/userspace-rcu/src/.libs
 CFLAGS += -L/lib64
-LDFLAGS += -lurcu-qsbr -le3datapath 
+LDFLAGS += -lurcu-qsbr -le3datapath -lzmq 
 include $(RTE_SDK)/mk/rte.extapp.mk
