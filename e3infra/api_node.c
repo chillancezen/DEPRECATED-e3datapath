@@ -4,7 +4,7 @@
 #include <rte_malloc.h>
 #include <e3_log.h>
 #include <e3-api-wrapper.h>
-
+#include <util.h>
 
 
 
@@ -62,5 +62,28 @@ void api_node_init(void)
 E3_init(api_node_init,TASK_PRIORITY_SYSTEM_INIT);
 
 
+/*
+*export API version interface
+*input:
+*	None
+*ouput:
+*	None
+*return:
+*	the version number
+*/
 
+e3_type e3datapath_version(e3_type service)
+{
+	return (e3_type)VERSION_DWORD(MAJOR_VERSION_NUMBER,
+							MINOR_VERSION_NUMBER,
+							BUILD_VERSION_NUMBER);
+}
 
+DECLARE_E3_API(e3_datapath_version)={
+	.api_name="e3datapath_version",
+	.api_desc="retrieve e3 datapath version dword",
+	.api_callback_func=(api_callback_func)e3datapath_version,
+	.args_desc={
+		{.type=e3_arg_type_none,},
+	},
+};

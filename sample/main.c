@@ -132,7 +132,7 @@ int input_node_process_func(void * arg)
 	struct node * pnode=(struct node * )arg;
 	int port_id=HIGH_UINT64((uint64_t)pnode->node_priv);
 	int queue_id=LOW_UINT64((uint64_t)pnode->node_priv);
-	printf("input:port %d queue %d\n",port_id,queue_id);
+	//printf("input:port %d queue %d\n",port_id,queue_id);
 	sleep(1);
 }
 int output_node_process_func(void * arg)
@@ -140,7 +140,7 @@ int output_node_process_func(void * arg)
 	struct node * pnode=(struct node *)arg;
 	int port_id=HIGH_UINT64((uint64_t)pnode->node_priv);
 	int queue_id=LOW_UINT64((uint64_t)pnode->node_priv);
-	printf("output:port %d queue %d\n",port_id,queue_id);
+	//printf("output:port %d queue %d\n",port_id,queue_id);
 	sleep(1);
 }
 int
@@ -190,7 +190,7 @@ main(int argc, char **argv)
 	//return 0;
 	int port_id;
 	printf("%d\n",create_e3iface_with_slowpath("0000:00:08.0",&ops,&port_id));
-	getchar();
+	//e3_api_export_module_test();
 	start_e3interface_with_slow_path(port_id);
 	
 	//printf("%d\n",create_e3iface_with_slowpath("0000:41:02.0",&ops,&port_id));
@@ -742,7 +742,7 @@ main(int argc, char **argv)
 	pnode=find_node_by_name("device-input-node-1");
 	printf("next_node:%d\n",next_forwarding_node(pnode,DEVICE_NEXT_ENTRY_TO_L2_INPUT));
 	#endif
-	while(1){
+	while(0){
 		getchar();
 		#if 0
 		/*inbound nodes stats*/
@@ -816,8 +816,7 @@ main(int argc, char **argv)
 		*/
 	}
 	lcore_default_entry(NULL);/*master core enters loops*/
-	while(1)
-		sleep(1);
+	
 	rte_eal_mp_wait_lcore();
 	return 0;
 }

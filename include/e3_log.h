@@ -31,18 +31,18 @@ do{ \
 
 #define E3_LOG(format,...) {\
 	fprintf(fp_log,"%s [log] %s:%d %s() ",current_time(),__FILE__,__LINE__,__FUNCTION__); \
-	fprintf(fp_log,(format),##__VA_ARGS__);} \
-	fflush(fp_log);
+	fprintf(fp_log,(format),##__VA_ARGS__); \
+	fflush(fp_log);}
 
 #define E3_WARN(format,...) {\
 	fprintf(fp_log,"%s [warn] %s:%d %s() ",current_time(),__FILE__,__LINE__,__FUNCTION__); \
-	fprintf(fp_log,(format),##__VA_ARGS__);} \
-	fflush(fp_log);
+	fprintf(fp_log,(format),##__VA_ARGS__); \
+	fflush(fp_log);}
 
 #define E3_ERROR(format,...) {\
 	fprintf(fp_log,"%s [error] %s:%d %s() ",current_time(),__FILE__,__LINE__,__FUNCTION__); \
-	fprintf(fp_log,(format),##__VA_ARGS__);} \
-	fflush(fp_log);
+	fprintf(fp_log,(format),##__VA_ARGS__); \
+	fflush(fp_log);}
 
 extern FILE * fp_log;
 extern time_t log_time;

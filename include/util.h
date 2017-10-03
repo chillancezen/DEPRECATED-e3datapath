@@ -70,4 +70,8 @@ __attribute__((always_inline))
 #endif
 
 
+#define VERSION_DWORD(major,minor,build) ((uint8_t)(build)|\
+	(((minor)<<8)&0xff00)|\
+	(((major)<<16)&0xff0000))
+
 #endif

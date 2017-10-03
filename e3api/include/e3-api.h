@@ -1,20 +1,18 @@
 #ifndef _E3_API_H
 #define _E3_API_H
 #include <e3-tlv.h>
-
+#include <stdio.h>
 #define TLV_MAJOR_E3_API 0x1
 typedef uint64_t e3_type;
 
 
 enum e3_arg_type{
-	#define _(t) e3_arg_type_##t,
-	_(none)
-	_(uint8_t)
-	_(uint16_t)
-	_(uint32_t)
-	_(uint64_t)
-	_(uint8_t_ptr)
-	#undef _
+	e3_arg_type_none=0,
+	e3_arg_type_uint8_t,
+	e3_arg_type_uint16_t,
+	e3_arg_type_uint32_t,
+	e3_arg_type_uint64_t,
+	e3_arg_type_uint8_t_ptr,
 };
 
 
@@ -26,12 +24,10 @@ enum e3_arg_type{
 #define e3_type_to_uint8_t_ptr(v) ((uint8_t*)(v))
 
 enum e3_arg_behavior{
-	#define _(t) e3_arg_behavior_##t,
-	_(none)
-	_(input)
-	_(output)
-	_(input_and_output)
-	#undef _
+	e3_arg_behavior_none=0,
+	e3_arg_behavior_input,
+	e3_arg_behavior_output,
+	e3_arg_behavior_input_and_output,
 };
 struct argument_descriptor{
 	enum e3_arg_type type;
@@ -64,6 +60,13 @@ extern struct e3_api_declaration *e3_api_head;
 struct e3_api_declaration * search_e3_api_by_name(const char * api_name);
 struct e3_api_declaration * search_e3_api_by_template(struct e3_api_declaration * api_template);
 int    e3_api_nr_args(struct e3_api_declaration * api);
+void   dump_e3_apis(FILE * fp);
+
+char * e3_arg_type_to_string(enum e3_arg_type type);
+char * e3_arg_behavior_to_string(enum e3_arg_behavior behavior);
+char * e3_arg_type_to_std_type(enum e3_arg_type type);
+
+
 
 
 #endif

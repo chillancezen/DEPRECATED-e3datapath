@@ -24,6 +24,12 @@ install:$(DLIB_TARGET)
 	cp ./$(DLIB_TARGET) /lib64
 uninstall:$(DLIB_TARGET)
 	-rm -f /lib64/$(DLIB_TARGET)
+api:
+	make -C e3api_export
+	make export -C e3api_export
+	make -C e3api_export/libs
 clean:
 	-rm -f $(TARGET)
 	find -name "*.o" -exec rm -f {} \;
+	make clean -C e3api_export
+	make clean -C e3api_export/libs
