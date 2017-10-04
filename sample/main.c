@@ -143,6 +143,17 @@ int output_node_process_func(void * arg)
 	//printf("output:port %d queue %d\n",port_id,queue_id);
 	sleep(1);
 }
+static int ifup(int iface)
+{
+
+	printf("iface:%d up!!!\n",iface);
+	return 0;
+}
+static int ifdown(int iface)
+{
+	printf("iface:%d down!!!\n",iface);
+	return 0;
+}
 int
 main(int argc, char **argv)
 {
@@ -160,6 +171,7 @@ main(int argc, char **argv)
 	}
 	
 	struct E3Interface_ops ops={
+		.check_lsc=1,
 		.priv_size=64,
 		.numa_socket_id=1,
 		.queue_setup=pre_setup,
@@ -170,9 +182,12 @@ main(int argc, char **argv)
 			{.edge_entry=-1,.fwd_behavior=NODE_TO_CLASS_FWD,.next_ref="dummy-node"},
 			{.edge_entry=-1},
 		},
+		.lsc_iface_up=ifup,
+		.lsc_iface_down=ifdown,
 	};
 
 	struct E3Interface_ops tap_ops={
+		.check_lsc=0,
 		.priv_size=64,
 		.numa_socket_id=0,
 		.queue_setup=tap_pre_setup,
@@ -189,14 +204,14 @@ main(int argc, char **argv)
 	
 	//return 0;
 	int port_id;
-	printf("%d\n",create_e3iface_with_slowpath("0000:00:08.0",&ops,&port_id));
+	printf("%d\n",create_e3iface_with_slowpath("0000:0a:00.0",&ops,&port_id));
 	//e3_api_export_module_test();
 	start_e3interface_with_slow_path(port_id);
 	
 	//printf("%d\n",create_e3iface_with_slowpath("0000:41:02.0",&ops,&port_id));
 	//printf("port id:%d\n",port_id);
 	//
-	//printf("%d\n",create_e3iface_with_slowpath("eth_pcap0,iface=p1p1",&tap_ops,NULL));
+	printf("%d\n",create_e3iface_with_slowpath("eth_pcap0,iface=p1p2",&tap_ops,NULL));
 	//getchar();
 	//release_e3iface_with_slowpath(2);
 	//release_e3iface_with_slowpath(1);
@@ -219,8 +234,11 @@ main(int argc, char **argv)
 	//printf("dissociate:%d\n",dissociate_e3interface(find_e3interface_by_index(1)));
 	//printf("dissociate:%d\n",dissociate_e3interface(find_e3interface_by_index(0)));
 	getchar();
+	release_e3iface_with_slowpath(1);
 	dump_e3interfaces(fp_log);
 
+	getchar();
+	printf("%d\n",create_e3iface_with_slowpath("0000:0a:00.0",&ops,&port_id));
 	//getchar();
 	//printf("%d\n",create_e3iface_with_slowpath("0000:00:04.0",&ops,NULL));
 	#if 0

@@ -39,7 +39,7 @@ struct E3Interface{
 		uint8_t  has_tap_device:1;/*indicate whether 
 							  	 it has corresponding tap devide*/
 	};
-	
+	uint8_t lsc_enabled:1;   /*whether this interface is able to check LSC*/
 	
 	uint16_t port_id;
 	uint16_t peer_port_id;
@@ -48,6 +48,8 @@ struct E3Interface{
 	uint16_t input_node[MAX_QUEUES_TO_POLL];
 	uint16_t output_node[MAX_QUEUES_TO_POLL];
 	struct rcu_head rcu;
+	int (*interface_up)(int iface);
+	int (*interface_down)(int iface);
 	__attribute__((aligned(64)))
 		void * private[0];
 };
@@ -61,6 +63,7 @@ struct next_edge_item{
 #define MAX_PREDEFINED_EDGE 8
 
 struct E3Interface_ops{
+	int check_lsc;    /*whether to change link status chanege update*/
 	int numa_socket_id;
 	int priv_size;
 	int (*capability_check)(int port_id);/*check the offload ability 
@@ -75,6 +78,8 @@ struct E3Interface_ops{
 	
     int (*input_node_process_func)(void * arg);
 	int (*output_node_process_func)(void * arg);
+	int (*lsc_iface_up)(int iface);
+	int (*lsc_iface_down)(int iface);
 	struct next_edge_item edges[MAX_PREDEFINED_EDGE];
 };
 

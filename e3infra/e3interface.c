@@ -58,6 +58,34 @@ char * link_speed_to_string(uint32_t speed)
 	
 	return ret;
 }
+
+static int e3_lsc_callback(uint8_t iface,
+			enum rte_eth_event_type type,
+			void * param,
+			void * ret_param)
+{
+	struct rte_eth_link link;
+	struct E3Interface * pe3iface;
+	if(type!=RTE_ETH_EVENT_INTR_LSC)
+		return 0;
+	pe3iface=find_e3interface_by_index(iface);
+	E3_ASSERT(pe3iface&&(pe3iface->port_id==iface));
+	rte_eth_link_get_nowait(iface,&link);
+	if(link.link_status){
+		E3_LOG("lsc notification:interface %s(port %d) up\n",
+			(char*)pe3iface->name,
+			pe3iface->port_id);
+		if(pe3iface->interface_up)
+			pe3iface->interface_up(iface);
+	}else{
+		E3_LOG("lsc notification:interface %s(port %d) down\n",
+			(char*)pe3iface->name,
+			pe3iface->port_id);
+		if(pe3iface->interface_down)
+			pe3iface->interface_down(iface);
+	}
+	return 0;
+}
 int register_e3interface(const char * params,struct E3Interface_ops * dev_ops,int *pport_id)
 {
 	int rc;
@@ -182,10 +210,23 @@ int register_e3interface(const char * params,struct E3Interface_ops * dev_ops,in
 	/*7.configure port by call port_setup() in dev_ops*/
 	memset(&port_conf,0x0,sizeof(struct rte_eth_conf));
 	dev_ops->port_setup(pe3iface,&port_conf);
+	port_conf.intr_conf.lsc=!!dev_ops->check_lsc;
 	rc=rte_eth_dev_configure(port_id,pe3iface->nr_queues,pe3iface->nr_queues,&port_conf);
 	if(rc<0){
 		E3_ERROR("errors occur during configuring dpdk port\n");
 		goto error_nodes_unregister;
+	}
+	if(dev_ops->check_lsc){
+		/*as a matter of fact, if the interface is configured to check lsc,and the interface does support
+		it, this process is not going to fail*/
+		rc=rte_eth_dev_callback_register(port_id,RTE_ETH_EVENT_INTR_LSC,e3_lsc_callback,NULL);
+		if(rc<0){
+			E3_ERROR("errors occur during registering LSC callback\n");
+			goto error_nodes_unregister;
+		}
+		pe3iface->lsc_enabled=1;
+		pe3iface->interface_up=dev_ops->lsc_iface_up;
+		pe3iface->interface_down=dev_ops->lsc_iface_down;
 	}
 	/*rte_eth_promiscuous_enable(port_id); 
 	not all the iterfaces work in promiscuous state,
@@ -329,6 +370,12 @@ int register_e3interface(const char * params,struct E3Interface_ops * dev_ops,in
 				rte_free(poutput_nodes[idx]);
 		}
 	error_iface_dealloc:
+		if(pe3iface&&pe3iface->lsc_enabled){
+			rte_eth_dev_callback_unregister(port_id,
+							RTE_ETH_EVENT_INTR_LSC,
+							e3_lsc_callback,
+							NULL);
+		}
 		if(pe3iface)
 			rte_free(pe3iface);
 	error_dev_detach:
@@ -408,8 +455,15 @@ void unregister_e3interface(int port_id)
 		}else
 			put_lcore(poutput_nodes[idx]->lcore_id,1);
 	}
-	
-	
+	/*unregister LSC event right now*/
+	if(pe3iface->lsc_enabled){
+		rc=rte_eth_dev_callback_unregister(pe3iface->port_id,
+							RTE_ETH_EVENT_INTR_LSC,
+							e3_lsc_callback,
+							NULL);
+		if(rc)
+			E3_WARN("errors occurs during unregistering LSC callback function\n");
+	}
 	/*not referrable any more*/
 	rcu_assign_pointer(global_e3iface_array[pe3iface->port_id],NULL);
 	call_rcu(&pe3iface->rcu,_unregister_e3interface_rcu_callback);
