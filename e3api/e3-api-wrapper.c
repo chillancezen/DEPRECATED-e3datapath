@@ -315,15 +315,21 @@ struct e3_api_client * allocate_e3_api_client(char * service_endpoint_to_connect
 {
 	int rc;
 	struct e3_api_client * client=malloc(sizeof(struct e3_api_client));
-	if(!client)
+	if(!client){
+		//printf("[api-client]:can not allocate client\n");
 		goto  error_dealloc;
+	}
 	memset(client,0x0,sizeof(struct e3_api_client));
 	client->socket_handler=zmq_socket(zmq_context,ZMQ_REQ);
-	if(!client->socket_handler)
+	if(!client->socket_handler){
+		//printf("[api-client]:can not create a zmq socket\n");
 		goto error_zmq;
+	}
 	rc=zmq_connect(client->socket_handler,service_endpoint_to_connect);
-	if(rc)
+	if(rc){
+		//printf("[api-client]:can not connect client to endpoint:%s\n",service_endpoint_to_connect);
 		goto error_zmq;
+	}
 	client->poll_items[0].socket=client->socket_handler;
 	client->poll_items[0].fd=0;
 	client->poll_items[0].events=ZMQ_POLLIN;
@@ -489,13 +495,25 @@ void publish_e3_api_client(struct e3_api_client * client)
 		lplast->next_api_client=client;
 	}	
 }
+int register_e3_api_client(char * endpoint_address)
+{
+	struct e3_api_client * client=allocate_e3_api_client(endpoint_address);
+	if(!client)
+		return -1;
+	publish_e3_api_client(client);
+	return 0;
+}
 struct e3_api_client * reference_e3_api_client()
 {
 
 	static struct e3_api_client * last_client_used=NULL;
 	struct e3_api_client * lptr=NULL;
 	struct e3_api_client * lpfound=NULL;
-	
+
+	/*fix the bug that when no endpoint is registered, trying to reference
+	crashes the program*/
+	if(!g_e3_api_client_ptr)
+		return NULL;
 	pthread_mutex_lock(&api_allocator_guard);
 	if(!last_client_used)
 		last_client_used=g_e3_api_client_ptr;

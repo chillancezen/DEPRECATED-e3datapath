@@ -4,6 +4,7 @@
 #include <node.h>
 #include <lcore_extension.h>
 #include <node_adjacency.h>
+#include <e3-api-wrapper.h>
 //#define USE_NUMA_NODE 
 /*when allocating lcore resource to io nodes,
 if we define this macro,as a matter of optimization,user should know which socket 
@@ -598,3 +599,82 @@ __attribute__((constructor))
 		global_e3iface_array[idx]=NULL;
 }
 
+void  dump_e3_interface_structure(void)
+{
+	int last_offset=0,last_size=0;
+	#define _(f) { \
+		int _offset=(int)offsetof(struct E3Interface,f);\
+		int _size=(int)size_of_field(struct E3Interface,f);\
+		int _gap=_offset-(last_offset+last_size);\
+		printf("%20s (offset:%3d size:%3d prev_gap:%d)\n",#f,_offset,_size,_gap);\
+		last_offset=_offset;\
+		last_size=_size;\
+	}
+		_(name);
+		_(cacheline0);
+		_(port_id);
+		_(peer_port_id);
+		_(mac_addrs);
+		_(input_node);
+		_(output_node);
+		_(rcu);
+		_(interface_up);
+		_(interface_down);
+		_(private);
+	#undef _
+}
+/*export e3interface api*/
+e3_type list_e3interfaces(e3_type service,
+			e3_type nr_ifaces, /*output: uint64_t* */
+			e3_type ifaces /*output:uint16_t * MAX_NUMBER_OF_E3INTERFACE*/)
+{
+	uint64_t * _nr_ifaces=(uint64_t *)e3_type_to_uint8_t_ptr(nr_ifaces);
+	uint16_t * _ifaces=(uint16_t*)e3_type_to_uint8_t_ptr(ifaces);
+	struct E3Interface * pif=NULL;
+	int iptr=0;
+	int idx=0;
+	for(idx=0;idx<MAX_NUMBER_OF_E3INTERFACE;idx++){
+		pif=find_e3interface_by_index(idx);
+		if(!pif)
+			continue;
+		_ifaces[iptr++]=idx;
+	}
+	*_nr_ifaces=iptr;
+	return 0;
+}
+
+DECLARE_E3_API(list_e3ifaces)={
+	.api_name="list_e3interfaces",
+	.api_desc="enumerate e3 interfaces, return the list of available index",
+	.api_callback_func=(api_callback_func)list_e3interfaces,
+	.args_desc={
+		{.type=e3_arg_type_uint8_t_ptr,.behavior=e3_arg_behavior_output,.len=8},
+		{.type=e3_arg_type_uint8_t_ptr,.behavior=e3_arg_behavior_output,.len=sizeof(uint16_t)*MAX_NUMBER_OF_E3INTERFACE},
+		{.type=e3_arg_type_none},
+	},
+};
+
+e3_type get_e3interface(e3_type service,
+	e3_type iface_idx,/*input:the target iface index*/
+	e3_type pe3iface/*output:the struct E3interface object memory*/)
+{
+	int _iface_idx=(int)e3_type_to_uint8_t(iface_idx);
+	struct E3Interface * _pe3iface=(struct E3Interface*)e3_type_to_uint8_t_ptr(pe3iface);
+	struct E3Interface * ptr=find_e3interface_by_index(_iface_idx);
+	if(!ptr)
+		return -1;
+	memcpy(_pe3iface,ptr,sizeof(struct E3Interface));
+	return 0;
+}
+
+DECLARE_E3_API(get_e3iface)={
+	.api_name="get_e3interface",
+	.api_desc="get the e3interface of a given index,this will copy the structure",
+	.api_callback_func=(api_callback_func)get_e3interface,
+	.args_desc={
+		{.type=e3_arg_type_uint16_t,.behavior=e3_arg_behavior_input},
+		{.type=e3_arg_type_uint8_t_ptr,.behavior=e3_arg_behavior_output,.len=sizeof(struct E3Interface)},
+		{.type=e3_arg_type_none},
+	},
+	
+};

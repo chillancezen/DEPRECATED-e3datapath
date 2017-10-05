@@ -72,6 +72,11 @@ int encode_e3_api_request(uint8_t * buffer,
 #define declare_e3_api_client_base() extern struct e3_api_client * g_e3_api_client_ptr;
 void publish_e3_api_client(struct e3_api_client * client);
 
+/*
+*this api is export to Python binding
+*/
+int register_e3_api_client(char * endpoint_address);
+
 struct e3_api_client * reference_e3_api_client(void);
 void dereference_e3_api_client(struct e3_api_client * client);
 

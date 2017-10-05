@@ -23,8 +23,10 @@ enum e3_hwiface_model{
 
 
 struct E3Interface{
+
+	/*cacheline 0*/
 	uint8_t name[MAX_E3INTERFACE_NAME_SIZE];
-	__attribute__((aligned(64))) 
+__attribute__((aligned(64))) 
 		uint64_t cacheline0[0];/*frequently accessed fields*/
 	uint8_t  hwiface_model:4;
 	uint8_t  iface_status:1;/*initially set to E3INTERFACE_STATUS_DOWN,
@@ -50,10 +52,25 @@ struct E3Interface{
 	struct rcu_head rcu;
 	int (*interface_up)(int iface);
 	int (*interface_down)(int iface);
-	__attribute__((aligned(64)))
-		void * private[0];
-};
+	
+__attribute__((aligned(64)))
+			   void * private[0];
+}__attribute__((aligned(1)));
 
+/*
+		  name (offset:  0 size: 64 prev_gap:0)
+	cacheline0 (offset: 64 size:  0 prev_gap:0)
+	   port_id (offset: 68 size:  2 prev_gap:4)
+  peer_port_id (offset: 70 size:  2 prev_gap:0)
+	 mac_addrs (offset: 72 size:  6 prev_gap:0)
+	input_node (offset: 78 size: 16 prev_gap:0)
+   output_node (offset: 94 size: 16 prev_gap:0)
+		   rcu (offset:112 size: 16 prev_gap:2)
+  interface_up (offset:128 size:  8 prev_gap:0)
+interface_down (offset:136 size:  8 prev_gap:0)
+	   private (offset:192 size:  0 prev_gap:48)
+
+*/
 #define E3IFACE_PRIV(iface) ((iface)->private)
 struct next_edge_item{
 	int edge_entry;/*-1 indicates the end of the entries*/

@@ -10,6 +10,10 @@
 #define offsetof(t, m) ((size_t) &((t *)0)->m)
 #endif
 
+#ifndef size_of_field
+#define size_of_field(t,m)  ((size_t)sizeof((t *)0)->m)
+#endif
+
 #ifndef container_of
 #define container_of(ptr, type, member) ({ \
 		typeof(((type *)0)->member)(*__mptr) = (ptr); \

@@ -201,17 +201,21 @@ main(int argc, char **argv)
 
 	//label_fib_module_test();
 	//label_nhlfe_module_test();
-	
+	//printf("offset:%d\n",size_of_field(struct E3Interface,name));
+	//printf("offset:%d\n",size_of_field(struct E3Interface,bit_fields0));
+	//printf("offset:%d\n",offsetof(struct E3Interface,bit_fields0)); 
+    //printf("offset:%d\n",offsetof(struct E3Interface,rcu));
+	//dump_e3_interface_structure();
 	//return 0;
 	int port_id;
-	printf("%d\n",create_e3iface_with_slowpath("0000:0a:00.0",&ops,&port_id));
+	printf("%d\n",create_e3iface_with_slowpath("0000:00:08.0",&ops,&port_id));
 	//e3_api_export_module_test();
 	start_e3interface_with_slow_path(port_id);
 	
 	//printf("%d\n",create_e3iface_with_slowpath("0000:41:02.0",&ops,&port_id));
 	//printf("port id:%d\n",port_id);
 	//
-	printf("%d\n",create_e3iface_with_slowpath("eth_pcap0,iface=p1p2",&tap_ops,NULL));
+	printf("%d\n",create_e3iface_with_slowpath("eth_pcap0,iface=docker0",&tap_ops,NULL));
 	//getchar();
 	//release_e3iface_with_slowpath(2);
 	//release_e3iface_with_slowpath(1);
@@ -233,12 +237,12 @@ main(int argc, char **argv)
 	//printf("dissociate:%d\n",dissociate_e3interface(find_e3interface_by_index(2)));
 	//printf("dissociate:%d\n",dissociate_e3interface(find_e3interface_by_index(1)));
 	//printf("dissociate:%d\n",dissociate_e3interface(find_e3interface_by_index(0)));
-	getchar();
-	release_e3iface_with_slowpath(1);
-	dump_e3interfaces(fp_log);
+	//getchar();
+	//release_e3iface_with_slowpath(1);
+	//dump_e3interfaces(fp_log);
 
-	getchar();
-	printf("%d\n",create_e3iface_with_slowpath("0000:0a:00.0",&ops,&port_id));
+	//getchar();
+	//printf("%d\n",create_e3iface_with_slowpath("0000:00:08.0",&ops,&port_id));
 	//getchar();
 	//printf("%d\n",create_e3iface_with_slowpath("0000:00:04.0",&ops,NULL));
 	#if 0
