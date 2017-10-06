@@ -4,34 +4,35 @@
 #include <stdio.h>
 #include <urcu-qsbr.h>
 
-
 struct E3Interface{
 
 	/*cacheline 0*/
-	uint8_t name[64];
+	uint8_t name[MAX_E3INTERFACE_NAME_SIZE];
 __attribute__((aligned(64))) 
 		uint64_t cacheline0[0];/*frequently accessed fields*/
-	uint8_t  hwiface_model:4;
-	uint8_t  iface_status:1;/*initially set to E3INTERFACE_STATUS_DOWN,
+	uint8_t  hwiface_model;
+	uint8_t  hwiface_role;
+	uint8_t  reserved0;
+	uint8_t  iface_status;/*initially set to E3INTERFACE_STATUS_DOWN,
 							 lcore must stop polling when it's down,because
 							 I found it can crash when application starts up
 							 with burst traffic already on the wire*/
-	uint8_t  nr_queues:3;
-	uint8_t  under_releasing:1;
+	uint8_t  nr_queues;
+	uint8_t  under_releasing;
 	union{
-		uint8_t  has_peer_device:1;
-		uint8_t  has_phy_device:1;
-		uint8_t  has_tap_device:1;/*indicate whether 
+		uint8_t  has_peer_device;
+		uint8_t  has_phy_device;
+		uint8_t  has_tap_device;/*indicate whether 
 							  	 it has corresponding tap devide*/
 	};
-	uint8_t lsc_enabled:1;   /*whether this interface is able to check LSC*/
+	uint8_t lsc_enabled;   /*whether this interface is able to check LSC*/
 	
 	uint16_t port_id;
 	uint16_t peer_port_id;
 	uint8_t  mac_addrs[6];
 	
-	uint16_t input_node[8];
-	uint16_t output_node[8];
+	uint16_t input_node[MAX_QUEUES_TO_POLL];
+	uint16_t output_node[MAX_QUEUES_TO_POLL];
 	struct rcu_head rcu;
 	int (*interface_up)(int iface);
 	int (*interface_down)(int iface);
@@ -40,20 +41,6 @@ __attribute__((aligned(64)))
 			   void * private[0];
 }__attribute__((aligned(1)));
 
-/*
-		  name (offset:  0 size: 64 prev_gap:0)
-	cacheline0 (offset: 64 size:  0 prev_gap:0)
-	   port_id (offset: 68 size:  2 prev_gap:4)
-  peer_port_id (offset: 70 size:  2 prev_gap:0)
-	 mac_addrs (offset: 72 size:  6 prev_gap:0)
-	input_node (offset: 78 size: 16 prev_gap:0)
-   output_node (offset: 94 size: 16 prev_gap:0)
-		   rcu (offset:112 size: 16 prev_gap:2)
-  interface_up (offset:128 size:  8 prev_gap:0)
-interface_down (offset:136 size:  8 prev_gap:0)
-	   private (offset:192 size:  0 prev_gap:48)
-
-*/
 
 int main()
 {

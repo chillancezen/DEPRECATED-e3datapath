@@ -4,30 +4,90 @@ from pye3datapath.e3client import clib
 from pye3datapath.e3client import api_call_exception
 from pye3datapath.e3client import api_return_exception
 from pye3datapath.e3client import register_service_endpoint
+
+
+E3IFACE_MODEL_GENERIC_SINGLY_QUEUE=0
+E3IFACE_ROLE_PROVIDER_BACKBONE_PORT=0
 class E3Interface(Structure):
     _pack_=1
     _fields_=[('name',c_char*64),
-                ('hwiface_model',c_uint32,4),
-                ('iface_status',c_uint32,1),
-                ('nr_queues',c_uint32,3),
-                ('under_releasing',c_uint32,1),
-                ('has_peer_device',c_uint32,1),
-                ('lsc_enabled',c_uint32,1),
+                ('hwiface_model',c_uint8),
+                ('hwiface_role',c_uint8),
+                ('reserved0',c_uint8),
+                ('iface_status',c_uint8),
+                ('nr_queues',c_uint8),
+                ('under_releasing',c_uint8),
+                ('has_peer_device',c_uint8),
+                ('lsc_enabled',c_uint8),
                 ('port_id',c_uint16),
                 ('peer_port_id',c_uint16),
                 ('mac_addrs',c_uint8*6),
                 ('input_node',c_uint16*8),
                 ('output_node',c_uint16*8),
-                ('dummy0',c_uint8*82)]
+                ('_dummy0',c_uint8*78)]
     def __str__(self):
         ret=dict()
-        for item  in self._fields_:
-            ret[item[0]]=getattr(self,item[0])
+        ret['name']=self.name
+        ret['hwiface_model']=self.hwiface_model
+        ret['hwiface_role']=self.hwiface_role
+        ret['reserved0']=self.reserved0
+        ret['iface_status']=self.iface_status
+        ret['nr_queues']=self.nr_queues
+        ret['under_releasing']=self.under_releasing
+        ret['has_peer_device']=self.has_peer_device
+        ret['lsc_enabled']=self.lsc_enabled
+        ret['port_id']=self.port_id
+        ret['peer_port_id']=self.peer_port_id
+        ret['mac_addrs']='%02x:%02x:%02x:%02x:%02x:%02x'%(self.mac_addrs[0],
+                    self.mac_addrs[1],
+                    self.mac_addrs[2],
+                    self.mac_addrs[3],
+                    self.mac_addrs[4],
+                    self.mac_addrs[5])
+        input_lst=list()
+        output_lst=list()
+        for i in range(self.nr_queues):
+            input_lst.append(self.input_node[i])
+            output_lst.append(self.output_node[i])
+        ret['input_node']=input_lst
+        ret['output_node']=output_lst
+        #for item  in self._fields_:
+            #ret[item[0]]=getattr(self,item[0])
         #ret['raw']=repr(string_at(addressof(self),sizeof(self)))
         return repr(ret)
-
+    def dump_definition(self):
+        print('%20s%s'%('name:',E3Interface.name))
+        print('%20s%s'%('hwiface_model:',E3Interface.hwiface_model))
+        print('%20s%s'%('hwiface_role:',E3Interface.hwiface_role))
+        print('%20s%s'%('reserved0:',E3Interface.reserved0))
+        print('%20s%s'%('iface_status:',E3Interface.iface_status))
+        print('%20s%s'%('nr_queues:',E3Interface.nr_queues))
+        print('%20s%s'%('under_releasing:',E3Interface.under_releasing))
+        print('%20s%s'%('has_peer_device:',E3Interface.has_peer_device))
+        print('%20s%s'%('lsc_enabled:',E3Interface.lsc_enabled))
+        print('%20s%s'%('port_id:',E3Interface.port_id))
+        print('%20s%s'%('peer_port_id:',E3Interface.peer_port_id))
+        print('%20s%s'%('mac_addrs:',E3Interface.mac_addrs))
+        print('%20s%s'%('input_node:',E3Interface.input_node))
+        print('%20s%s'%('output_node:',E3Interface.output_node))
+        print('%20s%s'%('_dummy0:',E3Interface._dummy0))
                 
 #return the list() of e3datapath interfaces 
+#return the attached interface index
+def attach_e3iface(dev_params,model,role):
+    api_ret=c_uint64(0);
+    _dev_parames=create_string_buffer(128)
+    _dev_parames.value=dev_params.encode()
+    _model=c_uint8(model)
+    _role=c_uint8(role)
+    _port=c_uint32(0)
+    
+    rc=clib.create_e3iface(byref(api_ret),_dev_parames,_model,_role,byref(_port))
+    if rc!=0:
+        raise api_call_exception()
+    if api_ret.value!=0:
+        raise api_return_exception()
+    return _port.value 
 
 def get_e3iface(iface):
     api_ret=c_uint64(0);
@@ -58,6 +118,8 @@ def get_e3iface_list():
     
 if __name__=='__main__':
     register_service_endpoint('tcp://localhost:507')
+    print(attach_e3iface('0000:00:08.0',E3IFACE_MODEL_GENERIC_SINGLY_QUEUE,E3IFACE_ROLE_PROVIDER_BACKBONE_PORT))
+    #E3Interface().dump_definition()
     if_lst=get_e3iface_list()
     print('interface index list:',if_lst)
     for ifidx in if_lst:

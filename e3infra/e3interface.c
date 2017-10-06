@@ -612,6 +612,14 @@ void  dump_e3_interface_structure(void)
 	}
 		_(name);
 		_(cacheline0);
+		_(hwiface_model);
+		_(hwiface_role);
+		_(reserved0);
+		_(iface_status);
+		_(nr_queues);
+		_(under_releasing);
+		_(has_peer_device);
+		_(lsc_enabled);
 		_(port_id);
 		_(peer_port_id);
 		_(mac_addrs);

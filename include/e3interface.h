@@ -28,20 +28,22 @@ struct E3Interface{
 	uint8_t name[MAX_E3INTERFACE_NAME_SIZE];
 __attribute__((aligned(64))) 
 		uint64_t cacheline0[0];/*frequently accessed fields*/
-	uint8_t  hwiface_model:4;
-	uint8_t  iface_status:1;/*initially set to E3INTERFACE_STATUS_DOWN,
+	uint8_t  hwiface_model;
+	uint8_t  hwiface_role;
+	uint8_t  reserved0;
+	uint8_t  iface_status;/*initially set to E3INTERFACE_STATUS_DOWN,
 							 lcore must stop polling when it's down,because
 							 I found it can crash when application starts up
 							 with burst traffic already on the wire*/
-	uint8_t  nr_queues:3;
-	uint8_t  under_releasing:1;
+	uint8_t  nr_queues;
+	uint8_t  under_releasing;
 	union{
-		uint8_t  has_peer_device:1;
-		uint8_t  has_phy_device:1;
-		uint8_t  has_tap_device:1;/*indicate whether 
+		uint8_t  has_peer_device;
+		uint8_t  has_phy_device;
+		uint8_t  has_tap_device;/*indicate whether 
 							  	 it has corresponding tap devide*/
 	};
-	uint8_t lsc_enabled:1;   /*whether this interface is able to check LSC*/
+	uint8_t lsc_enabled;   /*whether this interface is able to check LSC*/
 	
 	uint16_t port_id;
 	uint16_t peer_port_id;
@@ -58,17 +60,44 @@ __attribute__((aligned(64)))
 }__attribute__((aligned(1)));
 
 /*
-		  name (offset:  0 size: 64 prev_gap:0)
-	cacheline0 (offset: 64 size:  0 prev_gap:0)
-	   port_id (offset: 68 size:  2 prev_gap:4)
-  peer_port_id (offset: 70 size:  2 prev_gap:0)
-	 mac_addrs (offset: 72 size:  6 prev_gap:0)
-	input_node (offset: 78 size: 16 prev_gap:0)
-   output_node (offset: 94 size: 16 prev_gap:0)
-		   rcu (offset:112 size: 16 prev_gap:2)
-  interface_up (offset:128 size:  8 prev_gap:0)
-interface_down (offset:136 size:  8 prev_gap:0)
-	   private (offset:192 size:  0 prev_gap:48)
+C-definition
+		   name (offset:  0 size: 64 prev_gap:0)
+	 cacheline0 (offset: 64 size:  0 prev_gap:0)
+  hwiface_model (offset: 64 size:  1 prev_gap:0)
+   hwiface_role (offset: 65 size:  1 prev_gap:0)
+	  reserved0 (offset: 66 size:  1 prev_gap:0)
+   iface_status (offset: 67 size:  1 prev_gap:0)
+	  nr_queues (offset: 68 size:  1 prev_gap:0)
+under_releasing (offset: 69 size:  1 prev_gap:0)
+has_peer_device (offset: 70 size:  1 prev_gap:0)
+	lsc_enabled (offset: 71 size:  1 prev_gap:0)
+		port_id (offset: 72 size:  2 prev_gap:0)
+   peer_port_id (offset: 74 size:  2 prev_gap:0)
+	  mac_addrs (offset: 76 size:  6 prev_gap:0)
+	 input_node (offset: 82 size: 16 prev_gap:0)
+	output_node (offset: 98 size: 16 prev_gap:0)
+			rcu (offset:120 size: 16 prev_gap:6)
+   interface_up (offset:136 size:  8 prev_gap:0)
+ interface_down (offset:144 size:  8 prev_gap:0)
+		private (offset:192 size:  0 prev_gap:40)
+
+		
+Python-definition:
+		   name:<Field type=c_char_Array_64, ofs=0, size=64>
+  hwiface_model:<Field type=c_ubyte, ofs=64, size=1>
+   hwiface_role:<Field type=c_ubyte, ofs=65, size=1>
+	  reserved0:<Field type=c_ubyte, ofs=66, size=1>
+   iface_status:<Field type=c_ubyte, ofs=67, size=1>
+	  nr_queues:<Field type=c_ubyte, ofs=68, size=1>
+under_releasing:<Field type=c_ubyte, ofs=69, size=1>
+has_peer_device:<Field type=c_ubyte, ofs=70, size=1>
+	lsc_enabled:<Field type=c_ubyte, ofs=71, size=1>
+		port_id:<Field type=c_ushort, ofs=72, size=2>
+   peer_port_id:<Field type=c_ushort, ofs=74, size=2>
+	  mac_addrs:<Field type=c_ubyte_Array_6, ofs=76, size=6>
+	 input_node:<Field type=c_ushort_Array_8, ofs=82, size=16>
+	output_node:<Field type=c_ushort_Array_8, ofs=98, size=16>
+		_dummy0:<Field type=c_ubyte_Array_78, ofs=114, size=78>
 
 */
 #define E3IFACE_PRIV(iface) ((iface)->private)
@@ -91,7 +120,7 @@ struct E3Interface_ops{
 										  this emulates the proceedure the Linux netdevice does*/
 	int (*port_setup)(struct E3Interface * iface,
 					struct rte_eth_conf * port_conf);/*mandatory provided to configure the port*/
-	int (*post_setup)(struct E3Interface * iface);/*optional*/
+	int (*post_setup)(struct E3Interface * iface);/*optional,usually the interface role will be set*/
 	
     int (*input_node_process_func)(void * arg);
 	int (*output_node_process_func)(void * arg);
