@@ -1,10 +1,13 @@
 #include <e3iface-wrapper.h>
-
+#include <e3iface-inventory.h>
+#include <node.h>
+#include <mbuf_delivery.h>
 static int tap_number=0;
 
 static int tap_pre_setup(struct E3Interface * pe3iface)
 {
-	pe3iface->hwiface_model=e3_hwiface_model_tap;
+	pe3iface->hwiface_model=E3IFACE_MODEL_TAP_SINGLY_QUEUE;
+	pe3iface->hwiface_role=E3IFACE_ROLE_HOST_STACK_PORT;
 	pe3iface->nr_queues=1;
 	return 0;
 }
@@ -24,15 +27,53 @@ static int tap_port_config(struct E3Interface * piface,struct rte_eth_conf * por
 	port_config->txmode.mq_mode=ETH_MQ_TX_NONE;
 	return 0;
 }
-
+/*
+*read pkts from tap device, and send to corresponding 
+*peer device immediately
+*/
 int tap_input_process_func(void* argv)
 {
-	return 0;
+	#define _(c) if(!(c)) goto ret
+	struct rte_mbuf *mbufs[32];
+	int nr_rx;
+	int nr_tx;
+	int idx=0;
+	struct node * pnode=(struct node *)argv;
+	int iface_id=HIGH_UINT64((uint64_t)pnode->node_priv);
+	int queue_id=LOW_UINT64((uint64_t)pnode->node_priv);
+	struct E3Interface * pif=find_e3interface_by_index(iface_id);
+	struct E3Interface * peer_if;
+	_(pif&&pif->has_peer_device);
+	peer_if=find_e3interface_by_index(pif->peer_port_id);
+	_(peer_if);
+	nr_rx=rte_eth_rx_burst(iface_id,queue_id,mbufs,32);
+	_(nr_rx);
+	nr_tx=deliver_mbufs_to_e3iface(peer_if,0,mbufs,nr_rx);
+	for(idx=nr_tx;idx<nr_rx;idx++)
+		rte_pktmbuf_free(mbufs[idx]);
+	ret:
+		return 0;
+	#undef _
 }
 int tap_output_process_func(void * argv)
 {
-
-	return 0;
+	#define _(c) if(!(c)) goto ret
+	int idx=0;
+	struct rte_mbuf *mbufs[32];
+	int nr_rx;
+	int nr_tx;
+	struct node * pnode=(struct node *)argv;
+	int iface_id=HIGH_UINT64((uint64_t)pnode->node_priv);
+	int queue_id=LOW_UINT64((uint64_t)pnode->node_priv);
+	struct E3Interface * pif=find_e3interface_by_index(iface_id);
+	_(pif);
+	nr_rx=rte_ring_sc_dequeue_burst(pnode->node_ring,(void**)mbufs,32,NULL);
+	_(nr_rx);
+	nr_tx=rte_eth_tx_burst(iface_id,queue_id,mbufs,nr_rx);
+	for(idx=nr_tx;idx<nr_rx;idx++)
+		rte_pktmbuf_free(mbufs[idx]);
+	ret:
+		return 0;
 }
 struct E3Interface_ops tapiface_ops={
 	.priv_size=0,

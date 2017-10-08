@@ -7,7 +7,7 @@
 struct E3Interface{
 
 	/*cacheline 0*/
-	uint8_t name[MAX_E3INTERFACE_NAME_SIZE];
+	uint8_t name[64];
 __attribute__((aligned(64))) 
 		uint64_t cacheline0[0];/*frequently accessed fields*/
 	uint8_t  hwiface_model;
@@ -31,8 +31,8 @@ __attribute__((aligned(64)))
 	uint16_t peer_port_id;
 	uint8_t  mac_addrs[6];
 	
-	uint16_t input_node[MAX_QUEUES_TO_POLL];
-	uint16_t output_node[MAX_QUEUES_TO_POLL];
+	uint16_t input_node[8];
+	uint16_t output_node[8];
 	struct rcu_head rcu;
 	int (*interface_up)(int iface);
 	int (*interface_down)(int iface);

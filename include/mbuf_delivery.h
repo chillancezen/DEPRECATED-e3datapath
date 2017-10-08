@@ -5,13 +5,14 @@
 #include <node_adjacency.h>
 #include <rte_prefetch.h>
 #include <util.h>
-#include <mq-device.h>
+#include <e3interface.h>
+
 
 
 
 __attribute__((always_inline))
 	static inline int deliver_mbufs_to_e3iface(
-		struct E3interface *pe3iface,
+		struct E3Interface *pe3iface,
 		int prefered_queue_id,
 		struct rte_mbuf **mbufs,
 		int nr_mbufs)
@@ -27,7 +28,7 @@ __attribute__((always_inline))
 	struct node * pnext;
 	for(;(nr_left>0)&&(idx<pe3iface->nr_queues);
 		idx++,queue_id=(queue_id+1)%pe3iface->nr_queues){
-		pnext=find_node_by_index(pe3iface->output_node_arrar[queue_id]);
+		pnext=find_node_by_index(pe3iface->output_node[queue_id]);
 		if(PREDICT_FALSE(!pnext))
 			continue;
 		rc=rte_ring_mp_enqueue_burst(pnext->node_ring,(void**)&mbufs[iptr],nr_left,NULL);

@@ -7,6 +7,7 @@
 #include <urcu-qsbr.h>
 
 #define MAX_E3INTERFACE_NAME_SIZE 64
+#if 0
 enum e3_hwiface_model{
 	e3_hwiface_model_none,
 	e3_hwiface_model_vlink,
@@ -17,6 +18,8 @@ enum e3_hwiface_model{
 	e3_hwiface_model_intel_82599,
 	
 };
+#endif
+
 #define E3INTERFACE_STATUS_UP 0x1
 #define E3INTERFACE_STATUS_DOWN 0x0
 #define MAX_QUEUES_TO_POLL 8

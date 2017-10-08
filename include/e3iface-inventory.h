@@ -8,6 +8,7 @@ we enumerate all supported device model here*/
 
 enum e3iface_model{
 	E3IFACE_MODEL_GENERIC_SINGLY_QUEUE=0,/*compatiable with lots of dpdk compatible (v)NICs*/
+	E3IFACE_MODEL_TAP_SINGLY_QUEUE, /*do not export this model,but it's still used to distinguish*/
 	E3IFACE_MODEL_INTEL_XL710_SINGLY_QUEUE,
 	E3IFACE_MODEL_INTEL_XL710_VF_SINGLY_QUEUE,
 	E3IFACE_MODEL_MAX_MODELS,
@@ -16,6 +17,7 @@ enum e3iface_role{
 	E3IFACE_ROLE_PROVIDER_BACKBONE_PORT,/*Provider backbone port*/
 	E3IFACE_ROLE_CUSTOMER_BACKBONE_FACING_PORT,/**/
 	E3IFACE_ROLE_CUSTOMER_USER_FACING_PORT,
+	E3IFACE_ROLE_HOST_STACK_PORT,
 	E3IFACE_ROLE_MAX_ROLES,
 };
 struct e3iface_model_def{

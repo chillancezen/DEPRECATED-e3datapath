@@ -88,6 +88,30 @@ def attach_e3iface(dev_params,model,role):
     if api_ret.value!=0:
         raise api_return_exception()
     return _port.value 
+'''
+after release a e3iface, you need to wait for a reasonable time to elapse before
+you attach it again, the root cause is it need time to detach DPDK devce in RCU context which 
+needs to be scheduled periodically
+'''
+def reclaim_e3iface(iface_id):
+    api_ret=c_uint64(0);
+    _port=c_uint16(iface_id)
+    rc=clib.reclaim_e3iface(byref(api_ret),_port)
+    if rc!=0:
+        raise api_call_exception()
+    return api_ret.value==0
+def start_e3iface(iface_id):
+    api_ret=c_uint64(0);
+    _port=c_uint16(iface_id)
+    rc=clib.update_e3fiace_status(byref(api_ret),_port,c_uint8(1))
+    if rc!=0:
+        raise api_call_exception()
+def stop_e3iface(iface_id):
+    api_ret=c_uint64(0);
+    _port=c_uint16(iface_id)
+    rc=clib.update_e3fiace_status(byref(api_ret),_port,c_uint8(0))
+    if rc!=0:
+        raise api_call_exception()
 
 def get_e3iface(iface):
     api_ret=c_uint64(0);
@@ -116,12 +140,19 @@ def get_e3iface_list():
         list_iface.append(a.a[i])
     return list_iface
     
+import time
 if __name__=='__main__':
     register_service_endpoint('tcp://localhost:507')
     print(attach_e3iface('0000:00:08.0',E3IFACE_MODEL_GENERIC_SINGLY_QUEUE,E3IFACE_ROLE_PROVIDER_BACKBONE_PORT))
+    #print(reclaim_e3iface(1))
+    #time.sleep(1)
+    #print(attach_e3iface('0000:00:08.0',E3IFACE_MODEL_GENERIC_SINGLY_QUEUE,E3IFACE_ROLE_PROVIDER_BACKBONE_PORT)) 
     #E3Interface().dump_definition()
+    start_e3iface(1)
+    #stop_e3iface(2)
     if_lst=get_e3iface_list()
     print('interface index list:',if_lst)
+    
     for ifidx in if_lst:
         print(get_e3iface(ifidx))
     pass

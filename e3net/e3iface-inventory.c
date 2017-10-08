@@ -2,15 +2,12 @@
 #include <e3_init.h>
 #include <e3-api-wrapper.h>
 #include <e3_log.h>
-static struct e3iface_model_def model_defs[E3IFACE_MODEL_MAX_MODELS];
-static struct e3iface_role_def  role_defs[E3IFACE_ROLE_MAX_ROLES];
+
+struct e3iface_model_def model_defs[E3IFACE_MODEL_MAX_MODELS];
+struct e3iface_role_def  role_defs[E3IFACE_ROLE_MAX_ROLES];
 
 
 
-static int null_capability_check(int port_id)
-{
-	return 0;
-}
 
 static int generic_singly_queue_pre_setup(struct E3Interface * pif)
 {
@@ -39,19 +36,8 @@ static int generic_singly_queue_port_config(struct E3Interface * pif,struct rte_
 	return 0;
 }
 
-int provider_backbone_port_iface_input_iface(void * arg)
-{
-	return 0;
-}
-int provider_backbone_port_iface_output_iface(void * arg)
-{
-	return 0;
-}
-int provider_backbone_port_iface_post_setup(struct E3Interface * pif)
-{
-	pif->hwiface_role=E3IFACE_ROLE_PROVIDER_BACKBONE_PORT;
-	return 0;
-}
+
+
 
 
 void e3iface_inventory_init(void)
@@ -65,16 +51,14 @@ void e3iface_inventory_init(void)
 	model_defs[E3IFACE_MODEL_GENERIC_SINGLY_QUEUE].lsc_iface_down=NULL;
 	model_defs[E3IFACE_MODEL_GENERIC_SINGLY_QUEUE].queue_setup=generic_singly_queue_pre_setup;
 	model_defs[E3IFACE_MODEL_GENERIC_SINGLY_QUEUE].port_setup=generic_singly_queue_port_config;
-
-	role_defs[E3IFACE_ROLE_PROVIDER_BACKBONE_PORT].is_set=1;
-	role_defs[E3IFACE_ROLE_PROVIDER_BACKBONE_PORT].capability_check=null_capability_check;
-	role_defs[E3IFACE_ROLE_PROVIDER_BACKBONE_PORT].priv_size=0;
-	role_defs[E3IFACE_ROLE_PROVIDER_BACKBONE_PORT].input_node_process_func=provider_backbone_port_iface_input_iface;
-	role_defs[E3IFACE_ROLE_PROVIDER_BACKBONE_PORT].output_node_process_func=provider_backbone_port_iface_output_iface;
-	role_defs[E3IFACE_ROLE_PROVIDER_BACKBONE_PORT].post_setup=provider_backbone_port_iface_post_setup;
+	
 }
 
 E3_init(e3iface_inventory_init,TASK_PTIORITY_LOW);
+
+
+
+
 
 
 /*export C&Python API*/
@@ -125,4 +109,43 @@ DECLARE_E3_API(e3iface_creation)={
 		{.type=e3_arg_type_uint8_t_ptr,.behavior=e3_arg_behavior_output,.len=4},
 		{.type=e3_arg_type_none,}
 	},
+};
+
+
+e3_type reclaim_e3iface(e3_type service,e3_type iface)
+{
+	uint16_t _iface=e3_type_to_uint16_t(iface);
+	return release_e3iface_with_slowpath(_iface);
+}
+DECLARE_E3_API(e3iface_reclaim)={
+	.api_name="reclaim_e3iface",
+	.api_desc="reclaim the given e3iface as with its associated peer iface",
+	.api_callback_func=(api_callback_func)reclaim_e3iface,
+	.args_desc={
+		{.type=e3_arg_type_uint16_t,.behavior=e3_arg_behavior_input,},
+		{.type=e3_arg_type_none},
+	},
+};
+
+e3_type update_e3fiace_status(e3_type service,e3_type iface,e3_type is_to_start)
+{
+	uint16_t _iface       =e3_type_to_uint16_t(iface);
+	uint8_t  _is_to_start =!!e3_type_to_uint8_t(is_to_start);
+
+	if(_is_to_start)
+		start_e3interface_with_slow_path(_iface);
+	else
+		stop_e3interface_with_slow_path(_iface);
+	return 0;
+}
+DECLARE_E3_API(e3iface_status_update)={
+	.api_name="update_e3fiace_status",
+	.api_desc="update the status of an e3iface",
+	.api_callback_func=(api_callback_func)update_e3fiace_status,
+	.args_desc={
+		{.type=e3_arg_type_uint16_t,.behavior=e3_arg_behavior_input,},
+		{.type=e3_arg_type_uint8_t,.behavior=e3_arg_behavior_input,},
+		{.type=e3_arg_type_none,},
+	},
+	
 };

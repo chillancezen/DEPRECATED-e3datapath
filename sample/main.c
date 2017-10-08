@@ -18,18 +18,19 @@
 #include <lcore_extension.h>
 #include <e3_init.h>
 #include <e3interface.h>
-
+#include <label-fib.h>
+#include <label-nhlfe.h>
 int
 main(int argc, char **argv)
 {
 	
 	int ret;
 	unsigned lcore_id;
-
 	ret = rte_eal_init(argc, argv);
 	if (ret < 0)
 		rte_panic("Cannot init EAL\n");
 	init_registered_tasks();
+	label_nhlfe_module_test();
 	dump_e3_interface_structure();
 	RTE_LCORE_FOREACH_SLAVE(lcore_id) {
 		rte_eal_remote_launch(lcore_default_entry, NULL, lcore_id);

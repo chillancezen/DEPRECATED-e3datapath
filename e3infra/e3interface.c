@@ -5,6 +5,7 @@
 #include <lcore_extension.h>
 #include <node_adjacency.h>
 #include <e3-api-wrapper.h>
+#include <e3iface-inventory.h>
 //#define USE_NUMA_NODE 
 /*when allocating lcore resource to io nodes,
 if we define this macro,as a matter of optimization,user should know which socket 
@@ -475,11 +476,11 @@ int correlate_e3interfaces(struct E3Interface * pif1,struct E3Interface *pif2)
 	
 	struct E3Interface * pif_tap=NULL;
 	struct E3Interface * pif_phy=NULL;
-	if(pif1->hwiface_model==e3_hwiface_model_tap)
+	if(pif1->hwiface_model==E3IFACE_MODEL_TAP_SINGLY_QUEUE)
 		pif_tap=pif1;
 	else
 		pif_phy=pif1;
-	if(pif2->hwiface_model==e3_hwiface_model_tap)
+	if(pif2->hwiface_model==E3IFACE_MODEL_TAP_SINGLY_QUEUE)
 		pif_tap=pif2;
 	else
 		pif_phy=pif2;
