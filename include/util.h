@@ -78,4 +78,14 @@ __attribute__((always_inline))
 	(((minor)<<8)&0xff00)|\
 	(((major)<<16)&0xff0000))
 
+
+#define dump_field(s,f) { \
+		int _offset=(int)offsetof(s,f);\
+		int _size=(int)size_of_field(s,f);\
+		int _gap=_offset-(last_offset+last_size);\
+		printf("%20s (offset:%3d size:%3d prev_gap:%d)\n",#f,_offset,_size,_gap);\
+		last_offset=_offset;\
+		last_size=_size;\
+}
+
 #endif

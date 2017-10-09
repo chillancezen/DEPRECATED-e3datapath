@@ -18,8 +18,22 @@ struct topological_neighbor{
 	uint32_t neighbour_ip_as_le; //simply,ip as key
 	uint8_t  mac[6];
 	uint8_t is_valid;
-}__attribute__((aligned(4)));
+	uint8_t reserved0;
+}__attribute__((packed));
+/*
+C definition:
+neighbour_ip_as_le (offset:  0 size:  4 prev_gap:0)
+			   mac (offset:  4 size:  6 prev_gap:0)
+		  is_valid (offset: 10 size:  1 prev_gap:0)
+		 reserved0 (offset: 11 size:  1 prev_gap:0)
+		 
+Python definition:
+	<Field type=c_ubyte_Array_4, ofs=0, size=4>
+	<Field type=c_ubyte_Array_6, ofs=4, size=6>
+	<Field type=c_ubyte, ofs=10, size=1>
+	<Field type=c_ubyte, ofs=11, size=1>
 
+*/
 /*next_hop maps to link_pair in control plane abstraction,
 *and is structured to store local e3interface index and next hop's neighbour
 *by searching with next_hop,we can determine the L2 src&dst address

@@ -5,7 +5,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <e3-api-wrapper.h>
-
+#include <util.h>
 struct topological_neighbor * topological_neighbor_base;
 struct next_hop             * next_hop_base;
 struct multicast_next_hops  * mnext_hops_base;
@@ -163,9 +163,25 @@ int search_multicast_next_hopss(struct multicast_next_hops * mnh)
 			return idx;
 	return -1;
 }
+void dump_topological_neighbour_definition(void)
+{
+	int last_offset=0,last_size=0;
+	puts("dump definition: struct topological_neighbor");
+	dump_field(struct topological_neighbor,neighbour_ip_as_le);
+	dump_field(struct topological_neighbor,mac);
+	dump_field(struct topological_neighbor,is_valid);
+	dump_field(struct topological_neighbor,reserved0);
+	
+}
 void label_nhlfe_module_test(void)
 {
 	/*
+	int idx=0;
+	for(;idx<1478;idx++)
+		register_topological_neighbour(0x122f34+idx,"dsdssds");
+	//topological_neighbor_base[1022].is_valid=0;
+	//dump_topological_neighbour_definition();
+	
 	struct multicast_next_hops hops={
 		.next_hops={1,2,34,2,544,3,432,234},
 		.nr_hops=8,
@@ -217,20 +233,14 @@ void label_nhlfe_module_test(void)
 *ip_string:     xxx.xxx.xxx.xxx (4x4)
 *mac_string:    xx:xx:xx:xx:xx:xx (3x6)
 */
-e3_type register_neighbor(e3_type service, e3_type ip_string,e3_type mac_string,e3_type pindex)
+uint32_t _ip_string_to_u32_le(const char * ip_string)
 {
-	const char * _ip_string=(char *)e3_type_to_uint8_t_ptr(ip_string);
-    const char * _mac_array=(char *)e3_type_to_uint8_t_ptr(mac_string);
-	uint16_t   * _pindex=(uint16_t*)e3_type_to_uint8_t_ptr(pindex);
-	int index;
 	union{
 		uint32_t ip_as_u32_le;
 		uint8_t  ip_as_u8a[4];
 	}ip_stub;
 	int _ip_tmp[4];
-	int _mac_tmp[6];
-	uint8_t mac_stub[6];
-	sscanf(_ip_string,"%d.%d.%d.%d",&_ip_tmp[3],
+	sscanf(ip_string,"%d.%d.%d.%d",&_ip_tmp[3],
 					&_ip_tmp[2],
 					&_ip_tmp[1],
 					&_ip_tmp[0]);
@@ -238,8 +248,12 @@ e3_type register_neighbor(e3_type service, e3_type ip_string,e3_type mac_string,
 	ip_stub.ip_as_u8a[1]=_ip_tmp[1];
 	ip_stub.ip_as_u8a[2]=_ip_tmp[2];
 	ip_stub.ip_as_u8a[3]=_ip_tmp[3];
-
-	sscanf(_mac_array,"%x:%x:%x:%x:%x:%x",
+	return ip_stub.ip_as_u32_le;
+}
+void _mac_string_to_byte_array(const char * mac_string,uint8_t  *mac_stub)
+{
+	int _mac_tmp[6];
+	sscanf(mac_string,"%x:%x:%x:%x:%x:%x",
 		&_mac_tmp[0],
 		&_mac_tmp[1],
 		&_mac_tmp[2],
@@ -253,13 +267,25 @@ e3_type register_neighbor(e3_type service, e3_type ip_string,e3_type mac_string,
 	mac_stub[3]=_mac_tmp[3];
 	mac_stub[4]=_mac_tmp[4];
 	mac_stub[5]=_mac_tmp[5];
+}
+e3_type register_neighbor(e3_type service, e3_type ip_string,e3_type mac_string,e3_type pindex)
+{
+	const char * _ip_string=(char *)e3_type_to_uint8_t_ptr(ip_string);
+    const char * _mac_string=(char *)e3_type_to_uint8_t_ptr(mac_string);
+	uint16_t   * _pindex=(uint16_t*)e3_type_to_uint8_t_ptr(pindex);
+	int index;
 	
-	index=register_topological_neighbour(ip_stub.ip_as_u32_le,mac_stub);
+	uint8_t  mac_stub[6];
+	uint32_t ip_stub=_ip_string_to_u32_le(_ip_string);
+	_mac_string_to_byte_array(_mac_string,mac_stub);
+	
+	index=register_topological_neighbour(ip_stub,mac_stub);
 	if(index<0)
 		return -1;
 	*_pindex=index;
 	return 0;
 }
+
 DECLARE_E3_API(neighbor_registration)={
 	.api_name="register_neighbor",
 	.api_desc="register neighbor in neighborhood list",
@@ -268,6 +294,70 @@ DECLARE_E3_API(neighbor_registration)={
 		{.type=e3_arg_type_uint8_t_ptr,.behavior=e3_arg_behavior_input,.len=16},
 		{.type=e3_arg_type_uint8_t_ptr,.behavior=e3_arg_behavior_input,.len=18},
 		{.type=e3_arg_type_uint8_t_ptr,.behavior=e3_arg_behavior_output,.len=2},
+		{.type=e3_arg_type_none},
+	},
+};
+
+e3_type refresh_neighbor_mac(e3_type service, e3_type ip_string,e3_type mac_string)
+{
+	const char * _ip_string=(char *)e3_type_to_uint8_t_ptr(ip_string);
+    const char * _mac_string=(char *)e3_type_to_uint8_t_ptr(mac_string);
+	uint8_t  mac_stub[6];
+	uint32_t ip_stub=_ip_string_to_u32_le(_ip_string);
+	_mac_string_to_byte_array(_mac_string,mac_stub);
+
+	return update_neighbour_mac(ip_stub,mac_stub);
+	return 0;
+}
+
+DECLARE_E3_API(neighbor_mac_update)={
+	.api_name="refresh_neighbor_mac",
+	.api_desc="update the mac address of a neighbor entry",
+	.api_callback_func=(api_callback_func)refresh_neighbor_mac,
+	.args_desc={
+		{.type=e3_arg_type_uint8_t_ptr,.behavior=e3_arg_behavior_input,.len=16},
+		{.type=e3_arg_type_uint8_t_ptr,.behavior=e3_arg_behavior_input,.len=18},
+		{.type=e3_arg_type_none},
+	},
+	
+};
+
+#define MAX_NEIGHBORS_PER_FETCH 64
+
+e3_type list_neighbours_partial(e3_type service,
+							e3_type index_to_start,/*input&output*/
+							e3_type nr_entries,/*output*/
+							e3_type entries/*output*/)
+{
+	int    *  _index_to_start=(int*)e3_type_to_uint8_t_ptr(index_to_start);
+	int    *  _nr_entries=(int*)e3_type_to_uint8_t_ptr(nr_entries);
+	struct topological_neighbor * _entries=(struct topological_neighbor*)
+											e3_type_to_uint8_t_ptr(entries);
+	int idx=0;
+	int iptr=0;
+	for(idx=*_index_to_start;idx<MAX_TOPOLOGICAL_NEIGHBOURS;idx++){
+		if(!topological_neighbor_base[idx].is_valid)
+			continue;
+		memcpy(&_entries[iptr++],
+			&topological_neighbor_base[idx],
+			sizeof(struct topological_neighbor));
+		if(iptr==MAX_NEIGHBORS_PER_FETCH)
+			break;
+	}
+	*_index_to_start=idx+1;
+	*_nr_entries=iptr;
+	return 0;
+}
+
+DECLARE_E3_API(partial_neighbour_list)={
+	.api_name="list_neighbours_partial",
+	.api_desc="enumerate partial list of neighbours",
+	.api_callback_func=(api_callback_func)list_neighbours_partial,
+	.args_desc={
+		{.type=e3_arg_type_uint8_t_ptr,.behavior=e3_arg_behavior_input_and_output,.len=4},
+		{.type=e3_arg_type_uint8_t_ptr,.behavior=e3_arg_behavior_output,.len=4},
+		{.type=e3_arg_type_uint8_t_ptr,.behavior=e3_arg_behavior_output,
+		.len=sizeof(struct topological_neighbor)*MAX_NEIGHBORS_PER_FETCH},
 		{.type=e3_arg_type_none},
 	},
 };

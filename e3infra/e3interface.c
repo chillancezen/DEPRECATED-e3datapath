@@ -603,34 +603,26 @@ __attribute__((constructor))
 void  dump_e3_interface_structure(void)
 {
 	int last_offset=0,last_size=0;
-	#define _(f) { \
-		int _offset=(int)offsetof(struct E3Interface,f);\
-		int _size=(int)size_of_field(struct E3Interface,f);\
-		int _gap=_offset-(last_offset+last_size);\
-		printf("%20s (offset:%3d size:%3d prev_gap:%d)\n",#f,_offset,_size,_gap);\
-		last_offset=_offset;\
-		last_size=_size;\
-	}
-		_(name);
-		_(cacheline0);
-		_(hwiface_model);
-		_(hwiface_role);
-		_(reserved0);
-		_(iface_status);
-		_(nr_queues);
-		_(under_releasing);
-		_(has_peer_device);
-		_(lsc_enabled);
-		_(port_id);
-		_(peer_port_id);
-		_(mac_addrs);
-		_(input_node);
-		_(output_node);
-		_(rcu);
-		_(interface_up);
-		_(interface_down);
-		_(private);
-	#undef _
+		puts("dump definition: struct E3Interface");
+		dump_field(struct E3Interface,name);
+		dump_field(struct E3Interface,cacheline0);
+		dump_field(struct E3Interface,hwiface_model);
+		dump_field(struct E3Interface,hwiface_role);
+		dump_field(struct E3Interface,reserved0);
+		dump_field(struct E3Interface,iface_status);
+		dump_field(struct E3Interface,nr_queues);
+		dump_field(struct E3Interface,under_releasing);
+		dump_field(struct E3Interface,has_peer_device);
+		dump_field(struct E3Interface,lsc_enabled);
+		dump_field(struct E3Interface,port_id);
+		dump_field(struct E3Interface,peer_port_id);
+		dump_field(struct E3Interface,mac_addrs);
+		dump_field(struct E3Interface,input_node);
+		dump_field(struct E3Interface,output_node);
+		dump_field(struct E3Interface,rcu);
+		dump_field(struct E3Interface,interface_up);
+		dump_field(struct E3Interface,interface_down);
+		dump_field(struct E3Interface,private);
 }
 /*export e3interface api*/
 e3_type list_e3interfaces(e3_type service,
