@@ -4,13 +4,17 @@ from ctypes import *
 CDLL("libzmq.so", mode=RTLD_GLOBAL)
 clib=cdll.LoadLibrary("libe3api.so")#this is gonna be exported
 
-class api_call_exception(Exception):       
+class api_call_exception(Exception):
+    def __init__(self,exp=None):
+        self.explanation=exp
     def __str__(self):
-        return 'api calling failure which may be result of connnection error'
-   
+        return repr(self.explanation)
+ 
 class api_return_exception(Exception):
+    def __init__(self,exp=None):
+        self.explanation=exp
     def __str__(self):
-        return 'called api returns unexpected result'
+        return repr(self.explanation)
 
 def register_service_endpoint(endpoint):
     rc=clib.register_e3_api_client(c_char_p(endpoint.encode()+b'\x00'))

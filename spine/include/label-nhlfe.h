@@ -43,8 +43,23 @@ struct next_hop{
 	int local_e3iface_index; //both fields as the key
 	int remote_neighbor_index;
 	uint8_t is_valid;
-}__attribute__((aligned(4)));
+	uint8_t reserved0;
+}__attribute__((packed));
+/*
+C definition:
+ local_e3iface_index  (offset:  0 size:  4 prev_gap:0)
+remote_neighbor_index (offset:  4 size:  4 prev_gap:0)
+            is_valid  (offset:  8 size:  1 prev_gap:0)
+           reserved0  (offset:  9 size:  1 prev_gap:0)
+           
+Python Definition:
+	<Field type=c_uint, ofs=0, size=4>
+	<Field type=c_uint, ofs=4, size=4>
+	<Field type=c_ubyte, ofs=8, size=1>
+	<Field type=c_ubyte, ofs=9, size=1>
 
+
+*/
 
 #define MAX_HOPS_IN_MULTICAST_GROUP 64 /* 64 forks in a tree in the topology
 										is supposed to be enough*/

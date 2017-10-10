@@ -173,8 +173,19 @@ void dump_topological_neighbour_definition(void)
 	dump_field(struct topological_neighbor,reserved0);
 	
 }
+void dump_next_hop_definition(void)
+{
+	int last_offset=0,last_size=0;
+	puts("dump definition: struct next_hop");
+	dump_field(struct next_hop,local_e3iface_index);
+	dump_field(struct next_hop,remote_neighbor_index);
+	dump_field(struct next_hop,is_valid);
+	dump_field(struct next_hop,reserved0);
+}
 void label_nhlfe_module_test(void)
 {
+
+	dump_next_hop_definition();
 	/*
 	int idx=0;
 	for(;idx<1478;idx++)
@@ -229,6 +240,8 @@ void label_nhlfe_module_test(void)
 
 /*export C&Python APIs*/
 
+
+/**API for topological neighbour**/
 /*register a neighbor
 *ip_string:     xxx.xxx.xxx.xxx (4x4)
 *mac_string:    xx:xx:xx:xx:xx:xx (3x6)
@@ -348,7 +361,6 @@ e3_type list_neighbours_partial(e3_type service,
 	*_nr_entries=iptr;
 	return 0;
 }
-
 DECLARE_E3_API(partial_neighbour_list)={
 	.api_name="list_neighbours_partial",
 	.api_desc="enumerate partial list of neighbours",
@@ -358,6 +370,82 @@ DECLARE_E3_API(partial_neighbour_list)={
 		{.type=e3_arg_type_uint8_t_ptr,.behavior=e3_arg_behavior_output,.len=4},
 		{.type=e3_arg_type_uint8_t_ptr,.behavior=e3_arg_behavior_output,
 		.len=sizeof(struct topological_neighbor)*MAX_NEIGHBORS_PER_FETCH},
+		{.type=e3_arg_type_none},
+	},
+};
+e3_type get_neighbour(e3_type service,e3_type index,e3_type pneighbor)
+{
+	uint16_t  _index_to_fetch=e3_type_to_uint16_t(index);
+	struct topological_neighbor * _pneighbor=
+		(struct topological_neighbor*)e3_type_to_uint8_t_ptr(pneighbor);
+	if((_index_to_fetch>=0)&&(_index_to_fetch<MAX_TOPOLOGICAL_NEIGHBOURS))
+		memcpy(_pneighbor,
+				&topological_neighbor_base[_index_to_fetch],
+				sizeof(struct topological_neighbor));
+	else 
+		return -1;
+	return 0;
+}
+DECLARE_E3_API(neighbor_get)={
+	.api_name="get_neighbour",
+	.api_desc="retrieve the neighbour entry at a given index",
+	.api_callback_func=(api_callback_func)get_neighbour,
+	.args_desc={
+		{.type=e3_arg_type_uint16_t,.behavior=e3_arg_behavior_input,},
+		{.type=e3_arg_type_uint8_t_ptr,.behavior=e3_arg_behavior_output,
+			.len=sizeof(struct topological_neighbor)},
+		{.type=e3_arg_type_none},
+	},
+};
+
+e3_type delete_neighbour(e3_type service,e3_type ip_string)
+{
+	const char * _ip_string=(char *)e3_type_to_uint8_t_ptr(ip_string);
+	uint32_t ip_stub=_ip_string_to_u32_le(_ip_string);
+	int nbr=search_topological_neighbour(ip_stub);
+	if(nbr>=0){
+		topological_neighbor_base[nbr].is_valid=0;
+	}
+	return 0;
+}
+DECLARE_E3_API(neighbor_deletion)={
+	.api_name="delete_neighbour",
+	.api_desc="invalidate the neighbor entry",
+	.api_callback_func=(api_callback_func)delete_neighbour,
+	.args_desc={
+		{.type=e3_arg_type_uint8_t_ptr,.behavior=e3_arg_behavior_input,.len=16},
+		{.type=e3_arg_type_none},
+	},
+};
+
+/***API for next hops****/
+
+e3_type register_nexthop(e3_type service,e3_type iface_idx,e3_type ip_string,e3_type pindex)
+{
+	int index;
+	uint16_t     _iface_idx=e3_type_to_uint16_t(iface_idx);
+	const char * _ip_string=(char *)e3_type_to_uint8_t_ptr(ip_string);
+	uint16_t   * _pindex=(uint16_t*)e3_type_to_uint8_t_ptr(pindex);
+	uint32_t     ip_stub=_ip_string_to_u32_le(_ip_string);
+	int          nbr_idx=search_topological_neighbour(ip_stub);
+	
+	if(nbr_idx<0)
+		return -1;
+	/*here do not check whether iface_idx is legal*/
+	index=register_next_hop(_iface_idx,nbr_idx);
+	if(index<0)
+		return -1;
+	*_pindex=index;
+	return 0;
+}
+DECLARE_E3_API(nexthop_registration)={
+	.api_name="register_nexthop",
+	.api_desc="register a nexthop entry with e3iface&neighbor",
+	.api_callback_func=(api_callback_func)register_nexthop,
+	.args_desc={
+		{.type=e3_arg_type_uint16_t,.behavior=e3_arg_behavior_input,},
+		{.type=e3_arg_type_uint8_t_ptr,.behavior=e3_arg_behavior_input,.len=16},
+		{.type=e3_arg_type_uint8_t_ptr,.behavior=e3_arg_behavior_output,.len=2},
 		{.type=e3_arg_type_none},
 	},
 };
