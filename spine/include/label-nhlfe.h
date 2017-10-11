@@ -58,7 +58,6 @@ Python Definition:
 	<Field type=c_ubyte, ofs=8, size=1>
 	<Field type=c_ubyte, ofs=9, size=1>
 
-
 */
 
 #define MAX_HOPS_IN_MULTICAST_GROUP 64 /* 64 forks in a tree in the topology

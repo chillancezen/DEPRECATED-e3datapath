@@ -55,7 +55,8 @@ void api_node_init(void)
 		register_api_server_endpoint("tcp://*:507",0);
 		register_api_server_endpoint("tcp://*:508",0);
 	#else
-		register_api_server_endpoint("tcp://*:507",1);
+		//register_api_server_endpoint("tcp://*:507",1);
+		register_api_server_endpoint("ipc:///var/run/e3datapath.sock",1);
 	#endif
 }
 

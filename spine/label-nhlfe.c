@@ -47,7 +47,7 @@ int register_topological_neighbour(uint32_t le_ip_as_key,
 			break;
 	if(target_index>=MAX_TOPOLOGICAL_NEIGHBOURS)
 		return -2;
-
+	
 	topological_neighbor_base[target_index].is_valid=1;
 	topological_neighbor_base[target_index].neighbour_ip_as_le=le_ip_as_key;
 	memcpy(topological_neighbor_base[target_index].mac,mac,6);
@@ -111,13 +111,13 @@ int search_next_hop(int local_e3iface,int remote_neighbour)
 	return -1;
 }
 
-int _hop_index_comare(const void * arg1, const void * arg2)
+int _hop_index_compare(const void * arg1, const void * arg2)
 {
 	return (*(uint16_t*)arg1)-(*(uint16_t*)arg2);
 }
 void _rerrange_multicast_next_hop_indexs(struct multicast_next_hops * mnh)
 {
-	qsort(mnh->next_hops,mnh->nr_hops,sizeof(uint16_t),_hop_index_comare);
+	qsort(mnh->next_hops,mnh->nr_hops,sizeof(uint16_t),_hop_index_compare);
 }
 /*both structures are well sorted
 *if equal,0 is return. otherwise non-zero is instead.
@@ -185,7 +185,13 @@ void dump_next_hop_definition(void)
 void label_nhlfe_module_test(void)
 {
 
-	dump_next_hop_definition();
+	
+	int idx=0;
+	for(;idx<5;idx++)
+		register_topological_neighbour(0x122f34+idx,"dsdssds");
+
+	for(idx=0;idx<12;idx++)
+		register_next_hop(idx%5,idx%5);
 	/*
 	int idx=0;
 	for(;idx<1478;idx++)
@@ -340,17 +346,21 @@ DECLARE_E3_API(neighbor_mac_update)={
 e3_type list_neighbours_partial(e3_type service,
 							e3_type index_to_start,/*input&output*/
 							e3_type nr_entries,/*output*/
-							e3_type entries/*output*/)
+							e3_type entries,/*output*/
+							e3_type index_entries)
 {
 	int    *  _index_to_start=(int*)e3_type_to_uint8_t_ptr(index_to_start);
 	int    *  _nr_entries=(int*)e3_type_to_uint8_t_ptr(nr_entries);
 	struct topological_neighbor * _entries=(struct topological_neighbor*)
 											e3_type_to_uint8_t_ptr(entries);
+	uint16_t * _index_entries=(uint16_t *)e3_type_to_uint8_t_ptr(index_entries);
+	
 	int idx=0;
 	int iptr=0;
 	for(idx=*_index_to_start;idx<MAX_TOPOLOGICAL_NEIGHBOURS;idx++){
 		if(!topological_neighbor_base[idx].is_valid)
 			continue;
+		_index_entries[iptr]=idx;
 		memcpy(&_entries[iptr++],
 			&topological_neighbor_base[idx],
 			sizeof(struct topological_neighbor));
@@ -370,9 +380,12 @@ DECLARE_E3_API(partial_neighbour_list)={
 		{.type=e3_arg_type_uint8_t_ptr,.behavior=e3_arg_behavior_output,.len=4},
 		{.type=e3_arg_type_uint8_t_ptr,.behavior=e3_arg_behavior_output,
 		.len=sizeof(struct topological_neighbor)*MAX_NEIGHBORS_PER_FETCH},
+		{.type=e3_arg_type_uint8_t_ptr,.behavior=e3_arg_behavior_output,
+		.len=sizeof(uint16_t)*MAX_NEIGHBORS_PER_FETCH},
 		{.type=e3_arg_type_none},
 	},
 };
+
 e3_type get_neighbour(e3_type service,e3_type index,e3_type pneighbor)
 {
 	uint16_t  _index_to_fetch=e3_type_to_uint16_t(index);
@@ -446,6 +459,70 @@ DECLARE_E3_API(nexthop_registration)={
 		{.type=e3_arg_type_uint16_t,.behavior=e3_arg_behavior_input,},
 		{.type=e3_arg_type_uint8_t_ptr,.behavior=e3_arg_behavior_input,.len=16},
 		{.type=e3_arg_type_uint8_t_ptr,.behavior=e3_arg_behavior_output,.len=2},
+		{.type=e3_arg_type_none},
+	},
+};
+
+e3_type get_nexthop(e3_type service,e3_type index,e3_type pnexthop)
+{
+	uint16_t  _index=e3_type_to_uint16_t(index);
+	struct next_hop * _pnexthop=(struct next_hop*)e3_type_to_uint8_t_ptr(pnexthop);
+	if((_index<0)||(_index>=MAX_NEXT_HOPS))
+		return -1;
+	memcpy(_pnexthop,&next_hop_base[_index],sizeof(struct next_hop));
+	return 0;
+}
+DECLARE_E3_API(nexthop_retrieve)={
+	.api_name="get_nexthop",
+	.api_desc="get the next_hop entry at a given index",
+	.api_callback_func=(api_callback_func)get_nexthop,
+	.args_desc={
+		{.type=e3_arg_type_uint16_t,.behavior=e3_arg_behavior_input,},
+		{.type=e3_arg_type_uint8_t_ptr,.behavior=e3_arg_behavior_output,.len=
+		sizeof(struct next_hop),},
+		{.type=e3_arg_type_none},
+	},
+};
+#define MAX_NEXTHOPS_PER_FETCH 64
+e3_type list_nexthop_partial(e3_type service,
+					e3_type index_to_start/*in&out*/,
+					e3_type nr_entries/*out*/,
+					e3_type entries,/*out*/
+					e3_type index_entries)
+{
+	int * _index_to_start=(int*)e3_type_to_uint8_t_ptr(index_to_start);
+	int * _nr_entries    =(int*)e3_type_to_uint8_t_ptr(nr_entries);
+	struct next_hop * _entries=(struct next_hop *)e3_type_to_uint8_t_ptr(entries);
+	uint16_t * _index_entries=(uint16_t *)e3_type_to_uint8_t_ptr(index_entries);
+	int idx=0;
+	
+	int iptr=0;
+	for(idx=*_index_to_start;idx<MAX_NEXT_HOPS;idx++){
+		if(!next_hop_base[idx].is_valid)
+			continue;
+		_index_entries[iptr]=idx;
+		memcpy(&_entries[iptr++],
+			&next_hop_base[idx],
+			sizeof(struct next_hop));
+		if(iptr==MAX_NEXTHOPS_PER_FETCH)
+			break;
+	}
+	*_index_to_start=idx+1;
+	*_nr_entries=iptr;
+	return 0;
+}
+
+DECLARE_E3_API(partial_nexthops_list)={
+	.api_name="list_nexthop_partial",
+	.api_desc="get part of the whole next_hop entries",
+	.api_callback_func=(api_callback_func)list_nexthop_partial,
+	.args_desc={
+		{.type=e3_arg_type_uint8_t_ptr,.behavior=e3_arg_behavior_input_and_output,.len=4},
+		{.type=e3_arg_type_uint8_t_ptr,.behavior=e3_arg_behavior_output,.len=4},
+		{.type=e3_arg_type_uint8_t_ptr,.behavior=e3_arg_behavior_output,
+		.len=sizeof(struct next_hop)*MAX_NEXTHOPS_PER_FETCH},
+		{.type=e3_arg_type_uint8_t_ptr,.behavior=e3_arg_behavior_output,
+		.len=sizeof(uint16_t)*MAX_NEXTHOPS_PER_FETCH},
 		{.type=e3_arg_type_none},
 	},
 };
