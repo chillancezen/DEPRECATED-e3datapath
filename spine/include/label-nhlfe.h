@@ -65,12 +65,26 @@ Python Definition:
 
 struct multicast_next_hops{
 	uint64_t multicast_group_id;/*usually uniquely mapped to E-SERVICE
-								 in whatever manner*/
+								 in whatever manner,
+								 2017-10.14:this field will be reserved for other purposes*/
 	uint8_t  is_valid;
 	uint8_t  nr_hops;
 	uint16_t next_hops[MAX_HOPS_IN_MULTICAST_GROUP];
-}__attribute__((aligned(4)));
+}__attribute__((packed));
+/*
+C definition:
+multicast_group_id (offset:  0 size:  8 prev_gap:0)
+		  is_valid (offset:  8 size:  1 prev_gap:0)
+		   nr_hops (offset:  9 size:  1 prev_gap:0)
+		 next_hops (offset: 10 size:128 prev_gap:0)
+		 
+Python definition:
+	<Field type=c_ulong, ofs=0, size=8>
+	<Field type=c_ubyte, ofs=8, size=1>
+	<Field type=c_ubyte, ofs=9, size=1>
+	<Field type=c_ushort_Array_64, ofs=10, size=128>
 
+*/
 
 
 extern struct topological_neighbor * topological_neighbor_base;

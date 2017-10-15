@@ -71,6 +71,41 @@ class Nexthop(Structure):
         h.index=self.index
         return h
 
+class MNexthops(Structure):
+    _pack_=1
+    _fields_=[('multicast_group_id',c_uint64),
+                ('is_valid',c_uint8),
+                ('nr_hops',c_uint8),
+                ('next_hops',c_uint16*64)]
+    index=0
+    def __str__(self):
+        ret=dict()
+        ret['multicast_group_id']=self.multicast_group_id
+        ret['is_valid']=self.is_valid
+        ret['nr_hops']=self.nr_hops
+        lst=list()
+        for i in range(self.nr_hops):
+            lst.append(self.next_hops[i])
+        ret['next_hops']=str(lst)
+        ret['index']=self.index
+        return repr(ret)
+    def dump_definition(self):
+        print(MNexthops.multicast_group_id)
+        print(MNexthops.is_valid)
+        print(MNexthops.nr_hops)
+        print(MNexthops.next_hops)
+    def clone(self):
+        mnh=MNexthops()
+        mnh.multicast_group_id=self.multicast_group_id
+        mnh.is_valid=self.is_valid
+        mnh.nr_hops=self.nr_hops
+        for i in range(64):
+            mnh.next_hops[i]=self.next_hops[i]
+        mnh.index=self.index
+        return mnh
+
+
+
 def get_neighbour(index):
     api_ret=c_uint64(0)
     index_to_pass=c_uint16(index)
@@ -195,27 +230,109 @@ def list_nexthops():
         if nr_entries.value !=nr_entries_per_fetch:
             break
     return lst        
-        
+
+def delete_nexthop(index):
+    api_ret=c_uint64(0)
+    _index=c_uint16(index)
+    rc=clib.delete_nexthop(byref(api_ret),_index)
+    if rc!=0:
+        raise api_call_exception()
+ 
+def register_multicast_nexthops(hops_lst):
+    api_ret=c_uint64(0)
+    mnh=MNexthops()
+    index=c_uint16(0)
+    if len(hops_lst) > 64:
+        raise api_return_exception()
+    for i in range(len(hops_lst)):
+        mnh.next_hops[i]=hops_lst[i]
+    mnh.nr_hops=len(hops_lst)
+    rc=clib.register_mnexthops(byref(api_ret),byref(mnh),byref(index))
+    if rc !=0:
+        raise api_call_exception()
+    if api_ret.value!=0:
+        raise api_return_exception()
+    return index.value
+
+def get_multicast_nexthops(index):
+    api_ret=c_uint64(0)
+    mnh=MNexthops()
+    _index=c_uint16(index)
+    rc=clib.get_mnexthops(byref(api_ret),_index,byref(mnh))
+    if rc!=0:
+        raise api_call_exception()
+    if api_ret.value!=0:
+        raise api_return_exception()
+    mnh.index=index
+    return mnh
+
+def list_multicast_nexthops():
+    nr_entries_per_fetch=64
+    api_ret=c_uint64(0)
+    index_to_start=c_uint32(0)
+    nr_entries=c_uint32(0)
+    class A(Structure):
+        _pack_=1
+        _fields_=[('a',MNexthops*nr_entries_per_fetch)]
+    class B(Structure):
+        _pack_=1
+        _fields_=[('b',c_uint16*nr_entries_per_fetch)]
+    a=A()
+    b=B()
+    lst=list()
+    while True:
+        rc=clib.list_mnexthops_partial(byref(api_ret),byref(index_to_start),byref(nr_entries),byref(a),byref(b))
+        if rc!=0:
+            raise api_call_exception()
+        for i in range(nr_entries.value):
+            nh=a.a[i].clone()
+            nh.index=b.b[i]
+            lst.append(nh)
+        if nr_entries.value !=nr_entries_per_fetch:
+            break
+    return lst
+def delete_multicast_nexthops(index):
+    api_ret=c_uint64(0)
+    _index=c_uint16(index)
+    rc=clib.delete_mnexthops(byref(api_ret),_index)
+    if rc!=0:
+        raise api_call_exception()
+
 if __name__=='__main__':
     register_service_endpoint('ipc:///var/run/e3datapath.sock')
+    delete_multicast_nexthops(0)
+    delete_multicast_nexthops(1)
+    print(register_multicast_nexthops([1,2,3]))
+    print(register_multicast_nexthops([1,3,2,6]))
+   
+    #print(get_multicast_nexthops(0))
+    #print(get_multicast_nexthops(1))
+    #print(get_multicast_nexthops(1023))
+    #print(get_multicast_nexthops(1024))
+    #MNexthops().dump_definition()
     #print(Neighbour().dump_definition())
     #delete_neighbour('13.140.150.1')
-    delete_neighbour('0.18.47.54')
-    #print(register_neighbour('13.140.150.1','0:01:23:24:35:45'))
+    #delete_neighbour('0.18.47.54')
+    #print(register_neighbour('130.140.150.1','0:01:23:24:35:45'))
     #print(register_neighbour('130.140.150.1','01:01:23:24:35:45'))
     #print(get_neighbour(0))
-    print(get_neighbour(63))
-    print(get_nexthop(63))
+    #print(get_neighbour(63))
+    #print(get_nexthop(1024))
     #print(get_neighbour(1023))
     #print(get_neighbour(1024))
     #print(refresh_neighbor_mac('130.140.150.1','0:01:23:24:35:46'))
     #delete_neighbour('13.140.150.1')
-    #print(register_nexthop(1,'13.140.150.1'))
-    #print(register_nexthop(1,'13.140.150.1'))
+    #print(register_nexthop(1,'130.140.150.1'))
+    #print(register_nexthop(2,'130.140.150.1'))
     #print(get_nexthop(0))
     #print(register_nexthop(2,'130.140.150.2'))
     #print(Nexthop().clone())
+    #delete_nexthop(0)
+    #delete_nexthop(1)
+    #delete_nexthop(2)
     for n in list_neighbours():
         print(n)
     for nh in list_nexthops():
         print(nh)
+    for mnh in list_multicast_nexthops():
+        print(mnh)

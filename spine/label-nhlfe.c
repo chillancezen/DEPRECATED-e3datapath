@@ -133,6 +133,9 @@ int _compare_multicast_next_hop_indexs(const struct multicast_next_hops * hops1,
 			return -2;
 	return 0;
 }
+/*register a multicast nexthop list
+the newly registered entry must have unique next hop list element
+*/
 int register_multicast_next_hops(struct multicast_next_hops * mnh)
 {
 	int idx=0;
@@ -182,17 +185,30 @@ void dump_next_hop_definition(void)
 	dump_field(struct next_hop,is_valid);
 	dump_field(struct next_hop,reserved0);
 }
+void dump_multicast_next_hop(void)
+{
+	int last_offset=0,last_size=0;
+	puts("dump definition: struct multicast_next_hops");
+	dump_field(struct multicast_next_hops,multicast_group_id);
+	dump_field(struct multicast_next_hops,is_valid);
+	dump_field(struct multicast_next_hops,nr_hops);
+	dump_field(struct multicast_next_hops,next_hops);
+}
 void label_nhlfe_module_test(void)
 {
-
-	
+	dump_multicast_next_hop();
+	printf("size :%d\n",sizeof(struct multicast_next_hops));
+	int idx=0;
+	for(;idx<16;idx++)
+		register_next_hop(idx,idx);
+	/*
 	int idx=0;
 	for(;idx<5;idx++)
 		register_topological_neighbour(0x122f34+idx,"dsdssds");
 
 	for(idx=0;idx<12;idx++)
 		register_next_hop(idx%5,idx%5);
-	/*
+	
 	int idx=0;
 	for(;idx<1478;idx++)
 		register_topological_neighbour(0x122f34+idx,"dsdssds");
@@ -418,6 +434,7 @@ e3_type delete_neighbour(e3_type service,e3_type ip_string)
 	int nbr=search_topological_neighbour(ip_stub);
 	if(nbr>=0){
 		topological_neighbor_base[nbr].is_valid=0;
+		/*leave other fields untouched in case other threads are still using it*/
 	}
 	return 0;
 }
@@ -523,6 +540,151 @@ DECLARE_E3_API(partial_nexthops_list)={
 		.len=sizeof(struct next_hop)*MAX_NEXTHOPS_PER_FETCH},
 		{.type=e3_arg_type_uint8_t_ptr,.behavior=e3_arg_behavior_output,
 		.len=sizeof(uint16_t)*MAX_NEXTHOPS_PER_FETCH},
+		{.type=e3_arg_type_none},
+	},
+};
+
+e3_type delete_nexthop(e3_type service,e3_type index_to_delete)
+{
+	uint16_t _index_to_delete=e3_type_to_uint16_t(index_to_delete);
+	if((_index_to_delete>=0)&&(_index_to_delete<MAX_NEXT_HOPS)){
+		next_hop_base[_index_to_delete].is_valid=0;
+		/*still do not touch other fields,but it still risks when it is released,
+		and soon caoved by another registration,meanwhile, this entry is referred by other module,
+		fortunatelly, it seldom happens*/
+	}
+	return 0;
+}
+DECLARE_E3_API(nexthop_delete)={
+	.api_name="delete_nexthop",
+	.api_desc="delete a nexthop entry at a given index",
+	.api_callback_func=(api_callback_func)delete_nexthop,
+	.args_desc={
+		{.type=e3_arg_type_uint16_t,.behavior=e3_arg_behavior_input,},
+		{.type=e3_arg_type_none},
+	},
+};
+
+
+e3_type register_mnexthops(e3_type service,e3_type entry,e3_type pindex)
+{
+	struct multicast_next_hops * _entry=(struct multicast_next_hops*)
+												e3_type_to_uint8_t_ptr(entry);
+	uint16_t * _pindex=(uint16_t*)e3_type_to_uint8_t_ptr(pindex);
+	int idx=0;
+	int index=0;
+	_rerrange_multicast_next_hop_indexs(_entry);
+	
+	/*validate the nexthop index in the list to make sure all them are valid
+	and every hop is unique*/
+	{
+		for(idx=0;idx<_entry->nr_hops;idx++)
+			if((idx>1)&&
+				(_entry->next_hops[idx]==_entry->next_hops[idx-1]))
+				return -1;
+		
+		for(idx=0;idx<_entry->nr_hops;idx++)
+			if(!next_hop_base[_entry->next_hops[idx]].is_valid)
+				return -1;
+	}
+	index=register_multicast_next_hops(_entry);
+	if(index<0)
+		return -2;
+	*_pindex=index;
+	return 0;
+}
+DECLARE_E3_API(mnexthops_registration)={
+	.api_name="register_mnexthops",
+	.api_desc="register multicast next hops entry in the list",
+	.api_callback_func=(api_callback_func)register_mnexthops,
+	.args_desc={
+		{.type=e3_arg_type_uint8_t_ptr,.behavior=e3_arg_behavior_input,
+			.len=sizeof(struct multicast_next_hops)},
+		{.type=e3_arg_type_uint8_t_ptr,.behavior=e3_arg_behavior_output,.len=2},
+		{.type=e3_arg_type_none},
+	},
+};
+e3_type get_mnexthops(e3_type service,e3_type index,e3_type pmnexthops)
+{
+	uint16_t _index=e3_type_to_uint16_t(index);
+	struct multicast_next_hops * _pmnexthops=(struct multicast_next_hops*)
+												e3_type_to_uint8_t_ptr(pmnexthops);
+	if((_index>=0)&&(_index<MAX_MULTICAST_NEXT_HOPS))
+		memcpy(_pmnexthops,&mnext_hops_base[_index],sizeof(struct multicast_next_hops));
+	else
+		return -1;
+	return 0;
+}
+DECLARE_E3_API(mnexthops_get)={
+	.api_name="get_mnexthops",
+	.api_desc="get the multicast next hop entry at a given index",
+	.api_callback_func=(api_callback_func)get_mnexthops,
+	.args_desc={
+		{.type=e3_arg_type_uint16_t,.behavior=e3_arg_behavior_input,},
+		{.type=e3_arg_type_uint8_t_ptr,.behavior=e3_arg_behavior_output,
+		.len=sizeof(struct multicast_next_hops)},
+		{.type=e3_arg_type_none},
+	},
+};
+
+#define MAX_MNEXTHOPS_PER_FETCH 64
+e3_type list_mnexthops_partial(e3_type service,
+						e3_type index_to_start,
+						e3_type nr_entries,
+						e3_type entries,
+						e3_type index_entries)
+{
+	int * _index_to_start=(int*)e3_type_to_uint8_t_ptr(index_to_start);
+	int * _nr_entries    =(int*)e3_type_to_uint8_t_ptr(nr_entries);
+	struct multicast_next_hops* _entries=(struct multicast_next_hops *)
+											e3_type_to_uint8_t_ptr(entries);
+	uint16_t * _index_entries=(uint16_t *)e3_type_to_uint8_t_ptr(index_entries);
+	int idx=0;
+	int iptr=0;
+	
+	for(idx=*_index_to_start;idx<MAX_MULTICAST_NEXT_HOPS;idx++){
+		if(!mnext_hops_base[idx].is_valid)
+			continue;
+		_index_entries[iptr]=idx;
+		memcpy(&_entries[iptr++],
+			&mnext_hops_base[idx],
+			sizeof(struct multicast_next_hops));
+		if(iptr==MAX_MNEXTHOPS_PER_FETCH)
+			break;
+	}
+	*_index_to_start=idx+1;
+	*_nr_entries=iptr;
+	
+	return 0;
+}
+DECLARE_E3_API(partial_mnexthops_list)={
+	.api_name="list_mnexthops_partial",
+	.api_desc="enumerate partial list of multicast next hops",
+	.api_callback_func=(api_callback_func)list_mnexthops_partial,
+	.args_desc={
+		{.type=e3_arg_type_uint8_t_ptr,.behavior=e3_arg_behavior_input_and_output,.len=4},
+		{.type=e3_arg_type_uint8_t_ptr,.behavior=e3_arg_behavior_output,.len=4},
+		{.type=e3_arg_type_uint8_t_ptr,.behavior=e3_arg_behavior_output,
+		.len=sizeof(struct multicast_next_hops)*MAX_MNEXTHOPS_PER_FETCH},
+		{.type=e3_arg_type_uint8_t_ptr,.behavior=e3_arg_behavior_output,
+		.len=sizeof(uint16_t)*MAX_MNEXTHOPS_PER_FETCH},
+		{.type=e3_arg_type_none},
+	},
+};
+e3_type delete_mnexthops(e3_type service,e3_type index)
+{
+	uint16_t _index=e3_type_to_uint16_t(index);
+	if((_index>=0)&&(_index<MAX_MULTICAST_NEXT_HOPS)){
+		mnext_hops_base[_index].is_valid=0;
+	}
+	return 0;
+}
+DECLARE_E3_API(mnexthops_delete)={
+	.api_name="delete_mnexthops",
+	.api_desc="delete a multicast next hop entry at a given index",
+	.api_callback_func=(api_callback_func)delete_mnexthops,
+	.args_desc={
+		{.type=e3_arg_type_uint16_t,.behavior=e3_arg_behavior_input,},
 		{.type=e3_arg_type_none},
 	},
 };
