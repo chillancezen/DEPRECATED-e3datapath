@@ -196,12 +196,13 @@ void dump_multicast_next_hop(void)
 }
 void label_nhlfe_module_test(void)
 {
+	/*
 	dump_multicast_next_hop();
 	printf("size :%d\n",sizeof(struct multicast_next_hops));
 	int idx=0;
 	for(;idx<16;idx++)
 		register_next_hop(idx,idx);
-	/*
+	
 	int idx=0;
 	for(;idx<5;idx++)
 		register_topological_neighbour(0x122f34+idx,"dsdssds");
