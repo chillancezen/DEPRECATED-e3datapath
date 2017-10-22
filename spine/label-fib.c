@@ -49,6 +49,7 @@ int set_label_entry(struct label_entry * base,
 
 void label_fib_module_test(void)
 {
+	//printf("size:%d\n",sizeof(struct label_entry));
 	struct label_entry * base=allocate_label_entry_base(-1);
 	label_entry_at(base, 1)->is_valid=1;
 	label_entry_at(base, 1023)->is_valid=1;

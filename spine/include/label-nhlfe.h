@@ -7,7 +7,7 @@
 */
 #define MAX_TOPOLOGICAL_NEIGHBOURS 1024
 #define MAX_NEXT_HOPS 1024
-#define MAX_MULTICAST_NEXT_HOPS 1024
+#define MAX_MULTICAST_NEXT_HOPS 2048/*max E-LAN service supported*/
 
 
 /*topological_neighbour is system-wide resource,
@@ -70,20 +70,23 @@ struct multicast_next_hops{
 	uint8_t  is_valid;
 	uint8_t  nr_hops;
 	uint16_t next_hops[MAX_HOPS_IN_MULTICAST_GROUP];
+	uint32_t next_hops_labels[MAX_HOPS_IN_MULTICAST_GROUP];
 }__attribute__((packed));
 /*
 C definition:
-multicast_group_id (offset:  0 size:  8 prev_gap:0)
-		  is_valid (offset:  8 size:  1 prev_gap:0)
-		   nr_hops (offset:  9 size:  1 prev_gap:0)
-		 next_hops (offset: 10 size:128 prev_gap:0)
-		 
-Python definition:
-	<Field type=c_ulong, ofs=0, size=8>
-	<Field type=c_ubyte, ofs=8, size=1>
-	<Field type=c_ubyte, ofs=9, size=1>
-	<Field type=c_ushort_Array_64, ofs=10, size=128>
 
+multicast_group_id (offset:  0 size:  8 prev_gap:0)
+		   is_valid (offset:  8 size:  1 prev_gap:0)
+			nr_hops (offset:  9 size:  1 prev_gap:0)
+		  next_hops (offset: 10 size:128 prev_gap:0)
+   next_hops_labels (offset:138 size:256 prev_gap:0)
+   
+Python definition:
+<Field type=c_ulong, ofs=0, size=8>
+<Field type=c_ubyte, ofs=8, size=1>
+<Field type=c_ubyte, ofs=9, size=1>
+<Field type=c_ushort_Array_64, ofs=10, size=128>
+<Field type=c_uint_Array_64, ofs=138, size=256>
 */
 
 

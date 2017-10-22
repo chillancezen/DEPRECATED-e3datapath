@@ -134,10 +134,27 @@ int _compare_multicast_next_hop_indexs(const struct multicast_next_hops * hops1,
 	return 0;
 }
 /*register a multicast nexthop list
-the newly registered entry must have unique next hop list element
+*the newly registered entry must have unique next hop list element
+*update-2017-10.21:only register a entry,do not check whether other entries 
+*have the same labels and next hop sets.
 */
 int register_multicast_next_hops(struct multicast_next_hops * mnh)
 {
+	int idx=0;
+	int iptr;
+	for(idx=0;idx<MAX_MULTICAST_NEXT_HOPS;idx++)
+		if(!mnext_hops_base[idx].is_valid)
+			break;
+	if(idx>=MAX_MULTICAST_NEXT_HOPS)
+		return -1;
+	mnext_hops_base[idx].multicast_group_id=mnh->multicast_group_id;
+	mnext_hops_base[idx].nr_hops=mnh->nr_hops;
+	for(iptr=0;iptr<mnh->nr_hops;iptr++){
+		mnext_hops_base[idx].next_hops[iptr]=mnh->next_hops[iptr];
+		mnext_hops_base[idx].next_hops_labels[iptr]=mnh->next_hops_labels[iptr];
+	}
+	mnext_hops_base[idx].is_valid=1;
+	#if 0
 	int idx=0;
 	int iptr;
 	_rerrange_multicast_next_hop_indexs(mnh);
@@ -152,11 +169,15 @@ int register_multicast_next_hops(struct multicast_next_hops * mnh)
 		return -2;
 	mnext_hops_base[idx].multicast_group_id=mnh->multicast_group_id;
 	mnext_hops_base[idx].nr_hops=mnh->nr_hops;
-	for(iptr=0;iptr<mnext_hops_base[idx].nr_hops;iptr++)
+	for(iptr=0;iptr<mnext_hops_base[idx].nr_hops;iptr++){
 		mnext_hops_base[idx].next_hops[iptr]=mnh->next_hops[iptr];
+		mnext_hops_base[idx].next_hops_labels[iptr]=mnh->next_hops_labels[iptr];
+	}
 	mnext_hops_base[idx].is_valid=1;
+	#endif
 	return idx;
 }
+/*actually,this will be deprecated*/
 int search_multicast_next_hopss(struct multicast_next_hops * mnh)
 {
 	int idx=0;
@@ -193,9 +214,15 @@ void dump_multicast_next_hop(void)
 	dump_field(struct multicast_next_hops,is_valid);
 	dump_field(struct multicast_next_hops,nr_hops);
 	dump_field(struct multicast_next_hops,next_hops);
+	dump_field(struct multicast_next_hops,next_hops_labels);
 }
 void label_nhlfe_module_test(void)
 {
+	int idx=0;
+	for(;idx<7;idx++)
+		register_next_hop(idx,idx);
+	//printf("size of mnexthops:%d\n",sizeof(struct multicast_next_hops));
+	//dump_multicast_next_hop();
 	/*
 	dump_multicast_next_hop();
 	printf("size :%d\n",sizeof(struct multicast_next_hops));
@@ -574,7 +601,10 @@ e3_type register_mnexthops(e3_type service,e3_type entry,e3_type pindex)
 	uint16_t * _pindex=(uint16_t*)e3_type_to_uint8_t_ptr(pindex);
 	int idx=0;
 	int index=0;
+	
+	#if 0
 	_rerrange_multicast_next_hop_indexs(_entry);
+	#endif
 	
 	/*validate the nexthop index in the list to make sure all them are valid
 	and every hop is unique*/
@@ -585,7 +615,8 @@ e3_type register_mnexthops(e3_type service,e3_type entry,e3_type pindex)
 				return -1;
 		
 		for(idx=0;idx<_entry->nr_hops;idx++)
-			if(!next_hop_base[_entry->next_hops[idx]].is_valid)
+			if(!next_hop_at(_entry->next_hops[idx])||
+				(!next_hop_base[_entry->next_hops[idx]].is_valid))
 				return -1;
 	}
 	index=register_multicast_next_hops(_entry);
@@ -627,8 +658,46 @@ DECLARE_E3_API(mnexthops_get)={
 		{.type=e3_arg_type_none},
 	},
 };
-
-#define MAX_MNEXTHOPS_PER_FETCH 64
+e3_type update_mnexthops(e3_type service,e3_type index,e3_type entry)
+{
+	uint16_t _index=e3_type_to_uint16_t(index);
+	struct multicast_next_hops * _entry=(struct multicast_next_hops*)
+												e3_type_to_uint8_t_ptr(entry);
+	int idx=0;
+	if((_index>=0)&&(_index<MAX_MULTICAST_NEXT_HOPS)){
+		/*check the nexthop and labels list*/
+		for(idx=0;idx<_entry->nr_hops;idx++)
+			if((idx>1)&&
+				(_entry->next_hops[idx]==_entry->next_hops[idx-1]))
+				return -1;
+		
+		for(idx=0;idx<_entry->nr_hops;idx++)
+			if(!next_hop_at(_entry->next_hops[idx])||
+				(!next_hop_base[_entry->next_hops[idx]].is_valid))
+				return -1;
+		
+		for(idx=0;idx<_entry->nr_hops;idx++){
+			mnext_hops_base[_index].next_hops[idx]=_entry->next_hops[idx];
+			mnext_hops_base[_index].next_hops_labels[idx]=_entry->next_hops_labels[idx];
+		}
+		mnext_hops_base[_index].nr_hops=_entry->nr_hops;
+	}
+	else
+		return -1;
+	return 0;
+}
+DECLARE_E3_API(mnexthops_update)={
+	.api_name="update_mnexthops",
+	.api_desc="update the nexthop and labels list of a multicast entry",
+	.api_callback_func=(api_callback_func)update_mnexthops,
+	.args_desc={
+		{.type=e3_arg_type_uint16_t,.behavior=e3_arg_behavior_input,},
+		{.type=e3_arg_type_uint8_t_ptr,.behavior=e3_arg_behavior_input,
+			.len=sizeof(struct multicast_next_hops)},
+		{.type=e3_arg_type_none},
+	},
+};
+#define MAX_MNEXTHOPS_PER_FETCH 32
 e3_type list_mnexthops_partial(e3_type service,
 						e3_type index_to_start,
 						e3_type nr_entries,

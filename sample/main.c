@@ -29,9 +29,11 @@ main(int argc, char **argv)
 	ret = rte_eal_init(argc, argv);
 	if (ret < 0)
 		rte_panic("Cannot init EAL\n");
+	printf("lable size:%d\n",sizeof(struct label_entry));
 	init_registered_tasks();
+	//label_fib_module_test();
 	label_nhlfe_module_test();
-	dump_e3_interface_structure();
+	//dump_e3_interface_structure();
 	RTE_LCORE_FOREACH_SLAVE(lcore_id) {
 		rte_eal_remote_launch(lcore_default_entry, NULL, lcore_id);
 	}

@@ -19,26 +19,28 @@ if __name__=='__main__':
     delete_neighbour('130.140.150.1')
     delete_neighbour('130.140.150.2')
     delete_neighbour('130.140.150.3')
-    register_neighbour('130.140.150.1','0:01:23:24:35:45')
-    register_neighbour('130.140.150.2','0:01:23:24:35:46')
-    register_neighbour('130.140.150.3','0:01:23:24:35:47')
+    register_neighbour('130.140.150.1','08:00:27:53:9d:44')
+    register_neighbour('192.168.199.196','08:00:27:53:9d:44')
+    register_neighbour('130.140.150.3','08:00:27:53:9d:44')
     for n in list_neighbours():
         print(n)
     #next hop initialization
     for n in list_nexthops():
         delete_nexthop(n.index)
     register_nexthop(0,'130.140.150.1')
-    register_nexthop(0,'130.140.150.2')
+    register_nexthop(0,'192.168.199.196')
     register_nexthop(0,'130.140.150.3')
     for n in list_nexthops():
         print(n)
     #multicast hop initialization
     for n in list_multicast_nexthops():
         delete_multicast_nexthops(n.index)
-    register_multicast_nexthops([1,2])
+    register_multicast_nexthops([0,1],[123,234])
     for n in list_multicast_nexthops():
         print(n)
     #register label
-    register_label_entry(0,925516,1,0x520,1)
+    register_label_entry(0,925516,0,0x520,0)
+    register_label_entry(0,925516,0,123,0)
+    #register_label_entry(0,925516+1,1,0x520,1)
     for l in list_label_entry(0):
         print(l) 

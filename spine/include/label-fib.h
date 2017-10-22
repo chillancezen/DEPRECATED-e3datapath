@@ -10,12 +10,29 @@ struct label_entry{
 			uint32_t is_valid:1;        /*indicate whether the corresponding ILE is valid*/
 			uint32_t is_unicast:1;      /*if valid, whether the LSP is unicast(multicast)*/
 			uint32_t swapped_label:20;  /*the label to swap*/
-			uint32_t NHLFE:10;          /*next hop label forwarding entry*/
+										/*also as uint32_t rpf_check_label:20;
+										*in multicast forwarding,perform rpf checking to
+										*avoid duplicated replications
+										*/
+			uint32_t reserved:10;
+			uint32_t NHLFE;          /*next hop label forwarding entry,
+									 *expand to 32bit wide to accomondate enough (multicast
+									 *netx hop entries)
+									 */
 		};
-		uint32_t dummy_dword;
+		uint64_t dummy_dword;
 	};
 }__attribute__((packed));
+/*
+C definition:
 
+Python Definition:
+<Field type=c_uint, ofs=0:0, bits=1>
+<Field type=c_uint, ofs=0:1, bits=1>
+<Field type=c_uint, ofs=0:2, bits=20>
+<Field type=c_uint, ofs=0:22, bits=10>
+<Field type=c_uint, ofs=4, size=4>
+*/
 
 
 struct label_entry * allocate_label_entry_base(int numa_socket_id);

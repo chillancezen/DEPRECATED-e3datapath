@@ -44,8 +44,10 @@ inline uint64_t _process_pbp_input_packet(struct rte_mbuf * mbuf,
 	uint64_t fwd_id=MAKE_UINT64(PBP_PROCESS_INPUT_DROP,0);
 	uint32_t label;
 	uint32_t cache_index;
+	struct E3Interface * psrc_iface;
 	struct ether_hdr * eth_hdr =rte_pktmbuf_mtod(mbuf,struct ether_hdr*);
 	struct mpls_hdr  * mpls_hdr=(struct mpls_hdr*)(eth_hdr+1);
+	struct pbp_cache_entry * cache=NULL;
 	if(PREDICT_FALSE(eth_hdr->ether_type!=ETHER_PROTO_MPLS_UNICAST)){
 		/*
 		*any non-MPLS packet goes to host stack
@@ -54,48 +56,156 @@ inline uint64_t _process_pbp_input_packet(struct rte_mbuf * mbuf,
 		goto ret;
 	}
 	label=mpls_label(mpls_hdr);
+	if(PREDICT_FALSE(!mpls_ttl(mpls_hdr))){
+		/*discard any packet with TTL equal to 0*/
+		goto ret;
+	}
+	
 	cache_index=label&PBP_CACHE_MASK;
+	cache=&pbp_cache[cache_index];
 	{
 		/*
 		*process pbp cache relavant affairs.
 		*/
-		if(PREDICT_FALSE(pbp_cache[cache_index].label!=label)){
-			pbp_cache[cache_index].is_valid=0;
-			pbp_cache[cache_index].label=label;
-			pbp_cache[cache_index].lentry=label_entry_at(priv->label_base,label);
-			if(!pbp_cache[cache_index].lentry->is_valid)
+		if(PREDICT_FALSE(cache->label!=label)){
+			cache->is_valid=0;
+			cache->label=label;
+			cache->lentry=label_entry_at(priv->label_base,label);
+			if(!cache->lentry->is_valid)
 				goto normal;
-			if(pbp_cache[cache_index].lentry->is_unicast){
-				pbp_cache[cache_index].unicast_nexthop=
-					next_hop_at(pbp_cache[cache_index].lentry->NHLFE);
-				if(!pbp_cache[cache_index].unicast_nexthop->is_valid)
+			if(cache->lentry->is_unicast){
+				cache->unicast_nexthop=
+					next_hop_at(cache->lentry->NHLFE);
+				if((!(cache->unicast_nexthop))||(!(cache->unicast_nexthop->is_valid)))
 					goto normal;
-				pbp_cache[cache_index].unicast_neighbor=
-					topological_neighbour_at(pbp_cache[cache_index].unicast_nexthop->remote_neighbor_index);
-				if(!pbp_cache[cache_index].unicast_neighbor->is_valid)
+				cache->unicast_neighbor=
+					topological_neighbour_at(cache->unicast_nexthop->remote_neighbor_index);
+				if((!(cache->unicast_neighbor))||(!(cache->unicast_neighbor->is_valid)))
 					goto normal;
 			}else{
-				pbp_cache[cache_index].multicast_nexthops=
-					mnext_hops_at(pbp_cache[cache_index].lentry->NHLFE);
-				if(!pbp_cache[cache_index].multicast_nexthops->is_valid)
+				cache->multicast_nexthops=
+					mnext_hops_at(cache->lentry->NHLFE);
+				if((!(cache->multicast_nexthops))||(!(cache->multicast_nexthops->is_valid)))
 					goto normal;
 			}
-			pbp_cache[cache_index].is_valid=1;
+			cache->is_valid=1;
 		}
 		normal:
 		/*
 		*drop any packet whose fwd entries are incomplete
 		*/
-		if(PREDICT_FALSE(!pbp_cache[cache_index].is_valid)){
+		if(PREDICT_FALSE(!cache->is_valid)){
 			fwd_id=MAKE_UINT64(PBP_PROCESS_INPUT_DROP,0);
 			goto ret;
 		}
-		printf("valid mpls:%x\n",label);
+	}
+	/*until here we are sure the fwd credentials are ready*/
+	if(PREDICT_TRUE(cache->lentry->is_unicast)){
+		
+		/*unicast mpls packet:rewrite the outer MPLS header*/
+		set_mpls_label(mpls_hdr,cache->lentry->swapped_label);
+		set_mpls_ttl(mpls_hdr,mpls_ttl(mpls_hdr)-1);
+		if(PREDICT_FALSE(!(psrc_iface=
+			find_e3interface_by_index(cache->unicast_nexthop->local_e3iface_index)))){
+			fwd_id=MAKE_UINT64(PBP_PROCESS_INPUT_DROP,0);
+			goto ret;
+		}
+		memcpy(eth_hdr->d_addr.addr_bytes,
+				cache->unicast_neighbor->mac,
+				6);
+		memcpy(eth_hdr->s_addr.addr_bytes,
+				psrc_iface->mac_addrs,
+				6);
+		fwd_id=MAKE_UINT64(PBP_PROCESS_INPUT_UNICAST_FWD,
+			cache->unicast_nexthop->local_e3iface_index);
+	}else{
+		fwd_id=MAKE_UINT64(PBP_PROCESS_INPUT_MULTICAST_FWD,label);
 	}
 	ret:
 	return fwd_id;	
 }
 
+inline int _pbp_multicast_fordward(struct E3Interface *pif,
+						struct rte_mbuf **mbufs,
+						int nr_mbufs,
+						int label)
+{
+	struct pbp_private * priv=(struct pbp_private*)pif->private;
+	struct label_entry * lentry=label_entry_at(priv->label_base,label);
+	struct multicast_next_hops * pmnexthops=mnext_hops_at(lentry->NHLFE);
+	
+	nr_mbufs=nr_mbufs>PBP_NODE_BURST_SIZE?PBP_NODE_BURST_SIZE:nr_mbufs;
+	struct rte_mbuf * mbufs_invt[MAX_HOPS_IN_MULTICAST_GROUP][PBP_NODE_BURST_SIZE];
+	
+	
+	printf("multicast\n");
+	
+	return 0;
+}
+inline void _post_pbp_input_packet_process(struct E3Interface * pif,
+								struct node * pnode,
+								struct rte_mbuf **mbufs,
+								int nr_mbufs,
+								uint64_t fwd_id)
+{
+	int idx=0;
+	int drop_start=0;
+	int nr_dropped=0;
+	int nr_delivered=0;
+	
+	switch(HIGH_UINT64(fwd_id))
+	{
+		case PBP_PROCESS_INPUT_HOST_STACK:
+			{
+				struct E3Interface * ppeer=NULL;
+				if(PREDICT_FALSE((!pif->has_peer_device)||
+					!(ppeer=find_e3interface_by_index(pif->peer_port_id)))){
+					nr_dropped=nr_mbufs;
+					break;
+				}
+				nr_delivered=deliver_mbufs_to_e3iface(ppeer,
+					0,
+					mbufs,
+					nr_mbufs);
+				drop_start=nr_delivered;
+				nr_dropped=nr_mbufs-drop_start;
+			}
+				
+			break;
+		case PBP_PROCESS_INPUT_UNICAST_FWD:
+			{
+				uint32_t dst_iface=LOW_UINT32(fwd_id);
+				struct E3Interface * pdst=NULL;
+				if(PREDICT_FALSE(!(pdst=find_e3interface_by_index(dst_iface)))){
+					nr_dropped=nr_mbufs;
+					break;
+				}
+				nr_delivered=deliver_mbufs_to_e3iface(pdst,
+					0,
+					mbufs,
+					nr_mbufs);
+				drop_start=nr_delivered;
+				nr_dropped=nr_mbufs-drop_start;
+			}
+			break;
+		case PBP_PROCESS_INPUT_MULTICAST_FWD:
+			{
+				uint32_t label=LOW_UINT64(fwd_id);
+				nr_delivered=_pbp_multicast_fordward(pif,
+					mbufs,
+					nr_mbufs,
+					label);
+				drop_start=nr_delivered;
+				nr_dropped=nr_mbufs-drop_start;
+			}
+			break;
+		default:
+			nr_dropped=nr_mbufs;
+			break;
+	}
+	for(idx=0;idx<nr_dropped;idx++)
+		rte_pktmbuf_free(mbufs[drop_start+idx]);
+}
 int provider_backbone_port_iface_input_iface(void * arg)
 {
 	struct rte_mbuf *    mbufs[PBP_NODE_BURST_SIZE];
@@ -114,31 +224,55 @@ int provider_backbone_port_iface_input_iface(void * arg)
 	uint64_t fwd_id;
 	uint64_t last_fwd_id;
 	struct pbp_cache_entry pbp_cache[PBP_CACHE_SIZE];
-	memset(pbp_cache,0x0,sizeof(struct pbp_cache_entry));
+	memset(pbp_cache,0x0,sizeof(pbp_cache));
 	if(PREDICT_FALSE(!pif))
 		return 0;
 	nr_rx=rte_eth_rx_burst(iface,queue_id,mbufs,PBP_NODE_BURST_SIZE);
 	pre_setup_env(nr_rx);
 	while((iptr=peek_next_mbuf())>=0){
 		prefetch_next_mbuf(mbufs,iptr);
-		fwd_id=MAKE_UINT64(PBP_INPUT_NODE_FWD_DROP,0);
 		fwd_id=_process_pbp_input_packet(mbufs[iptr],pbp_cache,priv);
 		process_rc=proceed_mbuf(iptr,fwd_id);
 		if(process_rc==MBUF_PROCESS_RESTART){
 			fetch_pending_index(start_index,end_index);
 			fetch_pending_fwd_id(last_fwd_id);
-
+			_post_pbp_input_packet_process(pif,
+						pnode,
+						&mbufs[start_index],
+						end_index-start_index+1,
+						last_fwd_id);
 			flush_pending_mbuf();
 			proceed_mbuf(iptr,fwd_id);
 		}
 	}
 	fetch_pending_index(start_index,end_index);
 	fetch_pending_fwd_id(last_fwd_id);
+	if(PREDICT_TRUE(start_index>=0))
+		_post_pbp_input_packet_process(pif,
+						pnode,
+						&mbufs[start_index],
+						end_index-start_index+1,
+						last_fwd_id);
 	return 0;
 }
 
 int provider_backbone_port_iface_output_iface(void * arg)
 {
+	int idx=0;
+	struct rte_mbuf *mbufs[32];
+	int nr_rx;
+	int nr_tx;
+	struct node * pnode=(struct node *)arg;
+	int iface_id=HIGH_UINT64((uint64_t)pnode->node_priv);
+	int queue_id=LOW_UINT64((uint64_t)pnode->node_priv);
+	struct E3Interface * pif=NULL;
+	if(!(pif=find_e3interface_by_index(iface_id)))/*this never happens*/
+		return -1;
+	if(!(nr_rx=rte_ring_sc_dequeue_burst(pnode->node_ring,(void**)mbufs,32,NULL)))
+		return 0;
+	nr_tx=rte_eth_tx_burst(iface_id,queue_id,mbufs,nr_rx);
+	for(idx=nr_tx;idx<nr_rx;idx++)
+		rte_pktmbuf_free(mbufs[idx]);
 	return 0;
 }
 

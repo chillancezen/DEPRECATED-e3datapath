@@ -10,13 +10,17 @@ class Labelentry(Structure):
     _fields_=[('is_valid',c_uint32,1),
                 ('is_unicast',c_uint32,1),
                 ('swapped_label',c_uint32,20),
-                ('NHLFE',c_uint32,10)]
+                ('reserved0',c_uint32,10),
+                ('NHLFE',c_uint32)]
     index=0
     def __str__(self):
         ret=dict()
         ret['is_valid']     =self.is_valid
         ret['is_unicast']   =self.is_unicast
-        ret['swapped_label']=self.swapped_label
+        if self.is_unicast==1:
+            ret['swapped_label']=self.swapped_label
+        else:
+            ret['rpf_check_label']=self.swapped_label
         ret['NHLFE']        =self.NHLFE
         ret['index']        =self.index
         return repr(ret)
@@ -27,12 +31,19 @@ class Labelentry(Structure):
         l.swapped_label =self.swapped_label
         l.NHLFE         =self.NHLFE
         l.index         =self.index
+        l.reserved0     =self.reserved0
         return l
-    
+    def dump_definition(self):
+        print(Labelentry.is_valid)
+        print(Labelentry.is_unicast)
+        print(Labelentry.swapped_label)
+        print(Labelentry.reserved0)
+        print(Labelentry.NHLFE)
+
 def register_label_entry(iface,
                         label_index,
                         is_unicast,
-                        label_to_swap,
+                        label_to_swap,#also as RPF check label
                         nhlfe):
     api_ret     =c_uint64(0)
     _iface      =c_uint16(iface)
@@ -102,6 +113,7 @@ def delete_label_entry(iface,label_index):
         raise api_call_exception()
     
 if __name__=='__main__':
+    Labelentry().dump_definition()
     register_service_endpoint('ipc:///var/run/e3datapath.sock')
     from pye3datapath.e3iface import attach_e3iface
     from pye3datapath.e3iface import get_e3iface_list
