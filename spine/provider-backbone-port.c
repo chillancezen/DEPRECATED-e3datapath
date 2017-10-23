@@ -7,6 +7,7 @@
 #include <rte_ether.h>
 #include <label-fib.h>
 #include <label-nhlfe.h>
+#include <lcore_extension.h>
 #define PBP_NODE_BURST_SIZE 48
 
 extern struct e3iface_role_def  role_defs[E3IFACE_ROLE_MAX_ROLES];
@@ -110,10 +111,10 @@ inline uint64_t _process_pbp_input_packet(struct rte_mbuf * mbuf,
 			fwd_id=MAKE_UINT64(PBP_PROCESS_INPUT_DROP,0);
 			goto ret;
 		}
-		memcpy(eth_hdr->d_addr.addr_bytes,
+		rte_memcpy(eth_hdr->d_addr.addr_bytes,
 				cache->unicast_neighbor->mac,
 				6);
-		memcpy(eth_hdr->s_addr.addr_bytes,
+		rte_memcpy(eth_hdr->s_addr.addr_bytes,
 				psrc_iface->mac_addrs,
 				6);
 		fwd_id=MAKE_UINT64(PBP_PROCESS_INPUT_UNICAST_FWD,
@@ -125,7 +126,8 @@ inline uint64_t _process_pbp_input_packet(struct rte_mbuf * mbuf,
 	return fwd_id;	
 }
 
-inline int _pbp_multicast_fordward(struct E3Interface *pif,
+inline int _pbp_multicast_fordward_slow_path(struct E3Interface *pif,
+						struct node * pnode,
 						struct rte_mbuf **mbufs,
 						int nr_mbufs,
 						int label)
@@ -133,13 +135,85 @@ inline int _pbp_multicast_fordward(struct E3Interface *pif,
 	struct pbp_private * priv=(struct pbp_private*)pif->private;
 	struct label_entry * lentry=label_entry_at(priv->label_base,label);
 	struct multicast_next_hops * pmnexthops=mnext_hops_at(lentry->NHLFE);
+	struct next_hop * pnext;
+	struct topological_neighbor *pneighbor;
+	struct E3Interface *psrc_if;
+	int idx_packet;
+	int idx_hop;
+	int consumed;
+	int mbuf_ready;
+	int nr_delivered;
+	int numa_socket=lcore_to_socket_id(pnode->lcore_id);
+	struct rte_mempool * mempool=get_mempool_by_socket_id(numa_socket<0?0:numa_socket);
 	
 	nr_mbufs=nr_mbufs>PBP_NODE_BURST_SIZE?PBP_NODE_BURST_SIZE:nr_mbufs;
 	struct rte_mbuf * mbufs_invt[MAX_HOPS_IN_MULTICAST_GROUP][PBP_NODE_BURST_SIZE];
+	int iptr_invt[MAX_HOPS_IN_MULTICAST_GROUP];/*store the exact number of packet horizontally*/
+	memset(iptr_invt,0x0,sizeof(iptr_invt));
+
+	for(idx_packet=0;idx_packet<nr_mbufs;idx_packet++){
+		consumed=0;
+		for(idx_hop=0;idx_hop<pmnexthops->nr_hops;idx_hop++){
+			pnext=next_hop_at(pmnexthops->next_hops[idx_hop]);
+			if((!pnext)||
+				(!(pneighbor=topological_neighbour_at(pnext->remote_neighbor_index)))||
+				(!(psrc_if=find_e3interface_by_index(pnext->local_e3iface_index))))
+				continue;
+			/*
+			*perform Rrverse Path Check
+			*/
+			if(pmnexthops->next_hops_labels[idx_hop]==lentry->swapped_label)
+				continue;
+			mbuf_ready=0;
+			if((idx_hop==(pmnexthops->nr_hops-1))||
+				(((idx_hop+1)==(pmnexthops->nr_hops-1))&&
+				(pmnexthops->next_hops_labels[idx_hop+1]==lentry->swapped_label))){
+				mbufs_invt[idx_hop][iptr_invt[idx_hop]]=mbufs[idx_packet];
+				consumed=1;
+				mbuf_ready=1;
+			}else{
+				mbufs_invt[idx_hop][iptr_invt[idx_hop]]=rte_pktmbuf_alloc(mempool);
+				if(mbufs_invt[idx_hop][iptr_invt[idx_hop]]){
+					rte_pktmbuf_append(mbufs_invt[idx_hop][iptr_invt[idx_hop]],
+						mbufs[idx_packet]->pkt_len);
+					rte_memcpy(rte_pktmbuf_mtod(mbufs_invt[idx_hop][iptr_invt[idx_hop]],void*),
+						rte_pktmbuf_mtod(mbufs[idx_packet],void*),
+						mbufs[idx_packet]->pkt_len);
+					mbuf_ready=1;
+				}
+			}
+			if(PREDICT_TRUE(mbuf_ready)){
+				struct ether_hdr * eth_hdr=rte_pktmbuf_mtod(mbufs_invt[idx_hop][iptr_invt[idx_hop]],struct ether_hdr*);
+				struct mpls_hdr  * mpls=(struct mpls_hdr *)(eth_hdr+1);
+				set_mpls_label(mpls,pmnexthops->next_hops_labels[idx_hop]);
+				set_mpls_ttl(mpls,mpls_ttl(mpls)-1);
+				rte_memcpy(eth_hdr->d_addr.addr_bytes,
+					pneighbor->mac,
+					6);
+				rte_memcpy(eth_hdr->s_addr.addr_bytes,
+					psrc_if->mac_addrs,
+					6);
+				iptr_invt[idx_hop]++;
+			}
+		}
+		if(PREDICT_FALSE(!consumed))
+			rte_pktmbuf_free(mbufs[idx_packet]);
+	}
 	
-	
-	printf("multicast\n");
-	
+	for(idx_hop=0;idx_hop<pmnexthops->nr_hops;idx_hop++){
+		nr_delivered=0;
+		if(iptr_invt[idx_hop]){
+			pnext=next_hop_at(pmnexthops->next_hops[idx_hop]);
+			psrc_if=find_e3interface_by_index(pnext->local_e3iface_index);
+			nr_delivered=deliver_mbufs_to_e3iface(psrc_if,
+				0,
+				mbufs_invt[idx_hop],
+				iptr_invt[idx_hop]);
+		}
+		for(idx_packet=nr_delivered;idx_packet<iptr_invt[idx_hop];idx_packet++)
+			rte_pktmbuf_free(mbufs_invt[idx_hop][idx_packet]);
+		
+	}
 	return 0;
 }
 inline void _post_pbp_input_packet_process(struct E3Interface * pif,
@@ -191,7 +265,8 @@ inline void _post_pbp_input_packet_process(struct E3Interface * pif,
 		case PBP_PROCESS_INPUT_MULTICAST_FWD:
 			{
 				uint32_t label=LOW_UINT64(fwd_id);
-				nr_delivered=_pbp_multicast_fordward(pif,
+				nr_delivered=_pbp_multicast_fordward_slow_path(pif,
+					pnode,
 					mbufs,
 					nr_mbufs,
 					label);

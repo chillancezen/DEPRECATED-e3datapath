@@ -35,12 +35,13 @@ if __name__=='__main__':
     #multicast hop initialization
     for n in list_multicast_nexthops():
         delete_multicast_nexthops(n.index)
-    register_multicast_nexthops([0,1],[123,234])
+    register_multicast_nexthops([0,1,2],[123,234,345])
+    #register_multicast_nexthops([0],[345])
     for n in list_multicast_nexthops():
         print(n)
     #register label
     register_label_entry(0,925516,0,0x520,0)
-    register_label_entry(0,925516,0,123,0)
+    register_label_entry(0,925516,0,345,0)
     #register_label_entry(0,925516+1,1,0x520,1)
     for l in list_label_entry(0):
         print(l) 
