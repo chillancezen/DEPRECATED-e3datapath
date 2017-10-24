@@ -1,6 +1,6 @@
 #ifndef _PROVIDER_BACKBONE_PORT_H
 #define _PROVIDER_BACKBONE_PORT_H
-#include <label-fib.h>
+#include <spine-label-fib.h>
 
 /*per-port private*/
 

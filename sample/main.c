@@ -18,8 +18,8 @@
 #include <lcore_extension.h>
 #include <e3_init.h>
 #include <e3interface.h>
-#include <label-fib.h>
-#include <label-nhlfe.h>
+#include <spine-label-fib.h>
+#include <spine-label-nhlfe.h>
 int
 main(int argc, char **argv)
 {
@@ -29,7 +29,6 @@ main(int argc, char **argv)
 	ret = rte_eal_init(argc, argv);
 	if (ret < 0)
 		rte_panic("Cannot init EAL\n");
-	printf("lable size:%d\n",sizeof(struct label_entry));
 	init_registered_tasks();
 	//label_fib_module_test();
 	label_nhlfe_module_test();

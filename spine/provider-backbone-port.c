@@ -5,8 +5,8 @@
 #include <e3_init.h>
 #include <e3_log.h>
 #include <rte_ether.h>
-#include <label-fib.h>
-#include <label-nhlfe.h>
+#include <spine-label-fib.h>
+#include <spine-label-nhlfe.h>
 #include <lcore_extension.h>
 #define PBP_NODE_BURST_SIZE 48
 
@@ -214,7 +214,7 @@ inline int _pbp_multicast_fordward_slow_path(struct E3Interface *pif,
 			rte_pktmbuf_free(mbufs_invt[idx_hop][idx_packet]);
 		
 	}
-	return 0;
+	return nr_mbufs;
 }
 inline void _post_pbp_input_packet_process(struct E3Interface * pif,
 								struct node * pnode,
