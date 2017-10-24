@@ -10,7 +10,7 @@ struct label_entry{
 			uint32_t is_valid:1;        /*indicate whether the corresponding ILE is valid*/
 			uint32_t is_unicast:1;      /*if valid, whether the LSP is unicast(multicast)*/
 			uint32_t swapped_label:20;  /*the label to swap*/
-										/*also as uint32_t rpf_check_label:20;
+										/*also as uint32_t RPF_CHECK_LABEL:20;
 										*in multicast forwarding,perform rpf checking to
 										*avoid duplicated replications
 										*/
