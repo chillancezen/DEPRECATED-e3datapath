@@ -20,6 +20,7 @@ SRCS-y := $(wildcard $(E3_SDK)/unit_test/*.c)
 
 CFLAGS += -I$(E3_SDK)/unit_test/include
 CFLAGS += -I$(E3_SDK)/include
+CFLAGS += -I$(E3_SDK)
 CFLAGS += -O3 -I/$(E3_SDK)/e3api/include -include $(E3_SDK)/config/e3_config.h 
 CFLAGS += -I/root/jzheng/userspace-rcu-master/src -L/root/mywork/userspace-rcu/src/.libs
 CFLAGS += -L/lib64

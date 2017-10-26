@@ -33,3 +33,9 @@ clean:
 	find -name "*.o" -exec rm -f {} \;
 	make clean -C e3api_export
 	make clean -C e3api_export/libs
+
+test:
+	make clean -C unit_test
+	make -C unit_test
+	-make test -C unit_test
+

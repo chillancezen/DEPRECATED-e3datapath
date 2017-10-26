@@ -1,6 +1,6 @@
 include mk/pre-setup.mk
-
-INCLUDE =./include
+INCLUDE =./
+INCLUDE +=./include
 INCLUDE +=./spine/include
 INCLUDE +=./e3api/include
 INCLUDE +=./leaf/include
