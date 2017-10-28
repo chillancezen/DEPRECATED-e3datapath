@@ -15,8 +15,9 @@ struct label_entry * allocate_label_entry_base(int numa_socket_id)
 			sizeof(struct label_entry)*NR_LABEL_ENTRY,
 			64,
 			numa_socket_id<0?SOCKET_ID_ANY:numa_socket_id);
-	for(;idx<NR_LABEL_ENTRY;idx++)
-		base[idx].is_valid=0;
+	if(base)
+		for(;idx<NR_LABEL_ENTRY;idx++)
+			base[idx].is_valid=0;
 	return base;
 }
 

@@ -20,11 +20,27 @@ START_TEST(leaf_e_service_general){
 	ck_assert(!!find_e_line_service(MAX_E_LINE_SERVICES-1));
 	ck_assert(!find_e_line_service(MAX_E_LINE_SERVICES));
 
+	/*
+	*environmental presetup
+	*/
+	for(idx=0;idx<MAX_E_LINE_SERVICES;idx++)
+		e_line_base[idx].is_valid=0;
+	for(idx=0;idx<MAX_COMMON_NEIGHBORS;idx++)
+		neighbor_base[idx].is_valid=0;
+	for(idx=0;idx<MAX_COMMON_NEXTHOPS;idx++)
+		nexthop_base[idx].is_valid=0;
+	struct common_neighbor neighbor;
+	struct common_nexthop  nexthop={
+		.common_neighbor_index=0,
+	};
+	ck_assert(register_common_neighbor(&neighbor)==0);
+	ck_assert(register_common_nexthop(&nexthop)==0);
+	
 	struct ether_e_line eline;
 	eline.e3iface=0;
 	eline.vlan_tci=12;
 	eline.label_to_push=0x322;
-	eline.NHLFE=23;
+	eline.NHLFE=0;
 
 	/*
 	*maximum number of services supported
@@ -32,10 +48,10 @@ START_TEST(leaf_e_service_general){
 	for(idx=0;idx<MAX_E_LINE_SERVICES;idx++){
 		ck_assert(register_e_line_service(&eline)>=0);
 		eline.vlan_tci++;
-		eline.NHLFE++;
+		eline.label_to_push++;
 	}
 	eline.vlan_tci++;
-	eline.NHLFE++;
+	eline.label_to_push++;
 	ck_assert(register_e_line_service(&eline)<0);
 	for(idx=0;idx<MAX_E_LINE_SERVICES;idx++){
 		e_line_base[idx].is_valid=0;
@@ -47,7 +63,7 @@ START_TEST(leaf_e_service_general){
 	ck_assert(register_e_line_service(&eline)<0);
 	eline.vlan_tci++;
 	ck_assert(register_e_line_service(&eline)<0);
-	eline.NHLFE++;
+	eline.label_to_push++;
 	ck_assert(register_e_line_service(&eline)>=0);
 	ck_assert(register_e_line_service(&eline)<0);
 
@@ -62,7 +78,16 @@ START_TEST(leaf_e_service_general){
 	ck_assert(delete_e_line_service(1)<0);
 	ck_assert(!dereference_e_line_service(1));
 	ck_assert(!delete_e_line_service(1));
-	
+
+	/*
+	*environmental cleanup
+	*/
+	for(idx=0;idx<MAX_E_LINE_SERVICES;idx++)
+		e_line_base[idx].is_valid=0;
+	for(idx=0;idx<MAX_COMMON_NEIGHBORS;idx++)
+		neighbor_base[idx].is_valid=0;
+	for(idx=0;idx<MAX_COMMON_NEXTHOPS;idx++)
+		nexthop_base[idx].is_valid=0;
 }
 END_TEST
 ADD_TEST(leaf_e_service_general);

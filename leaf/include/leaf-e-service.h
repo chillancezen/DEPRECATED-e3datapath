@@ -1,6 +1,7 @@
 #ifndef _LEAF_E_SERVICE_H
 #define _LEAF_E_SERVICE_H
 #include <stdint.h>
+#include <e3net/include/common-nhlfe.h>
 
 #define MAX_E_LINE_SERVICES 4096
 #define MAX_E_LAN_SERVICES 4096

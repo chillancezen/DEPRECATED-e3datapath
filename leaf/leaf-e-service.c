@@ -40,6 +40,8 @@ int register_e_line_service(struct ether_e_line * eline)
 			break;
 	if(idx>=MAX_E_LINE_SERVICES)
 		return -3;
+	if(reference_common_nexthop(eline->NHLFE))
+		return -4;
 	e_line_base[idx].index=idx;
 	e_line_base[idx].e3iface=eline->e3iface;
 	e_line_base[idx].label_to_push=eline->label_to_push;
@@ -85,6 +87,7 @@ int delete_e_line_service(int index)
 		return -1;
 	if(eline->ref_cnt)/*still being used by other entity*/
 		return -2;
+	dereference_common_nexthop(eline->NHLFE);
 	eline->is_valid=0;
 	return 0;
 }
