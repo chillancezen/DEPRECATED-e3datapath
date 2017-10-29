@@ -3,13 +3,17 @@
 #include <e3_init.h>
 #include <e3_log.h>
 struct ether_e_line * e_line_base;
-
+struct ether_e_lan  * e_lan_base;
 void init_e_service(void)
 {
 	e_line_base=rte_zmalloc(NULL,
 			sizeof(struct ether_e_line)*MAX_E_LINE_SERVICES,
 			64);
 	E3_ASSERT(e_line_base);
+	e_lan_base=rte_zmalloc(NULL,
+			sizeof(struct ether_e_lan)*MAX_E_LAN_SERVICES,
+			64);
+	E3_ASSERT(e_lan_base);
 }
 
 E3_init(init_e_service,TASK_PRIORITY_RESOURCE_INIT);

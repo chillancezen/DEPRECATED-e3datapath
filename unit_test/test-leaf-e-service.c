@@ -4,7 +4,7 @@
 
 DECLARE_TEST_CASE(tc_leaf_e_service);
 
-START_TEST(leaf_e_service_general){
+START_TEST(leaf_e_line_service_general){
 	int idx=0;
 	int last_offset=0,last_size=0;
 	printf("dump definition of ether_e_line:\n");
@@ -90,4 +90,10 @@ START_TEST(leaf_e_service_general){
 		nexthop_base[idx].is_valid=0;
 }
 END_TEST
-ADD_TEST(leaf_e_service_general);
+ADD_TEST(leaf_e_line_service_general);
+
+START_TEST(leaf_e_lan_service_general){
+	printf("sizeof struct ether_e_lan:%d\n",sizeof(struct ether_e_lan));
+}
+END_TEST
+ADD_TEST(leaf_e_lan_service_general);

@@ -291,13 +291,9 @@ static inline int fast_index_2_1_6_item_safe(struct findex_2_1_6_base * base,str
 	return ret;
 }
 
-struct findex_2_1_6_base *allocate_findex_2_1_6_base(void);
+struct findex_2_1_6_base  * allocate_findex_2_1_6_base(void);
 struct findex_2_1_6_entry * allocate_findex_2_1_6_entry(void);
-int add_index_2_1_6_item_unsafe(struct findex_2_1_6_base * base,struct findex_2_1_6_key * key);
+int  add_index_2_1_6_item_unsafe(struct findex_2_1_6_base * base,struct findex_2_1_6_key * key);
 void dump_findex_2_1_6_base(struct findex_2_1_6_base * base);
 void delete_index_2_1_6_item_unsafe(struct findex_2_1_6_base * base,struct findex_2_1_6_key * key);
-
-
-
-
 #endif
