@@ -449,5 +449,6 @@ __attribute__((always_inline))
 	}
 	return ret;
 }
+void cleanup_findex_2_4_entries(struct findex_2_4_base * base);
 
 #endif

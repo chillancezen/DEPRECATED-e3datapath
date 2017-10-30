@@ -474,3 +474,15 @@ void dump_findex_2_4_base(struct findex_2_4_base * base)
 	}
 }
 
+void cleanup_findex_2_4_entries(struct findex_2_4_base * base)
+{
+	int idx=0;
+	struct findex_2_4_entry * pentry;
+	for(idx=0;idx<(1<<16);idx++){
+		while(base[idx].next){
+			pentry=base[idx].next;
+			base[idx].next=pentry->next_entry;
+			rte_free(pentry);
+		}
+	}
+}

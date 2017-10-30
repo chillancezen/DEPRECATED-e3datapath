@@ -93,7 +93,10 @@ END_TEST
 ADD_TEST(leaf_e_line_service_general);
 
 START_TEST(leaf_e_lan_service_general){
-	printf("sizeof struct ether_e_lan:%d\n",sizeof(struct ether_e_lan));
+	struct ether_e_lan * elan;
+	ck_assert(register_e_lan_service()==0);
+	ck_assert(!!(elan=find_e_lan_service(0)));
+	ck_assert(elan->is_valid);
 }
 END_TEST
 ADD_TEST(leaf_e_lan_service_general);
