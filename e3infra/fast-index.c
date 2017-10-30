@@ -312,3 +312,165 @@ void delete_index_2_1_6_item_unsafe(struct findex_2_1_6_base * base,struct finde
 		e3_bitmap_foreach_set_bit_end();
 	}
 }
+
+struct findex_2_4_base *allocate_findex_2_4_base(void)
+{
+	struct findex_2_4_base* base=
+		rte_zmalloc(NULL,sizeof(struct findex_2_4_base)*(1<<16),64);
+	return base;
+}
+
+struct findex_2_4_entry * allocate_findex_2_4_entry(void)
+{
+	struct findex_2_4_entry * entry=
+		rte_zmalloc(NULL,sizeof(struct findex_2_4_entry),64);
+	if(entry)
+		{e3_bitmap_init(entry->tag_avail);}
+	else
+		{E3_WARN("out of memory");}
+	return entry;
+}
+
+int add_index_2_4_item_unsafe(struct findex_2_4_base * base,struct findex_2_4_key * key)
+{
+    struct findex_2_4_entry * pentry;
+    struct findex_2_4_entry * ptmp_entry;
+    
+    int local_index;
+    int tag_index;
+	int tag_inner_index;
+    for(pentry=base[key->key_index].next;pentry;pentry=pentry->next_entry){
+        e3_bitmap_foreach_set_bit_start(pentry->tag_avail,local_index){
+            #if defined(__AVX2__)
+            tag_index=local_index/16;
+			tag_inner_index=local_index-16*tag_index;
+            #elif defined(__SSE4_1__)
+            tag_index=local_index/8;
+			tag_inner_index=local_index-8*tag_index;
+            #endif
+            if((pentry->tags[tag_index].tag1[tag_inner_index]==key->tag1)&&
+                (pentry->tags[tag_index].tag2[tag_inner_index]==key->tag2)){
+                    pentry->values[local_index]=key->value_as_u64;
+                    _mm_sfence();
+                    return 0;
+            }
+        }
+        e3_bitmap_foreach_set_bit_end();
+    }
+    for(pentry=base[key->key_index].next;pentry;pentry=pentry->next_entry){
+        local_index=e3_bitmap_first_zero_bit_to_index(pentry->tag_avail);
+        if((local_index>=0)&&
+            (local_index<FINDEX_2_4_TAGS_LENGTH)){
+                #if defined(__AVX2__)
+                tag_index=local_index/16;
+    			tag_inner_index=local_index-16*tag_index;
+                #elif defined(__SSE4_1__)
+                tag_index=local_index/8;
+    			tag_inner_index=local_index-8*tag_index;
+                #endif
+                pentry->tags[tag_index].tag1[tag_inner_index]=key->tag1;
+                pentry->tags[tag_index].tag2[tag_inner_index]=key->tag2;
+                pentry->values[local_index]=key->value_as_u64;
+                e3_bitmap_set_bit(pentry->tag_avail,local_index);
+                _mm_sfence();
+                return 0;
+        }
+    }
+    ptmp_entry=allocate_findex_2_4_entry();
+    if(!ptmp_entry)
+        return -1;
+    ptmp_entry->tags[0].tag1[0]=key->tag1;
+    ptmp_entry->tags[0].tag2[0]=key->tag2;
+    ptmp_entry->values[0]=key->value_as_u64;
+    e3_bitmap_set_bit(ptmp_entry->tag_avail,0);
+    __sync_synchronize();
+    ptmp_entry->next_entry=NULL;
+    if(!base[key->key_index].next){
+		rcu_assign_pointer(base[key->key_index].next,ptmp_entry);
+		
+	}else{
+		for(pentry=base[key->key_index].next;pentry->next_entry;pentry=pentry->next_entry);
+		rcu_assign_pointer(pentry->next_entry,ptmp_entry);
+	}
+	_mm_sfence();
+	return 0;    
+}
+static void findex_2_4_entry_rcu_callback(struct rcu_head * rcu)
+{
+	struct findex_2_4_entry * entry=container_of(rcu,struct findex_2_4_entry,rcu);
+	rte_free(entry);
+}
+
+void delete_index_2_4_item_unsafe(struct findex_2_4_base * base,struct findex_2_4_key * key)
+{
+    struct findex_2_4_entry * pentry;
+    struct findex_2_4_entry * ptmp;
+    int local_index;
+    int tag_index;
+	int tag_inner_index;
+    for(pentry=base[key->key_index].next;pentry;pentry=pentry->next_entry){
+        e3_bitmap_foreach_set_bit_start(pentry->tag_avail,local_index){
+            #if defined(__AVX2__)
+			tag_index=local_index/16;
+			tag_inner_index=local_index-16*tag_index;
+			#elif defined(__SSE4_1__)
+			tag_index=local_index/8;
+			tag_inner_index=local_index-8*tag_index;
+			#endif
+            if((pentry->tags[tag_index].tag1[tag_inner_index]==key->tag1)&&
+                (pentry->tags[tag_index].tag2[tag_inner_index]==key->tag2)){
+                e3_bitmap_clear_bit(pentry->tag_avail,local_index);
+                pentry->tags[tag_index].tag1[tag_inner_index]=0;
+                pentry->tags[tag_index].tag2[tag_inner_index]=0;
+                _mm_sfence();
+                if(!pentry->tag_avail){
+                    if(base[key->key_index].next==pentry){
+                        rcu_assign_pointer(base[key->key_index].next,pentry->next_entry);
+                    }else{
+                        for(ptmp=base[key->key_index].next;
+                            ptmp&&(ptmp->next_entry!=pentry);
+                            ptmp=ptmp->next_entry);
+                        E3_ASSERT(ptmp);
+                        rcu_assign_pointer(ptmp->next_entry,pentry->next_entry);
+                    }
+                    call_rcu(&pentry->rcu,findex_2_4_entry_rcu_callback);
+                }
+                return;
+            }
+        }
+        e3_bitmap_foreach_set_bit_end();
+    }
+}
+void dump_findex_2_4_base(struct findex_2_4_base * base)
+{
+	int idx=0;
+	int local_index;
+	int tag_index;
+	int tag_inner_index;
+	struct findex_2_4_entry * pentry;
+	for(idx=0;idx<(1<<16);idx++){
+		if(!base[idx].next)
+			continue;
+		printf("%d:",idx);
+		for(pentry=base[idx].next;pentry;pentry=pentry->next_entry){
+            printf("entry:%p ",pentry);
+			e3_bitmap_foreach_set_bit_start(pentry->tag_avail,local_index){
+				#if defined(__AVX2__)
+				tag_index=local_index/16;
+				tag_inner_index=local_index-16*tag_index;
+				#elif defined(__SSE4_1__)
+				tag_index=local_index/8;
+				tag_inner_index=local_index-8*tag_index;
+				#endif
+				
+				printf("(%d,  %4x.%4x) ",local_index,
+					pentry->tags[tag_index].tag1[tag_inner_index],
+					pentry->tags[tag_index].tag2[tag_inner_index]);
+			}
+			e3_bitmap_foreach_set_bit_end();
+            puts("");
+		}
+		printf("\n");
+	}
+}
+
