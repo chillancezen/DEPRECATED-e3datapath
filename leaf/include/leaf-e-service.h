@@ -67,4 +67,35 @@ extern struct ether_e_lan  * e_lan_base;
 int register_e_lan_service(void);
 int reference_e_lan_service(int index);
 int dereference_e_lan_service(int index);
+int delete_e_lan_service(int index);
+int register_e_lan_port(int elan_index,uint16_t e3iface,uint16_t vlan_tci);
+int find_e_lan_port(int elan_index,uint16_t e3iface,uint16_t vlan_tci);
+int delete_e_lan_port(int elan_index,int port_index);
+
+int register_e_lan_nhlfe(int elan_index,uint16_t nhlfe,uint32_t label_to_push);
+int find_e_lan_nhlfe(int elan_index,uint16_t nhlfe,uint32_t label_to_push);
+int delete_e_lan_nhlfe(int elan_index,int nhlfe_index);
+
+struct e_lan_fwd_entry{
+	union{
+		struct{
+			uint16_t is_port_entry;
+			union{
+				uint16_t field_u16;
+				uint16_t e3iface;
+				uint16_t NHLFE;
+			};
+			union{
+				uint32_t field_u32;
+				uint32_t vlan_tci;
+				uint32_t label_to_push;
+			};
+		};
+		uint64_t entry_as_u64;
+	};
+}__attribute__((packed));
+
+#define mac_to_findex_2_4_key(mac,key) {\
+	(key)->key_index=
+}
 #endif
