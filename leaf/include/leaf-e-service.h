@@ -96,6 +96,20 @@ struct e_lan_fwd_entry{
 }__attribute__((packed));
 
 #define mac_to_findex_2_4_key(mac,key) {\
-	(key)->key_index=
+	(key)->key_index=MAKE_UINT16((mac)[3],(mac)[4]); \
+	(key)->tag1=MAKE_UINT16((mac)[0],(mac)[1]); \
+	(key)->tag2=MAKE_UINT16((mac)[2],(mac)[5]); \
 }
+
+#define findex_2_4_key_to_mac(key,mac) {\
+    (mac)[0]=HIGH_UINT16((key)->tag1); \
+    (mac)[1]=LOW_UINT16((key)->tag1); \
+    (mac)[2]=HIGH_UINT16((key)->tag2); \
+    (mac)[3]=HIGH_UINT16((key)->key_index); \
+    (mac)[4]=LOW_UINT16((key)->key_index); \
+    (mac)[5]=LOW_UINT16((key)->tag2); \
+}
+int register_e_lan_fwd_entry(int elan_index,uint8_t * mac,struct e_lan_fwd_entry * fwd_entry);
+int delete_e_lan_fwd_entry(int elan_index,uint8_t *mac);
+
 #endif

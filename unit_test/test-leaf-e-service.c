@@ -93,6 +93,23 @@ END_TEST
 ADD_TEST(leaf_e_line_service_general);
 
 START_TEST(leaf_e_lan_service_general){
+    struct findex_2_4_key key;
+    uint8_t mac[6],mac1[6];
+    mac[0]=0x3f;
+    mac[1]=0xfe;
+    mac[2]=0x10;
+    mac[3]=0x1;
+    mac[4]=0x2;
+    mac[5]=0x3e;
+    mac_to_findex_2_4_key(mac, &key);
+    findex_2_4_key_to_mac(&key, mac1);
+    ck_assert(mac[0]==mac1[0]);
+    ck_assert(mac[1]==mac1[1]);
+    ck_assert(mac[2]==mac1[2]);
+    ck_assert(mac[3]==mac1[3]);
+    ck_assert(mac[4]==mac1[4]);
+    ck_assert(mac[5]==mac1[5]);
+    
 	struct ether_e_lan * elan;
 	ck_assert(register_e_lan_service()==0);
 	ck_assert(!!(elan=find_e_lan_service(0)));
@@ -100,3 +117,4 @@ START_TEST(leaf_e_lan_service_general){
 }
 END_TEST
 ADD_TEST(leaf_e_lan_service_general);
+

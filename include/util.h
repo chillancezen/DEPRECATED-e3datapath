@@ -39,6 +39,10 @@
 #define LOW_UINT32(v) ((uint16_t)((v)&0xffff))
 #define HIGH_UINT32(v) ((uint16_t)(((v)>>16)&0xffff))
 
+#define MAKE_UINT16(hi,lo) ((((uint16_t)(hi))<<8)|(((uint16_t)(lo))&0xff))
+#define LOW_UINT16(v) ((uint8_t)((v)&0xff))
+#define HIGH_UINT16(v) ((uint8_t)(((v)>>8)&0xff))
+
 __attribute__((always_inline)) 
 	static inline int is_ether_address_equal(void* a,void* b)
 {
@@ -87,5 +91,15 @@ __attribute__((always_inline))
 		last_offset=_offset;\
 		last_size=_size;\
 }
+
+enum e3error{
+    E3_OK=0,
+    E3_ERR_GENERIC=1,
+    E3_ERR_ILLEGAL,
+    E3_ERR_NOT_FOUND,
+    E3_ERR_IN_USE,
+    E3_ERR_OUT_OF_MEM,/*out of memory*/
+    E3_ERR_OUT_OF_RES,/*out of other resource*/
+};
 
 #endif
