@@ -221,7 +221,7 @@ int find_e_lan_port(int elan_index,uint16_t e3iface,uint16_t vlan_tci)
 
 int delete_e_lan_port(int elan_index,int port_index)
 {
-    #if 0
+    int is_skipping=0;
     int idx=0;
     int iptr=0;
     int tag_index;
@@ -231,7 +231,7 @@ int delete_e_lan_port(int elan_index,int port_index)
                             * pnext;
     struct e_lan_fwd_entry  fwd_entry;
     struct findex_2_4_key   key;
-    #endif 
+    e3_bitmap tmp_bitmap;
     
 	struct ether_e_lan *elan=find_e_lan_service(elan_index);
 	if((!elan)||(!elan->is_valid))
@@ -241,18 +241,18 @@ int delete_e_lan_port(int elan_index,int port_index)
 		(!elan->ports[port_index].is_valid))
 		return -E3_ERR_ILLEGAL;
 	/*
-	*todo:delete mac entries 
+	*delete mac entries 
 	*which is relelated to this port
 	*/
-	#if 0
     for(idx=0;idx<(1<<16);idx++){
         for(pentry=elan->fib_base[idx].next;pentry;pentry=pnext){
-            pnext=pentry->next_entry;/*if this entry is */
-            for(iptr=0;iptr<FINDEX_2_4_TAGS_LENGTH;iptr++){
+            pnext=pentry->next_entry;
+            for(iptr=0,is_skipping=0;iptr<FINDEX_2_4_TAGS_LENGTH;iptr++){
                 if(!e3_bitmap_is_bit_set(pentry->tag_avail,iptr))
                     continue;
                 fwd_entry.entry_as_u64=pentry->values[iptr];
-                if(!fwd_entry.is_port_entry)
+                if((!fwd_entry.is_port_entry)||
+                   (fwd_entry.e3iface!=elan->ports[port_index].iface))
                     continue;
                 tag_length=FINDEX_2_4_TAGS_LENGTH/MAX_2_4_TAGS_NR_OF_ENTRY;
                 tag_index=iptr/tag_length;
@@ -260,12 +260,16 @@ int delete_e_lan_port(int elan_index,int port_index)
                 key.key_index=idx;
                 key.tag1=pentry->tags[tag_index].tag1[tag_inner_index];
                 key.tag2=pentry->tags[tag_index].tag2[tag_inner_index];
-                
+
+                tmp_bitmap=pentry->tag_avail;
+                e3_bitmap_clear_bit(tmp_bitmap,iptr);
+                is_skipping=!tmp_bitmap;
+                delete_index_2_4_item_unsafe(elan->fib_base,&key);
+                if(is_skipping)
+                    break;
             }
         }
-    }
-    #endif
-    
+    }    
 	elan->ports[port_index].is_valid=0;
 	elan->nr_ports--;
 	E3_ASSERT(elan->nr_ports>=0);
@@ -315,6 +319,18 @@ int find_e_lan_nhlfe(int elan_index,uint16_t nhlfe,uint32_t label_to_push)
 }
 int delete_e_lan_nhlfe(int elan_index,int nhlfe_index)
 {
+    int is_skipping=0;
+    int idx=0;
+    int iptr=0;
+    int tag_index;
+    int tag_inner_index;
+    int tag_length;
+    struct findex_2_4_entry * pentry,
+                            * pnext;
+    struct e_lan_fwd_entry  fwd_entry;
+    struct findex_2_4_key   key;
+    e3_bitmap tmp_bitmap;
+    
 	struct ether_e_lan *elan=find_e_lan_service(elan_index);
 	if((!elan)||(!elan->is_valid))
 		return -E3_ERR_ILLEGAL;
@@ -324,9 +340,36 @@ int delete_e_lan_nhlfe(int elan_index,int nhlfe_index)
 		(!elan->nhlfes[nhlfe_index].is_valid))
 		return -E3_ERR_ILLEGAL;
 	/*
-	*todo:delete mac entries 
+	*delete mac entries 
 	*which is relelated to this nhlfe entry
 	*/
+	 for(idx=0;idx<(1<<16);idx++){
+        for(pentry=elan->fib_base[idx].next;pentry;pentry=pnext){
+            pnext=pentry->next_entry;
+            for(iptr=0,is_skipping=0;iptr<FINDEX_2_4_TAGS_LENGTH;iptr++){
+                if(!e3_bitmap_is_bit_set(pentry->tag_avail,iptr))
+                    continue;
+                fwd_entry.entry_as_u64=pentry->values[iptr];
+                if((fwd_entry.is_port_entry)||
+                   (fwd_entry.NHLFE!=elan->nhlfes[nhlfe_index].NHLFE))
+                    continue;
+                tag_length=FINDEX_2_4_TAGS_LENGTH/MAX_2_4_TAGS_NR_OF_ENTRY;
+                tag_index=iptr/tag_length;
+                tag_inner_index=iptr-tag_index*tag_length;
+                key.key_index=idx;
+                key.tag1=pentry->tags[tag_index].tag1[tag_inner_index];
+                key.tag2=pentry->tags[tag_index].tag2[tag_inner_index];
+
+                tmp_bitmap=pentry->tag_avail;
+                e3_bitmap_clear_bit(tmp_bitmap,iptr);
+                is_skipping=!tmp_bitmap;
+                delete_index_2_4_item_unsafe(elan->fib_base,&key);
+                if(is_skipping)
+                    break;
+            }
+        }
+    }    
+     
 	dereference_common_nexthop(elan->nhlfes[nhlfe_index].NHLFE);
 	elan->nhlfes[nhlfe_index].is_valid=0;
 	elan->nr_nhlfes--;
