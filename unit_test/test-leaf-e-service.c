@@ -173,12 +173,33 @@ START_TEST(leaf_e_lan_service_general){
     for(idx=2;idx<MAX_NHLFE_IN_E_LAN_SERVICE;idx++){
         ck_assert(register_e_lan_nhlfe(0,0,idx)==idx);
     }
+    for(idx=2;idx<MAX_NHLFE_IN_E_LAN_SERVICE;idx++){
+        ck_assert(find_e_lan_nhlfe(0,0,idx)==idx);
+    }
     ck_assert(register_e_lan_nhlfe(0,0,idx)<0);
     ck_assert(elan->nr_nhlfes==MAX_NHLFE_IN_E_LAN_SERVICE);
     for(idx=0;idx<MAX_NHLFE_IN_E_LAN_SERVICE;idx++){
         ck_assert(!delete_e_lan_nhlfe(0,idx));
     }
     ck_assert(!elan->nr_nhlfes);
+
+    /*
+    * fwd entry of e-lan service
+    */
+    uint8_t mac2[6];
+    mac[0]=0x12;
+    mac[1]=0x35;
+    mac[2]=0xfe;
+    mac[3]=0xf3;
+    mac[4]=0x00;
+    mac[5]=0x36;
+    
+    struct e_lan_fwd_entry fwd_entry;
+    fwd_entry.is_port_entry=0;
+    fwd_entry.e3iface=2;
+    fwd_entry.vlan_tci=0x123;
+    ck_assert(register_e_lan_fwd_entry(0, mac2,&fwd_entry)<0);
+    ck_assert(register_e_lan_port(0,2,0x123));
     
 }
 END_TEST
