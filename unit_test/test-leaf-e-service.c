@@ -184,23 +184,184 @@ START_TEST(leaf_e_lan_service_general){
     ck_assert(!elan->nr_nhlfes);
 
     /*
-    * fwd entry of e-lan service
+    *port fwd entry of e-lan service
     */
     uint8_t mac2[6];
-    mac[0]=0x12;
-    mac[1]=0x35;
-    mac[2]=0xfe;
-    mac[3]=0xf3;
-    mac[4]=0x00;
-    mac[5]=0x36;
-    
+    mac2[0]=0x12;
+    mac2[1]=0x35;
+    mac2[2]=0xfe;
+    mac2[3]=0xf3;
+    mac2[4]=0x00;
+    mac2[5]=0x36;
+    struct findex_2_4_key key1;
     struct e_lan_fwd_entry fwd_entry;
-    fwd_entry.is_port_entry=0;
+    fwd_entry.is_port_entry=1;
     fwd_entry.e3iface=2;
     fwd_entry.vlan_tci=0x123;
+	ck_assert(register_e_lan_fwd_entry(1, mac2,&fwd_entry)<0);
     ck_assert(register_e_lan_fwd_entry(0, mac2,&fwd_entry)<0);
-    ck_assert(register_e_lan_port(0,2,0x123));
+    ck_assert(register_e_lan_port(0,2,0x124)==0);
+	
+	ck_assert(register_e_lan_fwd_entry(0, mac2,&fwd_entry)<0);
+	fwd_entry.vlan_tci=0x124;
+	mac_to_findex_2_4_key(mac2,&key1);
+	ck_assert(!elan->fib_base[key1.key_index].next);
+	/*12:35:fe:f3:00:36-->port(2,0x123)*/
+    ck_assert(!register_e_lan_fwd_entry(0, mac2,&fwd_entry));
+	ck_assert(!!elan->fib_base[key1.key_index].next);
+	
+	mac_to_findex_2_4_key(mac2,&key1);
+	ck_assert(!fast_index_2_4_item_safe(elan->fib_base,&key1));
+	ck_assert(key1.value_as_u64==fwd_entry.entry_as_u64);
+	
+	mac2[5]=0x37;
+	mac_to_findex_2_4_key(mac2,&key1);
+	ck_assert(fast_index_2_4_item_safe(elan->fib_base,&key1));
+
+	mac2[0]=0x12;
+    mac2[1]=0x36;
+    mac2[2]=0xfe;
+    mac2[3]=0xf3;
+    mac2[4]=0x00;
+    mac2[5]=0x36;
+	fwd_entry.is_port_entry=1;
+    fwd_entry.e3iface=2;
+    fwd_entry.vlan_tci=0x124;
+	ck_assert(!register_e_lan_fwd_entry(0, mac2,&fwd_entry));
+
+    mac2[1]=0x35;
+	mac_to_findex_2_4_key(mac2,&key1);
+	ck_assert(!delete_e_lan_fwd_entry(0,mac2));
+	ck_assert(fast_index_2_4_item_safe(elan->fib_base,&key1));
+	ck_assert(!!elan->fib_base[key1.key_index].next);
+	mac2[1]=0x36;
+	mac_to_findex_2_4_key(mac2,&key1);
+	ck_assert(!delete_e_lan_fwd_entry(0,mac2));
+	ck_assert(fast_index_2_4_item_safe(elan->fib_base,&key1));
+	ck_assert(!elan->fib_base[key1.key_index].next);
     
+    mac2[0]=0x12;
+    mac2[1]=0x36;
+    mac2[2]=0xfe;
+    mac2[3]=0xf3;
+    mac2[4]=0x00;
+    mac2[5]=0x36;
+    fwd_entry.is_port_entry=1;
+    fwd_entry.e3iface=2;
+    fwd_entry.vlan_tci=0x124;
+    mac_to_findex_2_4_key(mac2,&key1);
+    for(idx=0;idx<FINDEX_2_1_6_TAGS_LENGTH;idx++){
+        mac2[0]=idx;
+        ck_assert(!register_e_lan_fwd_entry(0,mac2,&fwd_entry));
+    }
+    ck_assert(!!elan->fib_base[key1.key_index].next);
+    ck_assert(!elan->fib_base[key1.key_index].next->next_entry);
+    for(idx=FINDEX_2_1_6_TAGS_LENGTH;idx<FINDEX_2_1_6_TAGS_LENGTH*2;idx++){
+        mac2[0]=idx;
+        ck_assert(!register_e_lan_fwd_entry(0,mac2,&fwd_entry));
+    }
+    ck_assert(!!elan->fib_base[key1.key_index].next->next_entry);
+    ck_assert(!elan->fib_base[key1.key_index].next->next_entry->next_entry);
+
+    for(idx=FINDEX_2_1_6_TAGS_LENGTH;idx<FINDEX_2_1_6_TAGS_LENGTH*2;idx++){
+        mac2[0]=idx;
+        ck_assert(!delete_e_lan_fwd_entry(0,mac2));
+    }
+    ck_assert(!elan->fib_base[key1.key_index].next->next_entry);
+    for(idx=0;idx<FINDEX_2_1_6_TAGS_LENGTH;idx++){
+        mac2[0]=idx;
+        ck_assert(!delete_e_lan_fwd_entry(0,mac2));
+    }
+    ck_assert(!elan->fib_base[key1.key_index].next);
+
+    /*
+    *nhlfe fwd entry of e-lan service
+    */
+    mac2[0]=0x12;
+    mac2[1]=0x36;
+    mac2[2]=0xfe;
+    mac2[3]=0xf3;
+    mac2[4]=0x00;
+    mac2[5]=0x36;
+    fwd_entry.is_port_entry=0;
+    fwd_entry.NHLFE=0;/*in this test case, only 0th NHLFE is valid*/
+    fwd_entry.label_to_push=0x234;
+	mac_to_findex_2_4_key(mac2,&key1);
+    ck_assert(register_e_lan_fwd_entry(0,mac2,&fwd_entry));
+    ck_assert(register_e_lan_nhlfe(0,0,0x234)==0);
+	ck_assert(!register_e_lan_fwd_entry(0,mac2,&fwd_entry));
+
+	
+	ck_assert(!!elan->fib_base[key1.key_index].next);
+	ck_assert(!fast_index_2_4_item_safe(elan->fib_base,&key1));
+	ck_assert(fwd_entry.entry_as_u64==key1.value_as_u64);
+
+	ck_assert(!delete_e_lan_fwd_entry(0,mac2));
+	ck_assert(fast_index_2_4_item_safe(elan->fib_base,&key1));
+	ck_assert(!elan->fib_base[key1.key_index].next);
+
+	for(idx=0;idx<FINDEX_2_1_6_TAGS_LENGTH;idx++){
+        mac2[0]=idx;
+        ck_assert(!register_e_lan_fwd_entry(0,mac2,&fwd_entry));
+    }
+	ck_assert(!elan->fib_base[key1.key_index].next->next_entry);
+
+	for(idx=FINDEX_2_1_6_TAGS_LENGTH;idx<FINDEX_2_1_6_TAGS_LENGTH*2;idx++){
+        mac2[0]=idx;
+        ck_assert(!register_e_lan_fwd_entry(0,mac2,&fwd_entry));
+    }
+    ck_assert(!!elan->fib_base[key1.key_index].next->next_entry);
+    ck_assert(!elan->fib_base[key1.key_index].next->next_entry->next_entry);
+
+	for(idx=FINDEX_2_1_6_TAGS_LENGTH;idx<FINDEX_2_1_6_TAGS_LENGTH*2;idx++){
+        mac2[0]=idx;
+        ck_assert(!delete_e_lan_fwd_entry(0,mac2));
+    }
+    ck_assert(!elan->fib_base[key1.key_index].next->next_entry);
+    for(idx=0;idx<FINDEX_2_1_6_TAGS_LENGTH;idx++){
+        mac2[0]=idx;
+        ck_assert(!delete_e_lan_fwd_entry(0,mac2));
+    }
+    ck_assert(!elan->fib_base[key1.key_index].next);
+	ck_assert(!delete_e_lan_port(0,0));
+	ck_assert(!delete_e_lan_nhlfe(0,0));
+	ck_assert(!elan->nr_ports);
+	ck_assert(!elan->nr_nhlfes);
+	
+	/*
+	*elan-port & elan-nhlfe deletion test
+	*/
+	mac2[0]=0x12;
+    mac2[1]=0x36;
+    mac2[2]=0xfe;
+    mac2[3]=0xf3;
+    mac2[4]=0x00;
+    mac2[5]=0x36;
+	fwd_entry.is_port_entry=1;
+    fwd_entry.e3iface=1;
+    fwd_entry.vlan_tci=0x123;
+	ck_assert(register_e_lan_port(0,1,0x123)>=0);
+	ck_assert(elan->nr_ports==1);
+	ck_assert(!register_e_lan_fwd_entry(0,mac2,&fwd_entry));
+	mac_to_findex_2_4_key(mac2,&key1);
+	ck_assert(!fast_index_2_4_item_safe(elan->fib_base,&key1));
+	ck_assert(!delete_e_lan_port(0,0));
+	ck_assert(elan->nr_ports==0);
+	ck_assert(fast_index_2_4_item_safe(elan->fib_base,&key1));
+
+	fwd_entry.is_port_entry=0;
+    fwd_entry.e3iface=0;
+    fwd_entry.vlan_tci=0x234;
+	ck_assert(register_e_lan_nhlfe(0,0,0x234)>=0);
+	ck_assert(elan->nr_nhlfes==1);
+	ck_assert(!register_e_lan_fwd_entry(0,mac2,&fwd_entry));
+	mac_to_findex_2_4_key(mac2,&key1);
+	ck_assert(!fast_index_2_4_item_safe(elan->fib_base,&key1));
+	ck_assert(!delete_e_lan_nhlfe(0,0));
+	ck_assert(elan->nr_nhlfes==0);
+	ck_assert(fast_index_2_4_item_safe(elan->fib_base,&key1));
+
+	ck_assert(!delete_e_lan_service(0));
 }
 END_TEST
 ADD_TEST(leaf_e_lan_service_general);

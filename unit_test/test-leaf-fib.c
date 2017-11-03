@@ -7,13 +7,17 @@ DECLARE_TEST_CASE(tc_leaf_fib);
 START_TEST(leaf_fib_general){
 	int idx=0;
 	struct leaf_label_entry * base=allocate_leaf_label_base(-1);
+	struct leaf_label_entry * base1=allocate_leaf_label_base(-1);
 	ck_assert_msg(!!base,"OUT OF MEMORY,please reserve enough memory for test leaf fib");
+	ck_assert_msg(!!base1,"OUT OF MEMORY,please reserve enough memory for test leaf fib");
 	ck_assert(!!leaf_label_entry_at(base,0));
 	ck_assert(!!leaf_label_entry_at(base,NR_LEAF_LABEL_ENTRY-1));
 	ck_assert(!leaf_label_entry_at(base,NR_LEAF_LABEL_ENTRY));
 	/*environmrntal presetup*/
 	for(idx=0;idx<MAX_E_LINE_SERVICES;idx++)
 		e_line_base[idx].is_valid=0;
+	for(idx=0;idx<MAX_E_LAN_SERVICES;idx++)
+		e_lan_base[idx].is_valid=0;
 	for(idx=0;idx<MAX_COMMON_NEIGHBORS;idx++)
 		neighbor_base[idx].is_valid=0;
 	for(idx=0;idx<MAX_COMMON_NEXTHOPS;idx++)
@@ -25,6 +29,9 @@ START_TEST(leaf_fib_general){
 	ck_assert(register_common_neighbor(&neighbor)==0);
 	ck_assert(register_common_nexthop(&nexthop)==0);
 	
+	/*
+	*e-line-service fib test
+	*/
 	struct ether_e_line eline;
 	eline.e3iface=0;
 	eline.vlan_tci=12;
@@ -70,10 +77,61 @@ START_TEST(leaf_fib_general){
 	reset_leaf_label_entry(base,NR_LEAF_LABEL_ENTRY-1);
 	ck_assert(find_e_line_service(0)->ref_cnt==0);
 	ck_assert(find_e_line_service(1)->ref_cnt==0);
+
+	entry.e3_service=e_line_service;
+	entry.service_index=0;
+
+	ck_assert(!set_leaf_label_entry(base,0,&entry));
+	ck_assert(!set_leaf_label_entry(base1,NR_LEAF_LABEL_ENTRY-1,&entry));
+	ck_assert(find_e_line_service(0)->ref_cnt==2);
+	reset_leaf_label_entry(base,0);
+	ck_assert(find_e_line_service(0)->ref_cnt==1);
+	reset_leaf_label_entry(base1,NR_LEAF_LABEL_ENTRY-1);
+	ck_assert(find_e_line_service(0)->ref_cnt==0);
+	/*
+	*e-lan-service test
+	*/
+	ck_assert(register_e_lan_service()==0);
+	ck_assert(register_e_lan_service()==1);
+
+	entry.e3_service=e_lan_service;
+	entry.service_index=0;
+	ck_assert(set_leaf_label_entry(base,NR_LEAF_LABEL_ENTRY,&entry));
+	entry.service_index=2;
+	ck_assert(set_leaf_label_entry(base,0,&entry));
+	entry.service_index=0;
+	ck_assert(!set_leaf_label_entry(base,0,&entry));
+	ck_assert(find_e_lan_service(0)->ref_cnt==1);
+	ck_assert(!set_leaf_label_entry(base,NR_LEAF_LABEL_ENTRY-1,&entry));
+	ck_assert(find_e_lan_service(0)->ref_cnt==1);
 	
-	/*environmrntal presetup*/
+	entry.service_index=1;
+	ck_assert(!set_leaf_label_entry(base,0,&entry));
+	ck_assert(find_e_lan_service(0)->ref_cnt==1);
+	ck_assert(find_e_lan_service(1)->ref_cnt==1);
+
+	reset_leaf_label_entry(base,NR_LEAF_LABEL_ENTRY-1);
+	ck_assert(find_e_lan_service(0)->ref_cnt==0);
+	ck_assert(find_e_lan_service(1)->ref_cnt==1);
+	reset_leaf_label_entry(base,0);
+	ck_assert(find_e_lan_service(0)->ref_cnt==0);
+	ck_assert(find_e_lan_service(1)->ref_cnt==0);
+
+	entry.e3_service=e_lan_service;
+	entry.service_index=0;
+
+	ck_assert(!set_leaf_label_entry(base,0,&entry));
+	ck_assert(!set_leaf_label_entry(base1,NR_LEAF_LABEL_ENTRY-1,&entry));
+	ck_assert(find_e_lan_service(0)->ref_cnt==2);
+	reset_leaf_label_entry(base,0);
+	ck_assert(find_e_lan_service(0)->ref_cnt==1);
+	reset_leaf_label_entry(base1,NR_LEAF_LABEL_ENTRY-1);
+	ck_assert(find_e_lan_service(0)->ref_cnt==0);
+	/*environmrntal post-setup*/
 	for(idx=0;idx<MAX_E_LINE_SERVICES;idx++)
 		e_line_base[idx].is_valid=0;
+	for(idx=0;idx<MAX_E_LINE_SERVICES;idx++)
+		e_lan_base[idx].is_valid=0;
 	for(idx=0;idx<MAX_COMMON_NEIGHBORS;idx++)
 		neighbor_base[idx].is_valid=0;
 	for(idx=0;idx<MAX_COMMON_NEXTHOPS;idx++)

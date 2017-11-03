@@ -2,7 +2,7 @@
 #include <leaf-e-service.h>
 #include <rte_malloc.h>
 #include <e3_log.h>
-
+#include <util.h>
 struct leaf_label_entry * allocate_leaf_label_base(int numa_socket_id)
 {
 	struct leaf_label_entry * base;
@@ -50,7 +50,25 @@ void update_leaf_label_entry_relationship(struct leaf_label_entry * base,
 			}
 			break;
 		case e_lan_service:
-
+			for(idx=0,is_existing=0;idx<NR_LEAF_LABEL_ENTRY;idx++){
+				if(!base[idx].is_valid)
+					continue;
+				if(idx==index)
+					continue;
+				if(base[idx].e3_service!=e_lan_service)
+					continue;
+				if(base[idx].service_index==pentry->service_index){
+					is_existing=1;
+					break;
+				}
+			}
+			if(is_removed){
+				if(!is_existing)
+					dereference_e_lan_service(pentry->service_index);
+			}else{
+				if(!is_existing)
+					reference_e_lan_service(pentry->service_index);
+			}
 			break;
 		default:
 			E3_ASSERT(0);/*"never expect the value"*/
@@ -65,23 +83,26 @@ int set_leaf_label_entry(struct leaf_label_entry * base,
 {
 	struct leaf_label_entry * pentry=leaf_label_entry_at(base,index);
 	struct ether_e_line * eline;
+	struct ether_e_lan  * elan;
 	/*
 	*check whether ether service is leagal
 	*/
 	if(!pentry)
-		return -1;
+		return -E3_ERR_GENERIC;
 	switch(tmp_entry->e3_service)
 	{
 		case e_line_service:
 			eline=find_e_line_service(tmp_entry->service_index);
 			if(!eline||!eline->is_valid)
-				return -2;
+				return -E3_ERR_ILLEGAL;
 			break;
 		case e_lan_service:
-			/*todo:*/
+			elan=find_e_lan_service(tmp_entry->service_index);
+			if(!elan||!elan->is_valid)
+				return -E3_ERR_ILLEGAL;
 			break;
 		default:
-			return -3;
+			return -E3_ERR_GENERIC;
 			break;
 	}
 	/*
@@ -98,7 +119,7 @@ int set_leaf_label_entry(struct leaf_label_entry * base,
 	update_leaf_label_entry_relationship(base,
 		index,
 		0);
-	return 0;
+	return E3_OK;
 }
 void reset_leaf_label_entry(struct leaf_label_entry *base,int index)
 {
