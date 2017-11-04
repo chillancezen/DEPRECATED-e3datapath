@@ -92,6 +92,7 @@ int create_e3iface_with_slowpath(char * params,struct E3Interface_ops * ops,int 
 	int phy_port_id=0;
 	int tap_port_id=0;
 	struct E3Interface * pe3if_phy=NULL;
+	struct E3Interface * pe3if_tap=NULL;
 	int rc=register_e3interface(params,ops,&phy_port_id);
 	if(rc)
 		return rc;
@@ -106,7 +107,10 @@ int create_e3iface_with_slowpath(char * params,struct E3Interface_ops * ops,int 
 		return rc;
 	}
 	/*after creating the tap device, set its mac same with physical one*/
+	pe3if_tap=find_e3interface_by_index(tap_port_id);
+	E3_ASSERT(pe3if_tap);
 	rte_eth_dev_default_mac_addr_set(tap_port_id,(struct ether_addr *)pe3if_phy->mac_addrs);
+	rte_memcpy(pe3if_tap->mac_addrs,pe3if_phy->mac_addrs,6);
 	
 	E3_ASSERT(!correlate_e3interfaces(find_e3interface_by_index(phy_port_id),find_e3interface_by_index(tap_port_id)));
 	tap_number++;

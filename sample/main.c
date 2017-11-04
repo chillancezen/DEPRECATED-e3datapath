@@ -33,6 +33,7 @@ main(int argc, char **argv)
 	//label_fib_module_test();
 	//label_nhlfe_module_test();
 	//dump_e3_interface_structure();
+	dump_e3_interface_structure();
 	RTE_LCORE_FOREACH_SLAVE(lcore_id) {
 		rte_eal_remote_launch(lcore_default_entry, NULL, lcore_id);
 	}

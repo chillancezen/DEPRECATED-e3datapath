@@ -91,6 +91,8 @@ e3_type create_e3iface(e3_type service,
 	ops.output_node_process_func=role_defs[_role].output_node_process_func;
 	ops.priv_size               =role_defs[_role].priv_size;
 	ops.post_setup              =role_defs[_role].post_setup;
+	ops.iface_delete            =role_defs[_role].iface_delete;
+	
 	memcpy(ops.edges,role_defs[_role].edges,sizeof(ops.edges));
 	
 	return create_e3iface_with_slowpath(_dev_paarams,&ops,(int*)_pport);

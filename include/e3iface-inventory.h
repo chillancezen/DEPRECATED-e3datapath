@@ -37,6 +37,7 @@ struct e3iface_role_def{
 	int (*input_node_process_func)(void * arg);
 	int (*output_node_process_func)(void * arg);
 	int (*post_setup)(struct E3Interface * iface);
+	int (*iface_delete)(int iface);
 	struct next_edge_item edges[MAX_PREDEFINED_EDGE];
 };
 #endif

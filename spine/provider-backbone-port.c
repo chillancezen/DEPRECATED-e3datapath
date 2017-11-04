@@ -8,6 +8,8 @@
 #include <spine-label-fib.h>
 #include <spine-label-nhlfe.h>
 #include <lcore_extension.h>
+#include <util.h>
+#include <rte_malloc.h>
 #define PBP_NODE_BURST_SIZE 48
 
 extern struct e3iface_role_def  role_defs[E3IFACE_ROLE_MAX_ROLES];
@@ -361,7 +363,28 @@ int provider_backbone_port_iface_post_setup(struct E3Interface * pif)
 	E3_ASSERT(priv->label_base);
 	return 0;
 }
-
+int provider_backbone_port_iface_delete(int iface)
+{
+	/*
+	*withdraw all the label of the ports
+	*/
+	struct E3Interface * pif=find_e3interface_by_index(iface);
+	struct pbp_private * priv;
+	if((!pif))
+		return -E3_ERR_GENERIC;
+	E3_ASSERT(pif->hwiface_role==E3IFACE_ROLE_PROVIDER_BACKBONE_PORT);
+	priv=(struct pbp_private*)pif->private;
+	#if 0
+	int idx=0;
+	for(idx=0;idx<NR_LABEL_ENTRY;idx++){
+		if(priv->label_base[idx].is_valid)
+			invalidate_label_entry(priv->label_base,idx);
+	}
+	#endif
+	rte_free(priv->label_base);
+	priv->label_base=NULL;
+	return 0;
+}
 
 void pbp_init(void)
 {
@@ -372,6 +395,7 @@ void pbp_init(void)
 	role_defs[E3IFACE_ROLE_PROVIDER_BACKBONE_PORT].input_node_process_func=provider_backbone_port_iface_input_iface;
 	role_defs[E3IFACE_ROLE_PROVIDER_BACKBONE_PORT].output_node_process_func=provider_backbone_port_iface_output_iface;
 	role_defs[E3IFACE_ROLE_PROVIDER_BACKBONE_PORT].post_setup=provider_backbone_port_iface_post_setup;
+	role_defs[E3IFACE_ROLE_PROVIDER_BACKBONE_PORT].iface_delete=provider_backbone_port_iface_delete;
 }
 E3_init(pbp_init,(TASK_PTIORITY_LOW+1));
 

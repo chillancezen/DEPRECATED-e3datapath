@@ -58,32 +58,33 @@ __attribute__((aligned(64)))
 	int (*interface_up)(int iface);
 	int (*interface_down)(int iface);
 	/*interface delete callback function*/
+	int (*interface_delete)(int iface);
 __attribute__((aligned(64)))
 			   void * private[0];
-}__attribute__((aligned(1)));
+}__attribute__((packed));
 
 /*
 C-definition
-		   name (offset:  0 size: 64 prev_gap:0)
-	 cacheline0 (offset: 64 size:  0 prev_gap:0)
-  hwiface_model (offset: 64 size:  1 prev_gap:0)
-   hwiface_role (offset: 65 size:  1 prev_gap:0)
-	  reserved0 (offset: 66 size:  1 prev_gap:0)
-   iface_status (offset: 67 size:  1 prev_gap:0)
-	  nr_queues (offset: 68 size:  1 prev_gap:0)
-under_releasing (offset: 69 size:  1 prev_gap:0)
-has_peer_device (offset: 70 size:  1 prev_gap:0)
-	lsc_enabled (offset: 71 size:  1 prev_gap:0)
-		port_id (offset: 72 size:  2 prev_gap:0)
-   peer_port_id (offset: 74 size:  2 prev_gap:0)
-	  mac_addrs (offset: 76 size:  6 prev_gap:0)
-	 input_node (offset: 82 size: 16 prev_gap:0)
-	output_node (offset: 98 size: 16 prev_gap:0)
-			rcu (offset:120 size: 16 prev_gap:6)
-   interface_up (offset:136 size:  8 prev_gap:0)
- interface_down (offset:144 size:  8 prev_gap:0)
-		private (offset:192 size:  0 prev_gap:40)
-
+                name (offset:  0 size: 64 prev_gap:0)
+          cacheline0 (offset: 64 size:  0 prev_gap:0)
+       hwiface_model (offset: 64 size:  1 prev_gap:0)
+        hwiface_role (offset: 65 size:  1 prev_gap:0)
+           reserved0 (offset: 66 size:  1 prev_gap:0)
+        iface_status (offset: 67 size:  1 prev_gap:0)
+           nr_queues (offset: 68 size:  1 prev_gap:0)
+     under_releasing (offset: 69 size:  1 prev_gap:0)
+     has_peer_device (offset: 70 size:  1 prev_gap:0)
+         lsc_enabled (offset: 71 size:  1 prev_gap:0)
+             port_id (offset: 72 size:  2 prev_gap:0)
+        peer_port_id (offset: 74 size:  2 prev_gap:0)
+           mac_addrs (offset: 76 size:  6 prev_gap:0)
+          input_node (offset: 82 size: 16 prev_gap:0)
+         output_node (offset: 98 size: 16 prev_gap:0)
+                 rcu (offset:114 size: 16 prev_gap:0)
+        interface_up (offset:130 size:  8 prev_gap:0)
+      interface_down (offset:138 size:  8 prev_gap:0)
+    interface_delete (offset:146 size:  8 prev_gap:0)
+             private (offset:192 size:  0 prev_gap:38)
 		
 Python-definition:
 		   name:<Field type=c_char_Array_64, ofs=0, size=64>
@@ -129,6 +130,7 @@ struct E3Interface_ops{
 	int (*output_node_process_func)(void * arg);
 	int (*lsc_iface_up)(int iface);
 	int (*lsc_iface_down)(int iface);
+	int (*iface_delete)(int iface);
 	struct next_edge_item edges[MAX_PREDEFINED_EDGE];
 };
 

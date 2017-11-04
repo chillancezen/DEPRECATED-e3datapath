@@ -344,6 +344,7 @@ int register_e3interface(const char * params,struct E3Interface_ops * dev_ops,in
 	if(pport_id)
 		*pport_id=(int)port_id;
 	pe3iface->under_releasing=0;
+	pe3iface->interface_delete=dev_ops->iface_delete;
 	/*13.publish this E3interface*/
 	rcu_assign_pointer(global_e3iface_array[port_id],pe3iface);
 
@@ -400,6 +401,8 @@ void _unregister_e3interface_rcu_callback(struct rcu_head * rcu)
 	struct E3Interface * pe3iface=container_of(rcu,struct E3Interface,rcu);
 	struct node * pinput_nodes[MAX_QUEUES_TO_POLL];
 	struct node * poutput_nodes[MAX_QUEUES_TO_POLL];
+	if(pe3iface->interface_delete)
+		pe3iface->interface_delete(pe3iface->port_id);
 	for(idx=0;idx<pe3iface->nr_queues;idx++){
 		pinput_nodes[idx]=find_node_by_index(pe3iface->input_node[idx]);
 		poutput_nodes[idx]=find_node_by_index(pe3iface->output_node[idx]);
@@ -622,6 +625,7 @@ void  dump_e3_interface_structure(void)
 		dump_field(struct E3Interface,rcu);
 		dump_field(struct E3Interface,interface_up);
 		dump_field(struct E3Interface,interface_down);
+		dump_field(struct E3Interface,interface_delete);
 		dump_field(struct E3Interface,private);
 }
 /*export e3interface api*/
