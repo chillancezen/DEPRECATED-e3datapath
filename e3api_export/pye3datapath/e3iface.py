@@ -8,6 +8,7 @@ from pye3datapath.e3client import register_service_endpoint
 
 E3IFACE_MODEL_GENERIC_SINGLY_QUEUE=0
 E3IFACE_ROLE_PROVIDER_BACKBONE_PORT=0
+E3IFACE_ROLE_CUSTOMER_BACKBONE_FACING_PORT=1
 class E3Interface(Structure):
     _pack_=1
     _fields_=[('name',c_char*64),
@@ -143,9 +144,10 @@ def get_e3iface_list():
 import time
 if __name__=='__main__':
     register_service_endpoint('ipc:///var/run/e3datapath.sock')
-    print(attach_e3iface('0000:00:08.0',E3IFACE_MODEL_GENERIC_SINGLY_QUEUE,E3IFACE_ROLE_PROVIDER_BACKBONE_PORT))
+    #print(attach_e3iface('0000:00:08.0',E3IFACE_MODEL_GENERIC_SINGLY_QUEUE,E3IFACE_ROLE_PROVIDER_BACKBONE_PORT))
+    print(attach_e3iface('0000:00:08.0',E3IFACE_MODEL_GENERIC_SINGLY_QUEUE,E3IFACE_ROLE_CUSTOMER_BACKBONE_FACING_PORT))
     #print(reclaim_e3iface(1))
-    #time.sleep(1)
+    #E3IFACE_ROLE_CUSTOMER_BACKBONE_FACING_PORT
     #print(attach_e3iface('0000:00:08.0',E3IFACE_MODEL_GENERIC_SINGLY_QUEUE,E3IFACE_ROLE_PROVIDER_BACKBONE_PORT)) 
     #E3Interface().dump_definition()
     start_e3iface(1)

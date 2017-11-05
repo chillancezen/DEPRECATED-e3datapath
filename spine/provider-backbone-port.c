@@ -10,6 +10,7 @@
 #include <lcore_extension.h>
 #include <util.h>
 #include <rte_malloc.h>
+#include <e3net/include/mpls-util.h>
 #define PBP_NODE_BURST_SIZE 48
 
 extern struct e3iface_role_def  role_defs[E3IFACE_ROLE_MAX_ROLES];
@@ -18,14 +19,11 @@ static int null_capability_check(int port_id)
 {
 	return 0;
 }
-#define PBP_INPUT_NODE_FWD_DROP 0x0
-#define PBP_INPUT_NODE_FWD_NEXT_HOP 0x1
-#define PBP_INPUT_NODE_HOST_STACK 0x2
 
-#define ETHER_PROTO_MPLS_UNICAST 0x4788
+
 
 struct pbp_cache_entry{
-	uint8_t                       is_valid;
+	uint32_t                      is_valid;
 	uint32_t 			 		  label;/*0 indicate invalid*/
 	struct label_entry 			* lentry;
 	struct next_hop    			* unicast_nexthop;
@@ -295,7 +293,7 @@ int provider_backbone_port_iface_input_iface(void * arg)
 	int                  iface=HIGH_UINT64((uint64_t)pnode->node_priv);
 	int                  queue_id=LOW_UINT64((uint64_t)pnode->node_priv);
 	struct E3Interface * pif=find_e3interface_by_index(iface);
-	struct pbp_private * priv=(struct pbp_private*)pif->private;
+	struct pbp_private * priv=NULL;
 	DEF_EXPRESS_DELIVERY_VARS();
 	RESET_EXPRESS_DELIVERY_VARS();
 	uint64_t fwd_id;
@@ -304,6 +302,7 @@ int provider_backbone_port_iface_input_iface(void * arg)
 	memset(pbp_cache,0x0,sizeof(pbp_cache));
 	if(PREDICT_FALSE(!pif))
 		return 0;
+	priv=(struct pbp_private*)pif->private;
 	nr_rx=rte_eth_rx_burst(iface,queue_id,mbufs,PBP_NODE_BURST_SIZE);
 	pre_setup_env(nr_rx);
 	while((iptr=peek_next_mbuf())>=0){
@@ -360,7 +359,8 @@ int provider_backbone_port_iface_post_setup(struct E3Interface * pif)
 	pif->hwiface_role=E3IFACE_ROLE_PROVIDER_BACKBONE_PORT;
 	/*setup the label base for the e3interface*/
 	priv->label_base=allocate_label_entry_base(-1);
-	E3_ASSERT(priv->label_base);
+	if(!priv->label_base)
+		return -1;
 	return 0;
 }
 int provider_backbone_port_iface_delete(int iface)
@@ -374,13 +374,6 @@ int provider_backbone_port_iface_delete(int iface)
 		return -E3_ERR_GENERIC;
 	E3_ASSERT(pif->hwiface_role==E3IFACE_ROLE_PROVIDER_BACKBONE_PORT);
 	priv=(struct pbp_private*)pif->private;
-	#if 0
-	int idx=0;
-	for(idx=0;idx<NR_LABEL_ENTRY;idx++){
-		if(priv->label_base[idx].is_valid)
-			invalidate_label_entry(priv->label_base,idx);
-	}
-	#endif
 	rte_free(priv->label_base);
 	priv->label_base=NULL;
 	return 0;

@@ -98,7 +98,7 @@ int create_e3iface_with_slowpath(char * params,struct E3Interface_ops * ops,int 
 		return rc;
 	E3_ASSERT(pe3if_phy=find_e3interface_by_index(phy_port_id));
 	memset(tap_params,0x0,sizeof(tap_params));
-	sprintf(tap_params,"eth_tap%d,iface=e3tap%d"
+	sprintf(tap_params,"eth_tap%d,iface=e3tap%d,speed=10000"
 		,tap_number
 		,tap_number);
 	rc=register_e3interface(tap_params,&tapiface_ops,&tap_port_id);
