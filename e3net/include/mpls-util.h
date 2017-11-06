@@ -41,6 +41,12 @@ struct mpls_hdr{
 	(mpls)->u82|=((label)<<4)&0xf0; \
 }
 
-#define IS_MAC_EQUAL(mac1,mac2) (!(((*(uint64_t*)(mac1))^(*(uint64_t*)(mac2)))&0xffffffffffff))
-
+//#define IS_MAC_EQUAL(mac1,mac2) (!(((*(uint64_t*)(mac1))^(*(uint64_t*)(mac2)))&0xffffffffffff))
+#define IS_MAC_EQUAL(mac1,mac2) ((mac1)[0]==(mac2)[0]&&\
+	(mac1)[1]==(mac2)[1]&& \
+	(mac1)[2]==(mac2)[2]&& \
+	(mac1)[3]==(mac2)[3]&& \
+	(mac1)[4]==(mac2)[4]&& \
+	(mac1)[5]==(mac2)[5])
+	
 #endif

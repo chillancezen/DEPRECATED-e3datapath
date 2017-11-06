@@ -14,4 +14,7 @@
 #define MINOR_VERSION_NUMBER 0x0
 #define BUILD_VERSION_NUMBER 0x1
 
+
+
+#define SUPPORT_VXLAN_PMD_LINK 
 #endif
