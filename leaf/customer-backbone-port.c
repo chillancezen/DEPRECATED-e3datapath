@@ -7,6 +7,7 @@
 #include <rte_ether.h>
 #include <e3net/include/mpls-util.h>
 #include <rte_memcpy.h>
+#include <lcore_extension.h>
 extern struct e3iface_role_def  role_defs[E3IFACE_ROLE_MAX_ROLES];
 #define CBP_NODE_BURST_SIZE 48
 
@@ -36,8 +37,13 @@ struct mac_cache_entry{
 	uint8_t reserved0;
 	struct e_lan_fwd_entry fwd_entry;
 }__attribute__((aligned(8)));
-static int null_capability_check(int port_id)
+static int cbp_capability_check(int port_id)
 {
+	struct rte_eth_dev_info dev_info;
+	rte_eth_dev_info_get(port_id,&dev_info);
+	if(!(dev_info.rx_offload_capa&DEV_RX_OFFLOAD_VLAN_STRIP)||
+		!(dev_info.tx_offload_capa&DEV_TX_OFFLOAD_VLAN_INSERT))
+		return -1;
 	return 0;
 }
 inline uint64_t _process_cbp_input_packet(struct rte_mbuf* mbuf,
@@ -102,7 +108,7 @@ inline uint64_t _process_cbp_input_packet(struct rte_mbuf* mbuf,
 			*strip outer ether header plus mpls header
 			*where we do not care whether e3iface exists
 			*/
-			rte_pktmbuf_adj(mbuf,14);
+			rte_pktmbuf_adj(mbuf,18);
 			if(ccache->eline->vlan_tci){
 				mbuf->vlan_tci=ccache->eline->vlan_tci;
 				mbuf->ol_flags=PKT_TX_VLAN_PKT;
@@ -114,7 +120,7 @@ inline uint64_t _process_cbp_input_packet(struct rte_mbuf* mbuf,
 			*lookup the mac base to find the fwd entry
 			*of the dst mac
 			*/
-			rte_pktmbuf_adj(mbuf,14);
+			rte_pktmbuf_adj(mbuf,18);
 			inner_eth_hdr=rte_pktmbuf_mtod(mbuf,struct ether_hdr*);
 			/*
 			*use last byte which is mutable and ease distribution
@@ -148,6 +154,7 @@ inline uint64_t _process_cbp_input_packet(struct rte_mbuf* mbuf,
 					mbuf->vlan_tci=mcache->fwd_entry.vlan_tci;
 					mbuf->ol_flags=PKT_TX_VLAN_PKT;
 				}
+				
 				fwd_id=MAKE_UINT64(CBP_PROCESS_INPUT_ELAN_UNICAST_FWD,mcache->fwd_entry.e3iface);
 			}else{
 				/*
@@ -171,15 +178,21 @@ inline int _cbp_multicast_forward_slow_path(struct E3Interface *pif,
 	int vlan_tci=0;
 	int port_id=0;
 	int nr_port=0;
+	int nr_ports=0;
+	int iptr=0;
+	int nr_tx;
+	struct rte_mempool * mempool=get_mempool_by_socket_id(pnode->lcore_id);
 	struct E3Interface * pif_dst;
 	uint8_t consumed[CBP_NODE_BURST_SIZE];
 	struct rte_mbuf * mbufs_to_send[CBP_NODE_BURST_SIZE];
+	int nr_send=0;
 	struct ether_e_lan *elan=find_e_lan_service(elan_index);
 	if((!elan)||(!elan->is_valid))
 		return 0;
 	memset(consumed,0x0,sizeof(consumed));
+	nr_ports=elan->nr_ports;
 	for(port_id=0;
-		(port_id<MAX_PORTS_IN_E_LAN_SERVICE)&&(nr_port<elan->nr_ports);
+		(port_id<MAX_PORTS_IN_E_LAN_SERVICE)&&(nr_port<nr_ports);
 			port_id++){
 		if(!elan->ports[port_id].is_valid)
 			continue;
@@ -188,11 +201,52 @@ inline int _cbp_multicast_forward_slow_path(struct E3Interface *pif,
 		pif_dst=find_e3interface_by_index(e3iface);
 		if(!pif_dst){
 			/*
-			*skip invalid ports
+			*skip invalid ports,but we still think it increase nr_port.
 			*/
 			nr_port++;
 			continue;
 		}
+		/*
+		*prepare packets to send.
+		*place them in mbufs_to_send
+		*/
+		nr_send=0;
+		for(iptr=0;iptr<nr_mbufs;iptr++){
+			if((nr_port+1)<nr_ports){
+				/*
+				*todo:optimize with bulk allocation
+				*/
+				mbufs_to_send[nr_send]=rte_pktmbuf_alloc(mempool);
+				if(!mbufs_to_send[nr_send])
+					break;
+				rte_pktmbuf_append(mbufs[nr_send],mbufs[iptr]->pkt_len);
+				rte_memcpy(rte_pktmbuf_mtod(mbufs_to_send[nr_send],void*),
+									rte_pktmbuf_mtod(mbufs[iptr],void*),
+									mbufs[iptr]->pkt_len);
+				
+			}else{
+				mbufs_to_send[nr_send]=mbufs[iptr];
+				consumed[iptr]=1;
+			}
+			
+			if(vlan_tci){
+				mbufs_to_send[nr_send]->vlan_tci=vlan_tci;
+				mbufs_to_send[nr_send]->ol_flags=PKT_TX_VLAN_PKT;
+			}
+			nr_send++;
+		}
+		/*
+		*send these packets from the interfaces
+		*/
+		nr_tx=deliver_mbufs_to_e3iface(pif_dst,0,mbufs_to_send,nr_send);
+		for(iptr=nr_tx;iptr<nr_send;iptr++)
+			rte_pktmbuf_free(mbufs_to_send[iptr]);
+		
+	}
+	for(iptr=0;iptr<nr_mbufs;iptr++){
+		if(consumed[iptr])
+			continue;
+		rte_pktmbuf_free(mbufs[iptr]);
 	}
 	return nr_mbufs;
 }
@@ -316,6 +370,21 @@ int customer_backbone_port_iface_input_iface(void * arg)
 }
 int customer_backbone_port_iface_output_iface(void * arg)
 {
+	int idx=0;
+	struct rte_mbuf *mbufs[32];
+	int nr_rx;
+	int nr_tx;
+	struct node * pnode=(struct node *)arg;
+	int iface_id=HIGH_UINT64((uint64_t)pnode->node_priv);
+	int queue_id=LOW_UINT64((uint64_t)pnode->node_priv);
+	struct E3Interface * pif=NULL;
+	if(!(pif=find_e3interface_by_index(iface_id)))
+		return -1;
+	if(!(nr_rx=rte_ring_sc_dequeue_burst(pnode->node_ring,(void**)mbufs,32,NULL)))
+		return 0;
+	nr_tx=rte_eth_tx_burst(iface_id,queue_id,mbufs,nr_rx);
+	for(idx=nr_tx;idx<nr_rx;idx++)
+		rte_pktmbuf_free(mbufs[idx]);
 	return 0;
 }
 int customer_backbone_port_iface_post_setup(struct E3Interface * pif)
@@ -338,7 +407,7 @@ static void cbp_init(void)
 {
 	
 	role_defs[E3IFACE_ROLE_CUSTOMER_BACKBONE_FACING_PORT].is_set=1;
-	role_defs[E3IFACE_ROLE_CUSTOMER_BACKBONE_FACING_PORT].capability_check=null_capability_check;
+	role_defs[E3IFACE_ROLE_CUSTOMER_BACKBONE_FACING_PORT].capability_check=cbp_capability_check;
 	role_defs[E3IFACE_ROLE_CUSTOMER_BACKBONE_FACING_PORT].priv_size=sizeof(struct cbp_private);
 	role_defs[E3IFACE_ROLE_CUSTOMER_BACKBONE_FACING_PORT].input_node_process_func=customer_backbone_port_iface_input_iface;
 	role_defs[E3IFACE_ROLE_CUSTOMER_BACKBONE_FACING_PORT].output_node_process_func=customer_backbone_port_iface_output_iface;
@@ -350,8 +419,35 @@ E3_init(cbp_init,(TASK_PTIORITY_LOW+1));
 
 void cbp_module_test(void)
 {
-	#if 0
-	printf("%d %d\n",sizeof(struct cbp_cache_entry),
-		sizeof(struct mac_cache_entry));
-	#endif
+	struct E3Interface *pif=find_e3interface_by_index(0);
+	struct cbp_private *priv;
+	E3_ASSERT(pif->hwiface_role==E3IFACE_ROLE_CUSTOMER_BACKBONE_FACING_PORT);
+	E3_ASSERT(priv=(struct cbp_private*)pif->private);
+	/*register nexthop*/
+	struct common_neighbor neighbor={
+		.neighbour_ip_as_le=0x12345678,
+		.mac={0x12,0x12,0x12,0x12,0x12,0x12},
+	};
+	E3_ASSERT(register_common_neighbor(&neighbor)==0);
+	struct common_nexthop nexthop={
+		.local_e3iface=0,
+		.common_neighbor_index=0,
+	};
+	E3_ASSERT(register_common_nexthop(&nexthop)==0);
+	/*register an e-line service*/
+	struct ether_e_line eline={
+		.label_to_push=123,
+		.NHLFE=0,
+		.e3iface=0,
+		.vlan_tci=222,
+	};
+	E3_ASSERT(register_e_line_service(&eline)==0);
+
+	/*register a fib entry on if0*/
+	struct leaf_label_entry lentry={
+		.e3_service=e_line_service,
+		.service_index=0,
+	};
+	E3_ASSERT(!set_leaf_label_entry(priv->label_base,925516,&lentry));
+	
 }

@@ -151,3 +151,13 @@ DECLARE_E3_API(e3iface_status_update)={
 	},
 	
 };
+
+void e3iface_tmp_test(void)
+{
+	uint32_t port;
+	create_e3iface(0,
+		(e3_type)"0000:00:08.0",
+		E3IFACE_MODEL_GENERIC_SINGLY_QUEUE,
+		E3IFACE_ROLE_CUSTOMER_BACKBONE_FACING_PORT,
+		(e3_type)&port);
+}

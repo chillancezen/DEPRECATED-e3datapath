@@ -16,5 +16,5 @@
 
 
 
-#define SUPPORT_VXLAN_PMD_LINK 
+
 #endif
