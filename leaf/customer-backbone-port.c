@@ -181,7 +181,7 @@ inline int _cbp_multicast_forward_slow_path(struct E3Interface *pif,
 	int nr_ports=0;
 	int iptr=0;
 	int nr_tx;
-	struct rte_mempool * mempool=get_mempool_by_socket_id(pnode->lcore_id);
+	struct rte_mempool * mempool=get_mempool_by_socket_id(lcore_to_socket_id(pnode->lcore_id));
 	struct E3Interface * pif_dst;
 	uint8_t consumed[CBP_NODE_BURST_SIZE];
 	struct rte_mbuf * mbufs_to_send[CBP_NODE_BURST_SIZE];
@@ -219,7 +219,7 @@ inline int _cbp_multicast_forward_slow_path(struct E3Interface *pif,
 				mbufs_to_send[nr_send]=rte_pktmbuf_alloc(mempool);
 				if(!mbufs_to_send[nr_send])
 					break;
-				rte_pktmbuf_append(mbufs[nr_send],mbufs[iptr]->pkt_len);
+				rte_pktmbuf_append(mbufs_to_send[nr_send],mbufs[iptr]->pkt_len);
 				rte_memcpy(rte_pktmbuf_mtod(mbufs_to_send[nr_send],void*),
 									rte_pktmbuf_mtod(mbufs[iptr],void*),
 									mbufs[iptr]->pkt_len);
@@ -439,15 +439,35 @@ void cbp_module_test(void)
 		.label_to_push=123,
 		.NHLFE=0,
 		.e3iface=0,
-		.vlan_tci=222,
+		.vlan_tci=0,
 	};
 	E3_ASSERT(register_e_line_service(&eline)==0);
 
 	/*register a fib entry on if0*/
+	/*
 	struct leaf_label_entry lentry={
 		.e3_service=e_line_service,
 		.service_index=0,
 	};
 	E3_ASSERT(!set_leaf_label_entry(priv->label_base,925516,&lentry));
+	*/
+	/*register an e-lan service*/
+	E3_ASSERT(register_e_lan_service()==0);
+	E3_ASSERT(register_e_lan_port(0,0,0)==0);
+	E3_ASSERT(register_e_lan_port(0,1,0)==1);
+	struct leaf_label_entry lentry={
+		.e3_service=e_lan_service,
+		.service_index=0,
+	};
+	E3_ASSERT(!set_leaf_label_entry(priv->label_base,925516,&lentry));
+	E3_ASSERT(!set_leaf_label_entry(priv->label_base,925516,&lentry));
 	
+	struct e_lan_fwd_entry fwd_entry={
+		.is_port_entry=1,
+		.e3iface=0,
+		.vlan_tci=0,
+	};
+	//08:00:27:53:9d:44
+	uint8_t mac[6]={0x08,0x00,0x27,0x53,0x9d,0x44};
+	E3_ASSERT(!register_e_lan_fwd_entry(0,mac,&fwd_entry));
 }
