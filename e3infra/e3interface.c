@@ -402,7 +402,7 @@ void _unregister_e3interface_rcu_callback(struct rcu_head * rcu)
 	struct node * pinput_nodes[MAX_QUEUES_TO_POLL];
 	struct node * poutput_nodes[MAX_QUEUES_TO_POLL];
 	if(pe3iface->interface_delete)
-		pe3iface->interface_delete(pe3iface->port_id);
+		pe3iface->interface_delete(pe3iface);
 	for(idx=0;idx<pe3iface->nr_queues;idx++){
 		pinput_nodes[idx]=find_node_by_index(pe3iface->input_node[idx]);
 		poutput_nodes[idx]=find_node_by_index(pe3iface->output_node[idx]);

@@ -363,17 +363,13 @@ int provider_backbone_port_iface_post_setup(struct E3Interface * pif)
 		return -1;
 	return 0;
 }
-int provider_backbone_port_iface_delete(int iface)
+int provider_backbone_port_iface_delete(struct E3Interface * pif)
 {
 	/*
 	*withdraw all the label of the ports
 	*/
-	struct E3Interface * pif=find_e3interface_by_index(iface);
-	struct pbp_private * priv;
-	if((!pif))
-		return -E3_ERR_GENERIC;
+	struct pbp_private * priv=(struct pbp_private*)pif->private;
 	E3_ASSERT(pif->hwiface_role==E3IFACE_ROLE_PROVIDER_BACKBONE_PORT);
-	priv=(struct pbp_private*)pif->private;
 	rte_free(priv->label_base);
 	priv->label_base=NULL;
 	return 0;

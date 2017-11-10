@@ -58,7 +58,7 @@ __attribute__((aligned(64)))
 	int (*interface_up)(int iface);
 	int (*interface_down)(int iface);
 	/*interface delete callback function*/
-	int (*interface_delete)(int iface);
+	int (*interface_delete)(struct E3Interface*);
 __attribute__((aligned(64)))
 			   void * private[0];
 }__attribute__((packed));
@@ -130,7 +130,7 @@ struct E3Interface_ops{
 	int (*output_node_process_func)(void * arg);
 	int (*lsc_iface_up)(int iface);
 	int (*lsc_iface_down)(int iface);
-	int (*iface_delete)(int iface);
+	int (*iface_delete)(struct E3Interface*);
 	struct next_edge_item edges[MAX_PREDEFINED_EDGE];
 };
 
