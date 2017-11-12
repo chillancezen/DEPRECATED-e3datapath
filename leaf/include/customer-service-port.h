@@ -1,3 +1,6 @@
+/*
+*Copyright (c) 2016-2017 Jie Zheng
+*/
 #ifndef _CUSTOMER_SERVICE_PORT_H
 #define _CUSTOMER_SERVICE_PORT_H
 #include <stdint.h>

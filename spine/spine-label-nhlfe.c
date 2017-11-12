@@ -1,3 +1,6 @@
+/*
+*Copyright (c) 2016-2017 Jie Zheng
+*/
 #include <spine-label-nhlfe.h>
 #include <e3_init.h>
 #include <e3_log.h>

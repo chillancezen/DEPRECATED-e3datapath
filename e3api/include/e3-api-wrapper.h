@@ -1,3 +1,6 @@
+/*
+*Copyright (c) 2016-2017 Jie Zheng
+*/
 #ifndef _E3_API_WRAPPER_H
 #define _E3_API_WRAPPER_H
 #include <e3-api.h>

@@ -1,3 +1,6 @@
+/*
+*Copyright (c) 2016-2017 Jie Zheng
+*/
 #include <node.h>
 #include <lcore_extension.h>
 #include <e3_init.h>

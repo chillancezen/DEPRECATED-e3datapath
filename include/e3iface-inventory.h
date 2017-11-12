@@ -1,3 +1,6 @@
+/*
+*Copyright (c) 2016-2017 Jie Zheng
+*/
 #ifndef _E3IFACE_INVENTORY_H
 #define _E3IFACE_INVENTORY_H
 #include <e3iface-wrapper.h>

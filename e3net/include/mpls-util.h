@@ -1,3 +1,6 @@
+/*
+*Copyright (c) 2016-2017 Jie Zheng
+*/
 #ifndef _MPLS_UTIL_H
 #define _MPLS_UTIL_H
 #include <stdint.h>

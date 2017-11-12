@@ -1,3 +1,6 @@
+/*
+*Copyright (c) 2016-2017 Jie Zheng
+*/
 #ifndef _E3_BITMAP_H
 #define _E3_BITMAP_H
 

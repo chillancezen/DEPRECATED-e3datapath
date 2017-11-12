@@ -1,3 +1,6 @@
+/*
+*Copyright (c) 2016-2017 Jie Zheng
+*/
 #ifndef _E3INTERFACE_H
 #define _E3INTERFACE_H
 #include <inttypes.h>

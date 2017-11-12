@@ -1,3 +1,6 @@
+/*
+*Copyright (c) 2016-2017 Jie Zheng
+*/
 #ifndef _MBUF_DELIVERY_H
 #define _MBUF_DELIVERY_H
 #include <node.h>

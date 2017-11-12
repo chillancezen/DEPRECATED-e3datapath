@@ -1,3 +1,6 @@
+/*
+*Copyright (c) 2016-2017 Jie Zheng
+*/
 #include <rte_malloc.h>
 #include <e3interface.h>
 #include <string.h>

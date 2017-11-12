@@ -1,3 +1,6 @@
+/*
+*Copyright (c) 2016-2017 Jie Zheng
+*/
 #include <e3-api-wrapper.h>
 #include <exported-api.h>
 #include <assert.h>

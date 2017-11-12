@@ -1,3 +1,6 @@
+/*
+*Copyright (c) 2016-2017 Jie Zheng
+*/
 #ifndef _E3_CONFIG
 #define _E3_CONFIG
 /*the common options will be put here as DPDK's rte_config.h does*/

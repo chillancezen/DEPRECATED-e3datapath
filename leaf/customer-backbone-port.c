@@ -1,3 +1,6 @@
+/*
+*Copyright (c) 2016-2017 Jie Zheng
+*/
 #include <e3iface-inventory.h>
 #include <e3_init.h>
 #include <node.h>

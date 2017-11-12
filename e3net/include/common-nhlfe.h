@@ -1,3 +1,6 @@
+/*
+*Copyright (c) 2016-2017 Jie Zheng
+*/
 #ifndef _COMMON_NHLFE_H
 #define _COMMON_NHLFE_H
 #include <stdint.h>

@@ -1,3 +1,6 @@
+/*
+*Copyright (c) 2016-2017 Jie Zheng
+*/
 #include <rte_eal.h>
 #include <e3test.h>
 #include <stdio.h>

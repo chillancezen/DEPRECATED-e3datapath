@@ -1,3 +1,6 @@
+/*
+*Copyright (c) 2016-2017 Jie Zheng
+*/
 #ifndef _NODE_CLASS_H
 #define _NODE_CLASS_H
 #include <inttypes.h>

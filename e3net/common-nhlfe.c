@@ -1,3 +1,6 @@
+/*
+*Copyright (c) 2016-2017 Jie Zheng
+*/
 #include <e3net/include/common-nhlfe.h>
 #include <rte_malloc.h>
 #include <e3_init.h>

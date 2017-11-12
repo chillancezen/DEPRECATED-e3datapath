@@ -1,3 +1,6 @@
+/*
+*Copyright (c) 2016-2017 Jie Zheng
+*/
 #ifndef _LCORE_EXTENSION_H
 #define _LCORE_EXTENSION_H
 #include <node.h>

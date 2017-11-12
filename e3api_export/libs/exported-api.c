@@ -1,3 +1,6 @@
+/*
+*Copyright (c) 2016-2017 Jie Zheng
+*/
 #include <exported-api.h>
 #include <e3-api-wrapper.h>
 DECLARE_E3_API(e3_exported_api0)={

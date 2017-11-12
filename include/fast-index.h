@@ -1,3 +1,6 @@
+/*
+*Copyright (c) 2016-2017 Jie Zheng
+*/
 #ifndef _FAST_INDEX_H
 #define _FAST_INDEX_H
 #include <inttypes.h>

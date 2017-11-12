@@ -1,3 +1,6 @@
+/*
+*Copyright (c) 2016-2017 Jie Zheng
+*/
 #ifndef E3_TLV_H
 #define E3_TLV_H
 #include <inttypes.h>

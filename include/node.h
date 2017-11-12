@@ -1,3 +1,6 @@
+/*
+*Copyright (c) 2016-2017 Jie Zheng
+*/
 #ifndef _NODE_H
 #define _NODE_H
 #include <inttypes.h>

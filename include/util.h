@@ -1,3 +1,6 @@
+/*
+*Copyright (c) 2016-2017 Jie Zheng
+*/
 #ifndef _UTIL_H
 #define _UTIL_H
 #include <x86intrin.h>
