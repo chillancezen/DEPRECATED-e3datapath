@@ -12,6 +12,8 @@
 #include <rte_memcpy.h>
 #include <lcore_extension.h>
 #include <rte_malloc.h>
+#include <e3net/include/common-cache.h>
+
 extern struct e3iface_role_def  role_defs[E3IFACE_ROLE_MAX_ROLES];
 #define CBP_NODE_BURST_SIZE 48
 
@@ -27,20 +29,7 @@ extern struct e3iface_role_def  role_defs[E3IFACE_ROLE_MAX_ROLES];
 #define CBP_PROCESS_INPUT_ELAN_MULTICAST_FWD 0x3
 #define CBP_PROCESS_INPUT_HOST_STACK 0x4
 
-struct cbp_cache_entry{
-	uint32_t is_valid;
-	uint32_t label; 
-	struct leaf_label_entry * lentry;
-	struct ether_e_lan * elan;
-	struct ether_e_line * eline;
-}__attribute__((aligned(8)));
 
-struct mac_cache_entry{
-	uint8_t mac[6];
-	uint8_t is_valid;
-	uint8_t reserved0;
-	struct e_lan_fwd_entry fwd_entry;
-}__attribute__((aligned(8)));
 static int cbp_capability_check(int port_id)
 {
 	struct rte_eth_dev_info dev_info;
@@ -282,7 +271,7 @@ inline void _post_cbp_input_packet_process(struct E3Interface*pif,
 				drop_start=nr_deliveded;
 				nr_dropped=nr_mbufs-drop_start;
 			}
-			break;
+			break;		
 		case CBP_PROCESS_INPUT_ELINE_FWD:
 		case CBP_PROCESS_INPUT_ELAN_UNICAST_FWD:
 			{
