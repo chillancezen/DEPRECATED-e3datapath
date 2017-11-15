@@ -15,7 +15,7 @@
 #include <e3net/include/mpls-util.h>
 #include <rte_ether.h>
 #include <e3net/include/common-cache.h>
-
+#include <lcore_extension.h>
 extern struct e3iface_role_def  role_defs[E3IFACE_ROLE_MAX_ROLES];
 #define CSP_NODE_BURST_SIZE 48
 
@@ -167,6 +167,93 @@ inline uint64_t _csp_process_input_packet(struct rte_mbuf*mbuf,
 	ret:
 	return fwd_id;
 }
+inline int _csp_multicast_forward_slow_path(struct E3Interface *pif,
+		struct node * pnode,
+		struct rte_mbuf **mbufs,
+		int nr_mbufs)
+{
+	struct rte_mempool * mempool=get_mempool_by_socket_id(lcore_to_socket_id(pnode->lcore_id));
+	struct csp_private *priv=(struct csp_private*)pif->private;
+	int nr_ports=0;
+	int nr_port=0;
+	int port_id=0;
+	int iptr;
+	
+	struct ether_e_lan *elan=NULL;
+	struct rte_mbuf *mbufs_to_send[CSP_NODE_BURST_SIZE];
+	int nr_send=0;
+	int nr_tx;
+	struct E3Interface * pif_dst;
+
+	struct common_nexthop  * mc_nexthop=NULL;
+	struct common_neighbor * mc_neighbor=NULL;
+	struct E3Interface     * mc_src_if=NULL;
+	
+	if(PREDICT_FALSE((!priv->attached)||
+		(priv->e_service!=e_lan_service)||
+		(!(elan=find_e_lan_service(priv->service_index)))))
+		return 0;
+	nr_ports=elan->nr_ports;
+
+	for(port_id=0;(port_id<MAX_PORTS_IN_E_LAN_SERVICE)&&(nr_port<nr_ports);port_id++){
+		if(!elan->ports[port_id].is_valid)
+			continue;
+		pif_dst=find_e3interface_by_index(elan->ports[port_id].iface);
+		if(!pif_dst){
+			nr_port++;
+			continue;
+		}
+		/*
+		*prepare packet for this interface
+		*/
+		for(nr_send=0,iptr=0;iptr<nr_mbufs;iptr++){
+			mbufs_to_send[nr_send]=rte_pktmbuf_alloc(mempool);
+			if(!mbufs_to_send[nr_send])
+				break;
+			rte_pktmbuf_append(mbufs_to_send[nr_send],mbufs[iptr]->pkt_len);
+			rte_memcpy(rte_pktmbuf_mtod(mbufs_to_send[nr_send],void*),
+						rte_pktmbuf_mtod(mbufs[iptr],void*),
+						mbufs[iptr]->pkt_len);
+			if(elan->ports[port_id].vlan_tci){
+				mbufs_to_send[nr_send]->vlan_tci=elan->ports[port_id].vlan_tci;
+				mbufs_to_send[nr_send]->ol_flags=PKT_TX_VLAN_PKT;
+			}
+			nr_send++;
+		}
+		nr_tx=deliver_mbufs_to_e3iface(pif_dst,0,mbufs_to_send,nr_send);
+		for(iptr=nr_tx;iptr<nr_send;iptr++)
+			rte_pktmbuf_free(mbufs_to_send[iptr]);
+		nr_port++;
+	}
+	/*
+	*prepare a copy to multicat path of e-lan
+	*/
+	if((!(mc_nexthop=find_common_nexthop(elan->multicast_NHLFE)))||
+		(!(mc_src_if=find_e3interface_by_index(mc_nexthop->local_e3iface)))||
+		(!(mc_neighbor=find_common_neighbor(mc_nexthop->common_neighbor_index))))
+		return 0;
+	for(iptr=0;iptr<nr_mbufs;iptr++){
+		struct ether_hdr * outer_eth_hdr=(struct ether_hdr*)rte_pktmbuf_prepend(mbufs[iptr],18);
+		struct mpls_hdr  * outer_mpls_hdr=(struct mpls_hdr*)(outer_eth_hdr+1);
+		rte_memcpy(outer_eth_hdr->d_addr.addr_bytes,
+			mc_neighbor->mac,
+			6);
+		rte_memcpy(outer_eth_hdr->s_addr.addr_bytes,
+			mc_src_if->mac_addrs,
+			6);
+		outer_eth_hdr->ether_type=ETHER_PROTO_MPLS_UNICAST;
+
+		set_mpls_bottom(outer_mpls_hdr);
+		set_mpls_exp(outer_mpls_hdr,0x0);
+		set_mpls_ttl(outer_mpls_hdr,0x40);
+		set_mpls_label(outer_mpls_hdr,elan->multicast_label);
+	}
+	nr_tx=deliver_mbufs_to_e3iface(mc_src_if,
+		0,
+		mbufs,
+		nr_mbufs);
+	return nr_tx;
+}
 inline void _post_csp_input_packet_process(struct E3Interface*pif,
 		struct node * pnode,
 		struct rte_mbuf **mbufs,
@@ -195,6 +282,14 @@ inline void _post_csp_input_packet_process(struct E3Interface*pif,
 				drop_start=nr_deliveded;
 				nr_dropped=nr_mbufs-drop_start;
 			}
+			break;
+		case CSP_PROCESS_INPUT_ELAN_MULTICAST_FWD:
+			nr_deliveded=_csp_multicast_forward_slow_path(pif,
+				pnode,
+				mbufs,
+				nr_mbufs);
+			drop_start=nr_deliveded;
+			nr_dropped=nr_mbufs-drop_start;
 			break;
 		default:
 			nr_dropped=nr_mbufs;
@@ -265,7 +360,21 @@ int customer_service_port_iface_input_iface(void * arg)
 }
 int customer_service_port_iface_output_iface(void * arg)
 {
-
+	int idx=0;
+	struct rte_mbuf *mbufs[32];
+	int nr_rx;
+	int nr_tx;
+	struct node * pnode=(struct node *)arg;
+	int iface_id=HIGH_UINT64((uint64_t)pnode->node_priv);
+	int queue_id=LOW_UINT64((uint64_t)pnode->node_priv);
+	struct E3Interface * pif=NULL;
+	if(!(pif=find_e3interface_by_index(iface_id)))
+		return -1;
+	if(!(nr_rx=rte_ring_sc_dequeue_burst(pnode->node_ring,(void**)mbufs,32,NULL)))
+		return 0;
+	nr_tx=rte_eth_tx_burst(iface_id,queue_id,mbufs,nr_rx);
+	for(idx=nr_tx;idx<nr_rx;idx++)
+		rte_pktmbuf_free(mbufs[idx]);
 	return 0;
 }
 int customer_service_port_iface_post_setup(struct E3Interface * pif)

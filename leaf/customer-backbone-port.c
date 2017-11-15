@@ -234,7 +234,7 @@ inline int _cbp_multicast_forward_slow_path(struct E3Interface *pif,
 		nr_tx=deliver_mbufs_to_e3iface(pif_dst,0,mbufs_to_send,nr_send);
 		for(iptr=nr_tx;iptr<nr_send;iptr++)
 			rte_pktmbuf_free(mbufs_to_send[iptr]);
-		
+		nr_port++;
 	}
 	for(iptr=0;iptr<nr_mbufs;iptr++){
 		if(consumed[iptr])
