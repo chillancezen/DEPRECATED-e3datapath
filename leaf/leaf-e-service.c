@@ -1,11 +1,11 @@
 /*
 *Copyright (c) 2016-2017 Jie Zheng
 */
-#include <leaf-e-service.h>
+#include <leaf/include/leaf-e-service.h>
 #include <rte_malloc.h>
-#include <e3_init.h>
-#include <e3_log.h>
-#include <util.h>
+#include <e3infra/include/e3_init.h>
+#include <e3infra/include/e3_log.h>
+#include <e3infra/include/util.h>
 struct ether_e_line * e_line_base;
 struct ether_e_lan  * e_lan_base;
 void init_e_service(void)

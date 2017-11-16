@@ -1,33 +1,21 @@
 /*
 *Copyright (c) 2016-2017 Jie Zheng
 */
-#include <e3iface-inventory.h>
-#include <e3_init.h>
-#include <node.h>
-#include <mbuf_delivery.h>
+#include <e3net/include/e3iface-inventory.h>
+#include <e3infra/include/e3_init.h>
+#include <e3infra/include/node.h>
+#include <e3infra/include/mbuf_delivery.h>
 #include <leaf/include/customer-backbone-port.h>
 #include <leaf/include/leaf-e-service.h>
 #include <rte_ether.h>
 #include <e3net/include/mpls-util.h>
 #include <rte_memcpy.h>
-#include <lcore_extension.h>
+#include <e3infra/include/lcore_extension.h>
 #include <rte_malloc.h>
 #include <e3net/include/common-cache.h>
 
 extern struct e3iface_role_def  role_defs[E3IFACE_ROLE_MAX_ROLES];
-#define CBP_NODE_BURST_SIZE 48
 
-#define CBP_CACHE_SIZE 8
-#define CBP_CACHE_MASK (CBP_CACHE_SIZE-1)
-
-#define MAC_CACHE_SIZE 8
-#define MAC_CACHE_MASK (MAC_CACHE_SIZE-1)
-
-#define CBP_PROCESS_INPUT_DROP 0x0
-#define CBP_PROCESS_INPUT_ELINE_FWD 0x1
-#define CBP_PROCESS_INPUT_ELAN_UNICAST_FWD 0x2
-#define CBP_PROCESS_INPUT_ELAN_MULTICAST_FWD 0x3
-#define CBP_PROCESS_INPUT_HOST_STACK 0x4
 
 
 static int cbp_capability_check(int port_id)

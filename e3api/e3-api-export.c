@@ -1,7 +1,7 @@
 /*
 *Copyright (c) 2016-2017 Jie Zheng
 */
-#include <e3-api-export.h>
+#include <e3api/include/e3-api-export.h>
 #include <assert.h>
 
 int get_file_handler(const char * file_header,
@@ -31,7 +31,7 @@ int get_file_handler(const char * file_header,
 int init_api_source_file(FILE * fp)
 {
 	fprintf(fp,"#include <exported-api.h>\n");
-	fprintf(fp,"#include <e3-api-wrapper.h>\n");
+	fprintf(fp,"#include <e3api/include/e3-api-wrapper.h>\n");
 	fflush(fp);
 	
 	return 0;

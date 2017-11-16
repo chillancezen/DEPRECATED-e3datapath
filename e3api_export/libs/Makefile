@@ -8,7 +8,7 @@ API_LIBS_DIR =$(E3_SDK)/e3api/
 SRCs= $(wildcard $(API_LIBS_DIR)/*.c)
 SRCs += $(wildcard ./*.c)
 OBJs = $(patsubst %.c,%.o,$(SRCs))
-CFLAGS += -I$(E3_SDK)/e3api/include -I. -fpic
+CFLAGS += -I$(E3_SDK) -I. -fpic
 
 
 %.o:%.c

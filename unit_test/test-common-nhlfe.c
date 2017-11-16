@@ -3,7 +3,7 @@
 */
 #include <e3test.h>
 #include <e3net/include/common-nhlfe.h>
-#include <util.h>
+#include <e3infra/include/util.h>
 DECLARE_TEST_CASE(tc_common_nhlfe);
 
 START_TEST(common_neighbor_general){
@@ -22,9 +22,9 @@ START_TEST(common_neighbor_general){
 	for(idx=0;idx<MAX_COMMON_NEXTHOPS;idx++)
 		nexthop_base[idx].is_valid=0;
 	
-	ck_assert(!!find_common_neighbor(0));
-	ck_assert(!!find_common_neighbor(MAX_COMMON_NEIGHBORS-1));
-	ck_assert(!find_common_neighbor(MAX_COMMON_NEIGHBORS));
+	ck_assert(!!_find_common_neighbor(0));
+	ck_assert(!!_find_common_neighbor(MAX_COMMON_NEIGHBORS-1));
+	ck_assert(!_find_common_neighbor(MAX_COMMON_NEIGHBORS));
 	struct common_neighbor neighbor;
 	neighbor.neighbour_ip_as_le=0x1;
 	
@@ -68,9 +68,9 @@ START_TEST(common_nexthop_general){
 	dump_field(struct common_nexthop,reserved0);
 	dump_field(struct common_nexthop,reserved1);
 
-	ck_assert(!!find_common_nexthop(0));
-	ck_assert(!!find_common_nexthop(MAX_COMMON_NEXTHOPS-1));
-	ck_assert(!find_common_nexthop(MAX_COMMON_NEXTHOPS));
+	ck_assert(!!_find_common_nexthop(0));
+	ck_assert(!!_find_common_nexthop(MAX_COMMON_NEXTHOPS-1));
+	ck_assert(!_find_common_nexthop(MAX_COMMON_NEXTHOPS));
 
 	/*
 	*test registeration

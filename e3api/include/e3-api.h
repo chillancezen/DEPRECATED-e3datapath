@@ -3,7 +3,7 @@
 */
 #ifndef _E3_API_H
 #define _E3_API_H
-#include <e3-tlv.h>
+#include <e3api/include/e3-tlv.h>
 #include <stdio.h>
 #define TLV_MAJOR_E3_API 0x1
 typedef uint64_t e3_type;

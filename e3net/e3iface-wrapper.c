@@ -1,10 +1,10 @@
 /*
 *Copyright (c) 2016-2017 Jie Zheng
 */
-#include <e3iface-wrapper.h>
-#include <e3iface-inventory.h>
-#include <node.h>
-#include <mbuf_delivery.h>
+#include <e3net/include/e3iface-wrapper.h>
+#include <e3net/include/e3iface-inventory.h>
+#include <e3infra/include/node.h>
+#include <e3infra/include/mbuf_delivery.h>
 static int tap_number=0;
 
 static int tap_pre_setup(struct E3Interface * pe3iface)

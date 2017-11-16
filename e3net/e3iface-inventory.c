@@ -1,10 +1,10 @@
 /*
 *Copyright (c) 2016-2017 Jie Zheng
 */
-#include <e3iface-inventory.h>
-#include <e3_init.h>
-#include <e3-api-wrapper.h>
-#include <e3_log.h>
+#include <e3net/include/e3iface-inventory.h>
+#include <e3infra/include/e3_init.h>
+#include <e3api/include/e3-api-wrapper.h>
+#include <e3infra/include/e3_log.h>
 
 struct e3iface_model_def model_defs[E3IFACE_MODEL_MAX_MODELS];
 struct e3iface_role_def  role_defs[E3IFACE_ROLE_MAX_ROLES];

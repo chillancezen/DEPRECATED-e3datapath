@@ -15,12 +15,12 @@
 #include <rte_per_lcore.h>
 #include <rte_lcore.h>
 #include <rte_debug.h>
-#include <node.h>
-#include <node_class.h>
-#include <node_adjacency.h>
-#include <lcore_extension.h>
-#include <e3_init.h>
-#include <e3interface.h>
+#include <e3infra/include/node.h>
+#include <e3infra/include/node_class.h>
+#include <e3infra/include/node_adjacency.h>
+#include <e3infra/include/lcore_extension.h>
+#include <e3infra/include/e3_init.h>
+#include <e3infra/include/e3interface.h>
 //#include <spine-label-fib.h>
 //#include <spine-label-nhlfe.h>
 int

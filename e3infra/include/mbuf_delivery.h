@@ -3,12 +3,12 @@
 */
 #ifndef _MBUF_DELIVERY_H
 #define _MBUF_DELIVERY_H
-#include <node.h>
-#include <node_class.h>
-#include <node_adjacency.h>
+#include <e3infra/include/node.h>
+#include <e3infra/include/node_class.h>
+#include <e3infra/include/node_adjacency.h>
 #include <rte_prefetch.h>
-#include <util.h>
-#include <e3interface.h>
+#include <e3infra/include/util.h>
+#include <e3infra/include/e3interface.h>
 
 
 

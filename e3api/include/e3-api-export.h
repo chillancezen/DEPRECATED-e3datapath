@@ -4,7 +4,7 @@
 #ifndef E3_API_EXPORT_H
 #define E3_API_EXPORT_H
 #include <stdio.h>
-#include <e3-api-wrapper.h>
+#include <e3api/include/e3-api-wrapper.h>
 
 int get_file_handler(const char * file_header,
 						const char * file_source,

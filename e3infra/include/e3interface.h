@@ -5,8 +5,8 @@
 #define _E3INTERFACE_H
 #include <inttypes.h>
 #include <rte_ethdev.h>
-#include <e3_log.h>
-#include <util.h>
+#include <e3infra/include/e3_log.h>
+#include <e3infra/include/util.h>
 #include <urcu-qsbr.h>
 
 #define MAX_E3INTERFACE_NAME_SIZE 64

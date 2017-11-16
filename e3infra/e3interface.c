@@ -2,13 +2,13 @@
 *Copyright (c) 2016-2017 Jie Zheng
 */
 #include <rte_malloc.h>
-#include <e3interface.h>
+#include <e3infra/include/e3interface.h>
 #include <string.h>
-#include <node.h>
-#include <lcore_extension.h>
-#include <node_adjacency.h>
-#include <e3-api-wrapper.h>
-#include <e3iface-inventory.h>
+#include <e3infra/include/node.h>
+#include <e3infra/include/lcore_extension.h>
+#include <e3infra/include/node_adjacency.h>
+#include <e3api/include/e3-api-wrapper.h>
+#include <e3net/include/e3iface-inventory.h>
 //#define USE_NUMA_NODE 
 /*when allocating lcore resource to io nodes,
 if we define this macro,as a matter of optimization,user should know which socket 

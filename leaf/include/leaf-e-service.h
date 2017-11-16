@@ -5,7 +5,7 @@
 #define _LEAF_E_SERVICE_H
 #include <stdint.h>
 #include <e3net/include/common-nhlfe.h>
-#include <fast-index.h>
+#include <e3infra/include/fast-index.h>
 #include <urcu-qsbr.h>
 
 #define MAX_E_LINE_SERVICES 4096
@@ -59,14 +59,16 @@ struct ether_e_lan{
 }__attribute__((packed));
 
 extern struct ether_e_line * e_line_base;
-#define find_e_line_service(index) ((((index)>=0)&&((index)<MAX_E_LINE_SERVICES))?&e_line_base[(index)]:NULL)
+#define _find_e_line_service(index) ((((index)>=0)&&((index)<MAX_E_LINE_SERVICES))?&e_line_base[(index)]:NULL)
+#define find_e_line_service(index) (((((index)>=0)&&((index)<MAX_E_LINE_SERVICES))&&(e_line_base[(index)].is_valid))?&e_line_base[(index)]:NULL)
 int register_e_line_service(struct ether_e_line * eline);
 int reference_e_line_service(int index);
 int dereference_e_line_service(int index);
 int delete_e_line_service(int index);
 
 extern struct ether_e_lan  * e_lan_base;
-#define find_e_lan_service(index) ((((index)>=0)&&((index)<MAX_E_LAN_SERVICES))?&e_lan_base[(index)]:NULL)
+#define _find_e_lan_service(index) ((((index)>=0)&&((index)<MAX_E_LAN_SERVICES))?&e_lan_base[(index)]:NULL)
+#define find_e_lan_service(index) (((((index)>=0)&&((index)<MAX_E_LAN_SERVICES))&&(e_lan_base[(index)].is_valid))?&e_lan_base[(index)]:NULL)
 int register_e_lan_service(void);
 int reference_e_lan_service(int index);
 int dereference_e_lan_service(int index);

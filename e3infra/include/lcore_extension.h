@@ -3,7 +3,7 @@
 */
 #ifndef _LCORE_EXTENSION_H
 #define _LCORE_EXTENSION_H
-#include <node.h>
+#include <e3infra/include/node.h>
 
 #define MAX_LCORE_SUPPORTED 127
 #define MAX_SOCKET_SUPPORTED 8

@@ -1,14 +1,14 @@
 /*
 *Copyright (c) 2016-2017 Jie Zheng
 */
-#include <spine-label-nhlfe.h>
-#include <e3_init.h>
-#include <e3_log.h>
+#include <spine/include/spine-label-nhlfe.h>
+#include <e3infra/include/e3_init.h>
+#include <e3infra/include/e3_log.h>
 #include <rte_malloc.h>
 #include <string.h>
 #include <stdlib.h>
-#include <e3-api-wrapper.h>
-#include <util.h>
+#include <e3api/include/e3-api-wrapper.h>
+#include <e3infra/include/util.h>
 struct topological_neighbor * topological_neighbor_base;
 struct next_hop             * next_hop_base;
 struct multicast_next_hops  * mnext_hops_base;

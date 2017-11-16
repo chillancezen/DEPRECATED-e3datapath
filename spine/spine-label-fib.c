@@ -1,7 +1,7 @@
 /*
 *Copyright (c) 2016-2017 Jie Zheng
 */
-#include <spine-label-fib.h>
+#include <spine/include/spine-label-fib.h>
 #include <rte_malloc.h>
 
 

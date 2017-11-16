@@ -1,7 +1,7 @@
 /*
 *Copyright (c) 2016-2017 Jie Zheng
 */
-#include <node_adjacency.h>
+#include <e3infra/include/node_adjacency.h>
 
 int set_node_to_node_edge(const char * cur_node_name,int entry_index,const char * next_node_name)
 {

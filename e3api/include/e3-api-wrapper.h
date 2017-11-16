@@ -3,7 +3,7 @@
 */
 #ifndef _E3_API_WRAPPER_H
 #define _E3_API_WRAPPER_H
-#include <e3-api.h>
+#include <e3api/include/e3-api.h>
 #include <zmq.h>
 #include <pthread.h>
 

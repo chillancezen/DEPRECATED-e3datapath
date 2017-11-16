@@ -29,7 +29,8 @@ struct common_nexthop{
 
 extern struct common_neighbor * neighbor_base;
 int register_common_neighbor(struct common_neighbor * neighbor);
-#define find_common_neighbor(index) ((((index)>=0)&&((index)<MAX_COMMON_NEIGHBORS))?&neighbor_base[(index)]:NULL)
+#define _find_common_neighbor(index) ((((index)>=0)&&((index)<MAX_COMMON_NEIGHBORS))?&neighbor_base[(index)]:NULL)
+#define find_common_neighbor(index) (((((index)>=0)&&((index)<MAX_COMMON_NEIGHBORS))&(neighbor_base[(index)].is_valid))?&neighbor_base[(index)]:NULL)
 int reference_common_nrighbor(int index);
 int dereference_common_neighbor(int index);
 int delete_common_neighbor(int index);
@@ -37,7 +38,8 @@ int delete_common_neighbor(int index);
 
 extern struct common_nexthop  * nexthop_base;
 int register_common_nexthop(struct common_nexthop * hop);
-#define find_common_nexthop(index) ((((index)>=0)&&((index)<MAX_COMMON_NEXTHOPS))?&nexthop_base[(index)]:NULL)
+#define _find_common_nexthop(index) ((((index)>=0)&&((index)<MAX_COMMON_NEXTHOPS))?&nexthop_base[(index)]:NULL)
+#define find_common_nexthop(index) (((((index)>=0)&&((index)<MAX_COMMON_NEXTHOPS))&&(nexthop_base[(index)].is_valid))?&nexthop_base[(index)]:NULL)
 int reference_common_nexthop(int index);
 int dereference_common_nexthop(int index);
 int delete_common_nexthop(int index);

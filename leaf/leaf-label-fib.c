@@ -1,11 +1,11 @@
 /*
 *Copyright (c) 2016-2017 Jie Zheng
 */
-#include <leaf-label-fib.h>
-#include <leaf-e-service.h>
+#include <leaf/include/leaf-label-fib.h>
+#include <leaf/include/leaf-e-service.h>
 #include <rte_malloc.h>
-#include <e3_log.h>
-#include <util.h>
+#include <e3infra/include/e3_log.h>
+#include <e3infra/include/util.h>
 struct leaf_label_entry * allocate_leaf_label_base(int numa_socket_id)
 {
 	struct leaf_label_entry * base;

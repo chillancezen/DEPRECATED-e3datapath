@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <leaf/include/leaf-e-service.h>
 #include <leaf/include/leaf-label-fib.h>
-#include <e3interface.h>
+#include <e3infra/include/e3interface.h>
 
 struct cbp_cache_entry{
 	uint32_t is_valid;

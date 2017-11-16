@@ -1,10 +1,10 @@
 /*
 *Copyright (c) 2016-2017 Jie Zheng
 */
-#include <e3_init.h>
-#include <e3-api-wrapper.h>
-#include <e3iface-inventory.h>
-#include <provider-backbone-port.h>
+#include <e3infra/include/e3_init.h>
+#include <e3api/include/e3-api-wrapper.h>
+#include <e3net/include/e3iface-inventory.h>
+#include <spine/include/provider-backbone-port.h>
 
 /*actually, it should be aliased to set_label_entry*/
 e3_type register_label_entry(e3_type service,

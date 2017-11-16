@@ -1,11 +1,11 @@
 /*
 *Copyright (c) 2016-2017 Jie Zheng
 */
-#include <lcore_extension.h>
-#include <e3_log.h>
+#include <e3infra/include/lcore_extension.h>
+#include <e3infra/include/e3_log.h>
 #include <stdio.h>
 #include <string.h>
-#include <e3_init.h>
+#include <e3infra/include/e3_init.h>
 struct node * lcore_task_list[MAX_LCORE_SUPPORTED];
 struct e3_lcore lcore_records[MAX_LCORE_SUPPORTED];
 struct rte_mempool * gmempool_array[MAX_SOCKET_SUPPORTED];

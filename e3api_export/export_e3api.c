@@ -2,7 +2,7 @@
 *Copyright (c) 2016-2017 Jie Zheng
 */
 #include <stdio.h>
-#include <e3-api-export.h>
+#include <e3api/include/e3-api-export.h>
 #include <assert.h>
 
 #define EXPORTED_HEADER "./libs/exported-api.h"

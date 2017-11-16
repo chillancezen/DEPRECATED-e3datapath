@@ -4,7 +4,7 @@
 #include <rte_eal.h>
 #include <e3test.h>
 #include <stdio.h>
-#include <lcore_extension.h>
+#include <e3infra/include/lcore_extension.h>
 DECLARE_TEST_CASE(tc_main);
 
 Suite * suite_total=NULL;

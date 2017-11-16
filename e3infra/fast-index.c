@@ -1,10 +1,10 @@
 /*
 *Copyright (c) 2016-2017 Jie Zheng
 */
-#include <fast-index.h>
+#include <e3infra/include/fast-index.h>
 #include <rte_malloc.h>
-#include <e3_log.h>
-#include <util.h>
+#include <e3infra/include/e3_log.h>
+#include <e3infra/include/util.h>
 
 struct findex_2_2_base * allocate_findex_2_2_base(void)
 {

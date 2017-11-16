@@ -3,7 +3,7 @@
 */
 #include <e3test.h>
 #include <leaf/include/leaf-e-service.h>
-#include <util.h>
+#include <e3infra/include/util.h>
 
 DECLARE_TEST_CASE(tc_leaf_e_service);
 
@@ -19,9 +19,9 @@ START_TEST(leaf_e_line_service_general){
 	dump_field(struct ether_e_line,vlan_tci);
 	dump_field(struct ether_e_line,ref_cnt);
 
-	ck_assert(!!find_e_line_service(0));
-	ck_assert(!!find_e_line_service(MAX_E_LINE_SERVICES-1));
-	ck_assert(!find_e_line_service(MAX_E_LINE_SERVICES));
+	ck_assert(!!_find_e_line_service(0));
+	ck_assert(!!_find_e_line_service(MAX_E_LINE_SERVICES-1));
+	ck_assert(!_find_e_line_service(MAX_E_LINE_SERVICES));
 
 	/*
 	*environmental presetup
@@ -132,7 +132,7 @@ START_TEST(leaf_e_lan_service_general){
     
 	struct ether_e_lan * elan;
 	ck_assert(register_e_lan_service()==0);
-	ck_assert(!!(elan=find_e_lan_service(0)));
+	ck_assert(!!(elan=_find_e_lan_service(0)));
 	ck_assert(elan->is_valid);
 
     /*
