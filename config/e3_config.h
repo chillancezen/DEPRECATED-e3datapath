@@ -18,6 +18,8 @@
 #define BUILD_VERSION_NUMBER 0x1
 
 
+#define E3_DATAPATH_CONFIG_FILE "/etc/e3net/e3datapath.ini"
+
 
 
 #endif

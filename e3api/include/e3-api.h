@@ -69,7 +69,4 @@ char * e3_arg_type_to_string(enum e3_arg_type type);
 char * e3_arg_behavior_to_string(enum e3_arg_behavior behavior);
 char * e3_arg_type_to_std_type(enum e3_arg_type type);
 
-
-
-
 #endif
