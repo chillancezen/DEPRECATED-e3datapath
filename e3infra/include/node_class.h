@@ -124,7 +124,7 @@ int  add_node_into_nodeclass(const char* class_name,const char* node_name);
 
 int _delete_node_from_nodeclass(struct node_class *pclass,struct node *pnode);
 int  delete_node_from_nodeclass(const char* class_name,const char* node_name);
-void dump_node_class(FILE* fp);
+void dump_node_class(void);
 
 int _add_node_into_nodeclass_pool(struct node_class * pclass,struct node* pnode);
 int  add_node_into_nodeclass_pool(const char* class_name,const char* node_name);

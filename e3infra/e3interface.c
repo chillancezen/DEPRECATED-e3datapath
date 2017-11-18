@@ -578,7 +578,7 @@ int stop_e3interface(struct E3Interface * pif)
 	return 0;
 }
 
-void dump_e3interfaces(FILE* fp)
+void dump_e3interfaces(void)
 {
 	struct E3Interface * pif;
 	int idx=0;
@@ -586,13 +586,7 @@ void dump_e3interfaces(FILE* fp)
 		pif=find_e3interface_by_index(idx);
 		if(!pif)
 			continue;
-		if(fp!=fp_log)
-			fprintf(fp,"%d: ifname:%s with %d queues\n",
-				pif->port_id,
-				(char*)pif->name,
-				pif->nr_queues);
-		else 
-			E3_LOG("%d: ifname:%s with %d queues\n",
+		E3_LOG("%d: ifname:%s with %d queues\n",
 				pif->port_id,
 				(char*)pif->name,
 				pif->nr_queues);

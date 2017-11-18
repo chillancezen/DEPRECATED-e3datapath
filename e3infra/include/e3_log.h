@@ -8,6 +8,8 @@
 #include <time.h>
 #include <string.h>
 #include <stdlib.h>
+#include <e3infra/include/e3_log_feature.h>
+
 
 #define current_time() ({\
 	int  _iptr=0; \
@@ -25,34 +27,37 @@
 #define E3_ASSERT(condition)  \
 do{ \
         if(!(condition)){\
-                fprintf(fp_log,"%s [assert] %s:%d %s() %s\n",current_time(),__FILE__,__LINE__,__FUNCTION__,#condition); \
-                fflush(fp_log); \
+				log_fatal("%s",#condition); \
                 exit(-1); \
         }\
 }while(0)
 
 
 #define E3_LOG(format,...) {\
-	fprintf(fp_log,"%s [log] %s:%d %s() ",current_time(),__FILE__,__LINE__,__FUNCTION__); \
-	fprintf(fp_log,(format),##__VA_ARGS__); \
-	fflush(fp_log);}
+	log_info((format),##__VA_ARGS__); \
+}
+
 
 #define E3_WARN(format,...) {\
-	fprintf(fp_log,"%s [warn] %s:%d %s() ",current_time(),__FILE__,__LINE__,__FUNCTION__); \
-	fprintf(fp_log,(format),##__VA_ARGS__); \
-	fflush(fp_log);}
+	log_warn((format),##__VA_ARGS__); \
+}
 
 #define E3_ERROR(format,...) {\
-	fprintf(fp_log,"%s [error] %s:%d %s() ",current_time(),__FILE__,__LINE__,__FUNCTION__); \
-	fprintf(fp_log,(format),##__VA_ARGS__); \
-	fflush(fp_log);}
+	log_error((format),##__VA_ARGS__); \
+}
 
-extern FILE * fp_log;
+/*
+*E3_DEBUG is special because we usually put it in fastpath
+*so it should not appear in RELEASE target
+*/
+#if BUILD_TYPE==BUILD_TYPE_DEBUG
+	#define E3_DEBUG(format,...){\
+		log_debug((format),##__VA_ARGS__); \
+	}
+#else
+	#define E3_DEBUG(format,...)
+#endif
+
 extern time_t log_time;
 
-#if defined(USE_STD_LOG)
-	#define LOG_FILE_PATH "/dev/stdout"
-#else
-	#define LOG_FILE_PATH "/var/log/e3vswitch.log"
-#endif
 #endif

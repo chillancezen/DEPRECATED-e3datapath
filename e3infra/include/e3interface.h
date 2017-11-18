@@ -161,7 +161,7 @@ void unregister_e3interface(int port_id);
 	_mm_sfence(); \
 }
 
-void dump_e3interfaces(FILE* fp);
+void dump_e3interfaces(void);
 
 int correlate_e3interfaces(struct E3Interface * pif1,struct E3Interface *pif2);
 int dissociate_e3interface(struct E3Interface * pif);

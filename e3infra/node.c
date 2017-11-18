@@ -125,13 +125,10 @@ void unregister_node(struct node * node)
 	#endif
 }
 
-void dump_nodes(FILE*fp)
+void dump_nodes(void)
 {
 	struct node * pnode;
 	FOREACH_NODE_START(pnode){
-		if(fp_log!=fp)
-			fprintf(fp,"node :%d %s\n",pnode->node_index,pnode->name);
-		else
 			E3_LOG("node :%d %s\n",pnode->node_index,pnode->name);
 	}
 	FOREACH_NODE_END();

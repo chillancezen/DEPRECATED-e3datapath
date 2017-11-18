@@ -109,7 +109,7 @@ __attribute__((always_inline)) static inline struct node* find_node_by_index(int
 int register_node(struct node *node);
 void unregister_node(struct node * node);
 int node_module_test(void);
-void dump_nodes(FILE*fp);
+void dump_nodes(void);
 void dump_node_stats(int node_index);
 
 

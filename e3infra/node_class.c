@@ -48,14 +48,11 @@ void unregister_node_class(struct node_class *nclass)
 }
 
 
-void dump_node_class(FILE* fp)
+void dump_node_class(void)
 {	
 	struct node_class * pclass=NULL;
 	FOREACH_NODE_CLASS_START(pclass){
-		if(fp!=fp_log)
-			fprintf(fp,"node class :%d %s\n",pclass->node_class_index,pclass->class_name);
-		else
-			E3_LOG("node class :%d %s\n",pclass->node_class_index,pclass->class_name);
+		E3_LOG("node class :%d %s\n",pclass->node_class_index,pclass->class_name);
 	}
 	FOREACH_NODE_CLASS_END();
 }
