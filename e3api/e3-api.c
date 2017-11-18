@@ -5,11 +5,32 @@
 #include <string.h>
 #include <assert.h>
 
+
 struct e3_api_declaration *e3_api_head=(void*)0;
+
+map_void_t e3_api_map={
+	.ref=NULL,
+	.tmp=0,
+	.base={
+		.buckets=NULL,
+		.nbuckets=0,
+		.nnodes=0,
+	},
+};
+
 
 struct e3_api_declaration * search_e3_api_by_name(const char * api_name)
 {
+	struct e3_api_declaration ** papi_ptr=NULL;
 	struct e3_api_declaration * api_ptr=e3_api_head;
+	papi_ptr=(struct e3_api_declaration **)map_get(&e3_api_map,api_name);
+	if(papi_ptr)
+		return *papi_ptr;
+
+	/*
+	*if not found in the hash-map,populate the whole
+	*api declaration list,and try to find it
+	*/
 	for(;api_ptr;api_ptr=api_ptr->next){
 		if(!strcmp(api_ptr->api_name,api_name))
 			break;

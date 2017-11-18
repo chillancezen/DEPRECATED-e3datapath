@@ -1,7 +1,7 @@
 #include <e3test.h>
 #include <leaf/include/customer-backbone-port.h>
 #include <e3infra/include/e3-ini-config.h>
-
+#include <e3infra/include/e3-hashmap.h>
 DECLARE_TEST_CASE(tc_customer_backbone_port);
 
 START_TEST(cbp_generic){

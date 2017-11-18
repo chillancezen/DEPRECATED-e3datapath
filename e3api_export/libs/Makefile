@@ -7,6 +7,8 @@ EXPORTED_LIB=libe3api.so
 API_LIBS_DIR =$(E3_SDK)/e3api/
 SRCs= $(wildcard $(API_LIBS_DIR)/*.c)
 SRCs += $(wildcard ./*.c)
+SRCs += $(E3_SDK)/e3infra/e3-hashmap.c
+
 OBJs = $(patsubst %.c,%.o,$(SRCs))
 CFLAGS += -I$(E3_SDK) -I. -fpic
 

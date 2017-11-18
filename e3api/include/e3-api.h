@@ -5,6 +5,8 @@
 #define _E3_API_H
 #include <e3api/include/e3-tlv.h>
 #include <stdio.h>
+#include <e3infra/include/e3-hashmap.h>
+
 #define TLV_MAJOR_E3_API 0x1
 typedef uint64_t e3_type;
 
@@ -50,6 +52,7 @@ typedef e3_type (*api_callback_func)(e3_type dummy,...);
 
 
 extern struct e3_api_declaration *e3_api_head;
+extern map_void_t e3_api_map;
 
 #define DECLARE_E3_API(api) \
 	struct e3_api_declaration e3_api_##api; \
@@ -57,6 +60,7 @@ extern struct e3_api_declaration *e3_api_head;
 		void register_e3_api_##api(void){ \
 		e3_api_##api.next=e3_api_head; \
 		e3_api_head=&e3_api_##api; \
+		map_set(&e3_api_map,e3_api_##api.api_name,&e3_api_##api); \
 	} \
 	struct e3_api_declaration e3_api_##api
 
