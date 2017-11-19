@@ -5,7 +5,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <e3infra/include/node.h>
-#include <e3infra/include/node_class.h>
+#include <e3infra/include/node-class.h>
 #include <x86intrin.h>
 
 

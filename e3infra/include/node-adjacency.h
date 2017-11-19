@@ -4,7 +4,7 @@
 #ifndef _NODE_ADJACENCY_H
 #define _NODE_ADJACENCY_H
 #include <e3infra/include/node.h>
-#include <e3infra/include/node_class.h>
+#include <e3infra/include/node-class.h>
 #include <e3infra/include/util.h>
 
 

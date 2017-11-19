@@ -2,15 +2,15 @@
 *Copyright (c) 2016-2017 Jie Zheng
 */
 #include <e3net/include/e3iface-inventory.h>
-#include <e3infra/include/e3_init.h>
+#include <e3infra/include/e3-init.h>
 #include <e3infra/include/node.h>
-#include <e3infra/include/mbuf_delivery.h>
+#include <e3infra/include/mbuf-delivery.h>
 #include <leaf/include/customer-backbone-port.h>
 #include <leaf/include/leaf-e-service.h>
 #include <rte_ether.h>
 #include <e3net/include/mpls-util.h>
 #include <rte_memcpy.h>
-#include <e3infra/include/lcore_extension.h>
+#include <e3infra/include/lcore-extension.h>
 #include <rte_malloc.h>
 #include <e3net/include/common-cache.h>
 

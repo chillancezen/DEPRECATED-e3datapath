@@ -5,7 +5,7 @@
 #define _E3INTERFACE_H
 #include <inttypes.h>
 #include <rte_ethdev.h>
-#include <e3infra/include/e3_log.h>
+#include <e3infra/include/e3-log.h>
 #include <e3infra/include/util.h>
 #include <urcu-qsbr.h>
 

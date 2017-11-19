@@ -7,7 +7,7 @@
 #include <urcu-qsbr.h>
 #include <string.h>
 #include <stdio.h>
-#include <e3infra/include/e3_bitmap.h>
+#include <e3infra/include/e3-bitmap.h>
 
 #define MAX_NR_NODE_CLASSES 256
 #define MAX_NODECLASS_NAME_LEN 64

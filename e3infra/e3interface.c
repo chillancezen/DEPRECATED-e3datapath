@@ -5,8 +5,8 @@
 #include <e3infra/include/e3interface.h>
 #include <string.h>
 #include <e3infra/include/node.h>
-#include <e3infra/include/lcore_extension.h>
-#include <e3infra/include/node_adjacency.h>
+#include <e3infra/include/lcore-extension.h>
+#include <e3infra/include/node-adjacency.h>
 #include <e3api/include/e3-api-wrapper.h>
 #include <e3net/include/e3iface-inventory.h>
 //#define USE_NUMA_NODE 

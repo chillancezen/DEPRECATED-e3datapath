@@ -4,13 +4,13 @@
 #include <spine/include/provider-backbone-port.h>
 #include <e3net/include/e3iface-inventory.h>
 #include <e3infra/include/node.h>
-#include <e3infra/include/mbuf_delivery.h>
-#include <e3infra/include/e3_init.h>
-#include <e3infra/include/e3_log.h>
+#include <e3infra/include/mbuf-delivery.h>
+#include <e3infra/include/e3-init.h>
+#include <e3infra/include/e3-log.h>
 #include <rte_ether.h>
 #include <spine/include/spine-label-fib.h>
 #include <spine/include/spine-label-nhlfe.h>
-#include <e3infra/include/lcore_extension.h>
+#include <e3infra/include/lcore-extension.h>
 #include <e3infra/include/util.h>
 #include <rte_malloc.h>
 #include <e3net/include/mpls-util.h>

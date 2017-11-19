@@ -5,7 +5,7 @@
 #define _FAST_INDEX_H
 #include <inttypes.h>
 #include <urcu-qsbr.h>
-#include <e3infra/include/e3_bitmap.h>
+#include <e3infra/include/e3-bitmap.h>
 #include <x86intrin.h>
 /*todo:ip to 2_2key*/
 /*part 0:2-2 fast index which can map ipv4 addresses into corresponding data structure*/

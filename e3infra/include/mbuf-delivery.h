@@ -4,8 +4,8 @@
 #ifndef _MBUF_DELIVERY_H
 #define _MBUF_DELIVERY_H
 #include <e3infra/include/node.h>
-#include <e3infra/include/node_class.h>
-#include <e3infra/include/node_adjacency.h>
+#include <e3infra/include/node-class.h>
+#include <e3infra/include/node-adjacency.h>
 #include <rte_prefetch.h>
 #include <e3infra/include/util.h>
 #include <e3infra/include/e3interface.h>

@@ -1,7 +1,7 @@
 /*
 *Copyright (c) 2016-2017 Jie Zheng
 */
-#include <e3infra/include/e3_init.h>
+#include <e3infra/include/e3-init.h>
 #include <e3api/include/e3-api-wrapper.h>
 #include <e3net/include/e3iface-inventory.h>
 #include <spine/include/provider-backbone-port.h>

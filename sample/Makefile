@@ -44,7 +44,7 @@ APP = helloworld
 # all source are stored in SRCS-y
 SRCS-y := main.c
 
-CFLAGS += -O3 -I/$(E3_SDK) -include $(E3_SDK)/config/e3_config.h 
+CFLAGS += -O3 -I/$(E3_SDK) -include $(E3_SDK)/config/e3-config.h 
 CFLAGS += -I/root/jzheng/userspace-rcu-master/src -L/root/mywork/userspace-rcu/src/.libs
 CFLAGS += -L/lib64
 LDFLAGS += -lurcu-qsbr -le3datapath -lzmq 

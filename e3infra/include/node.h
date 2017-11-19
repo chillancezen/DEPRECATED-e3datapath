@@ -8,7 +8,7 @@
 #include <rte_ring.h>
 #include <rte_mempool.h>
 #include <urcu-qsbr.h>
-#include <e3infra/include/e3_log.h>
+#include <e3infra/include/e3-log.h>
 
 
 #define MAX_NR_NODES 1024 

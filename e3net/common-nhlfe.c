@@ -3,8 +3,8 @@
 */
 #include <e3net/include/common-nhlfe.h>
 #include <rte_malloc.h>
-#include <e3infra/include/e3_init.h>
-#include <e3infra/include/e3_log.h>
+#include <e3infra/include/e3-init.h>
+#include <e3infra/include/e3-log.h>
 #include <rte_memcpy.h>
 struct common_neighbor * neighbor_base=NULL;
 struct common_nexthop  * nexthop_base=NULL;

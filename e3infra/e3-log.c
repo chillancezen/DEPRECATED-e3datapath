@@ -1,8 +1,8 @@
 /*
 *Copyright (c) 2016-2017 Jie Zheng
 */
-#include <e3infra/include/e3_log.h>
-#include <e3infra/include/e3_init.h>
+#include <e3infra/include/e3-log.h>
+#include <e3infra/include/e3-init.h>
 #include <e3infra/include/e3-ini-config.h>
 #include <rte_spinlock.h>
 time_t log_time;

@@ -4,18 +4,18 @@
 #define __CONTEXT_CUSTOEMR_SERVICE_PORT
 
 #include <leaf/include/customer-service-port.h>
-#include <e3infra/include/e3_init.h>
+#include <e3infra/include/e3-init.h>
 #include <e3net/include/e3iface-inventory.h>
 #include <leaf/include/leaf-e-service.h>
 #include <leaf/include/leaf-label-fib.h>
 #include <e3infra/include/util.h>
 #include <e3net/include/mpls-util.h>
 #include <e3infra/include/node.h>
-#include <e3infra/include/mbuf_delivery.h>
+#include <e3infra/include/mbuf-delivery.h>
 #include <e3net/include/mpls-util.h>
 #include <rte_ether.h>
 #include <e3net/include/common-cache.h>
-#include <e3infra/include/lcore_extension.h>
+#include <e3infra/include/lcore-extension.h>
 extern struct e3iface_role_def  role_defs[E3IFACE_ROLE_MAX_ROLES];
 
 //#define CSP_PROCESS_INPUT_HOST_STACK 0x4

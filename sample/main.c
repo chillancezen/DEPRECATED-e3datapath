@@ -16,10 +16,10 @@
 #include <rte_lcore.h>
 #include <rte_debug.h>
 #include <e3infra/include/node.h>
-#include <e3infra/include/node_class.h>
-#include <e3infra/include/node_adjacency.h>
-#include <e3infra/include/lcore_extension.h>
-#include <e3infra/include/e3_init.h>
+#include <e3infra/include/node-class.h>
+#include <e3infra/include/node-adjacency.h>
+#include <e3infra/include/lcore-extension.h>
+#include <e3infra/include/e3-init.h>
 #include <e3infra/include/e3interface.h>
 //#include <spine-label-fib.h>
 //#include <spine-label-nhlfe.h>

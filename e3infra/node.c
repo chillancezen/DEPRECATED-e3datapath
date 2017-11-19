@@ -4,7 +4,7 @@
 #include <e3infra/include/node.h>
 #include <stdio.h>
 #include <string.h>
-#include <e3infra/include/lcore_extension.h>
+#include <e3infra/include/lcore-extension.h>
 #include <rte_malloc.h>
 #include <e3infra/include/util.h>
 struct node *gnode_array[MAX_NR_NODES];

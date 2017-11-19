@@ -8,7 +8,7 @@
 #include <time.h>
 #include <string.h>
 #include <stdlib.h>
-#include <e3infra/include/e3_log_feature.h>
+#include <e3infra/include/e3-log-feature.h>
 
 
 #define current_time() ({\

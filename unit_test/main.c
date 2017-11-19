@@ -4,7 +4,12 @@
 #include <rte_eal.h>
 #include <e3test.h>
 #include <stdio.h>
-#include <e3infra/include/lcore_extension.h>
+#include <unistd.h>
+#include <e3infra/include/lcore-extension.h>
+#include <e3infra/include/e3-ini-config.h>
+#include <e3infra/include/e3-log.h>
+#include <e3net/include/e3iface-inventory.h>
+
 DECLARE_TEST_CASE(tc_main);
 
 Suite * suite_total=NULL;
@@ -15,16 +20,30 @@ void init_suite(void)
 }
 E3_init(init_suite,E3_TASK_PRI_TEST_SUITE);
 
-int main(int argc, char **argv)
+
+void global_test_setup(void)
 {
-    int lcore_id;
+	int  pport;
+	char * cbp_pci_addr=get_ini_option_string("test","cbp_pci_addr");
+	E3_ASSERT(!create_e3iface(0,
+		cbp_pci_addr,
+		E3IFACE_MODEL_GENERIC_SINGLY_QUEUE,
+		E3IFACE_ROLE_CUSTOMER_BACKBONE_FACING_PORT,
+		&pport));
+}
+int main(int argc, char **argv)
+{	
     int n;
-    SRunner *sr;
+	SRunner *sr;
+	pthread_t pid;
 	rte_eal_init(argc, argv);
 	init_registered_tasks();
-    sr = srunner_create(suite_total);
-    srunner_run_all(sr, CK_ENV);
-    n = srunner_ntests_failed(sr);
-    srunner_free(sr);
-    return (n == 0) ? EXIT_SUCCESS : EXIT_FAILURE;	
+	global_test_setup();
+	sr = srunner_create(suite_total);
+	srunner_run_all(sr, CK_ENV);
+	n = srunner_ntests_failed(sr);
+	srunner_free(sr);
+
+	
+	return 0;
 }

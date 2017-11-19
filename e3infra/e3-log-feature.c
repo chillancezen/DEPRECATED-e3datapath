@@ -27,7 +27,7 @@
 #include <stdarg.h>
 #include <string.h>
 #include <time.h>
-#include <e3infra/include/e3_log_feature.h>
+#include <e3infra/include/e3-log-feature.h>
 
 static struct {
   void *udata;

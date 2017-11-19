@@ -4,8 +4,8 @@
 #ifndef _E3TEST_H
 #define _E3TEST_H
 #include <check.h>
-#include <e3infra/include/e3_init.h>
-#include <e3infra/include/e3_log.h>
+#include <e3infra/include/e3-init.h>
+#include <e3infra/include/e3-log.h>
 #define E3_TASK_PRI_TEST_SUITE   (0x100+TASK_PTIORITY_LOW)
 #define E3_TASK_PRI_TEST_CASE    (0x1000+TASK_PTIORITY_LOW)
 #define E3_TASK_PRI_TEST_ELEMENT (0x10000+TASK_PTIORITY_LOW)
