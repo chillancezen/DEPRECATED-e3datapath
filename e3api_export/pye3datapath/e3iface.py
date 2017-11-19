@@ -150,7 +150,7 @@ if __name__=='__main__':
     #print(attach_e3iface('0000:00:08.0',E3IFACE_MODEL_GENERIC_SINGLY_QUEUE,E3IFACE_ROLE_PROVIDER_BACKBONE_PORT))
     #print(attach_e3iface('0000:00:08.0',E3IFACE_MODEL_GENERIC_SINGLY_QUEUE,E3IFACE_ROLE_CUSTOMER_BACKBONE_FACING_PORT))
     #E3IFACE_ROLE_CUSTOMER_USER_FACING_PORT
-    print(attach_e3iface('0000:00:08.0',E3IFACE_MODEL_GENERIC_SINGLY_QUEUE,E3IFACE_ROLE_CUSTOMER_USER_FACING_PORT)) 
+    #print(attach_e3iface('0000:00:08.0',E3IFACE_MODEL_GENERIC_SINGLY_QUEUE,E3IFACE_ROLE_CUSTOMER_USER_FACING_PORT)) 
     #E3Interface().dump_definition()
     start_e3iface(1)
     #stop_e3iface(2)
@@ -160,4 +160,4 @@ if __name__=='__main__':
     for ifidx in if_lst:
         print(get_e3iface(ifidx))
     pass
-    print(reclaim_e3iface(1))
+    #print(reclaim_e3iface(1))

@@ -325,7 +325,14 @@ int register_e3interface(const char * params,struct E3Interface_ops * dev_ops,in
 			E3_ERROR("errors occurs during next edges setup\n");
 			goto error_lcore_detach;
 	}
-	/*11. misc setup*/
+	/*11.do post-setup calling*/
+	if(dev_ops->post_setup){
+		if(dev_ops->post_setup(pe3iface)){
+			E3_ERROR("errors occurs during post setting-up\n");
+			goto error_lcore_detach;
+		}
+	}
+	/*12. misc non-error setup*/
 	for(idx=0;idx<pe3iface->nr_queues;idx++){
 		pinput_nodes[idx]->node_reclaim_func=input_and_output_reclaim_func;
 		poutput_nodes[idx]->node_reclaim_func=input_and_output_reclaim_func;
@@ -341,9 +348,6 @@ int register_e3interface(const char * params,struct E3Interface_ops * dev_ops,in
 			(char*)poutput_nodes[idx]->name,
 			(int)poutput_nodes[idx]->lcore_id);
 	}
-	/*12.do post-setup calling*/
-	if(dev_ops->post_setup)
-		dev_ops->post_setup(pe3iface);
 	if(pport_id)
 		*pport_id=(int)port_id;
 	pe3iface->under_releasing=0;

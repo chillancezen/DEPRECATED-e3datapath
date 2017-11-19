@@ -14,6 +14,7 @@
 #include <e3infra/include/mbuf-delivery.h>
 #include <e3net/include/mpls-util.h>
 #include <rte_ether.h>
+#include <rte_ethdev.h>
 #include <e3net/include/common-cache.h>
 #include <e3infra/include/lcore-extension.h>
 extern struct e3iface_role_def  role_defs[E3IFACE_ROLE_MAX_ROLES];
@@ -41,6 +42,7 @@ inline uint64_t _csp_process_input_packet(struct rte_mbuf*mbuf,
 	uint16_t mcache_index;
 	struct mac_cache_entry * mcache;
 	if(mbuf->ol_flags&PKT_RX_VLAN_STRIPPED){
+		printf("stripped:%d\n",mbuf->vlan_tci);
 		pkt_vlan_tci=mbuf->vlan_tci;
 	}
 	/*
@@ -51,6 +53,7 @@ inline uint64_t _csp_process_input_packet(struct rte_mbuf*mbuf,
 	/*
 	*process csp_cache
 	*/
+	printf("flag1\n");
 	if(PREDICT_FALSE(csp_cache->vlan_tci!=pkt_vlan_tci)){
 		csp_cache->vlan_tci=pkt_vlan_tci;
 		csp_cache->is_valid=0;
@@ -59,6 +62,7 @@ inline uint64_t _csp_process_input_packet(struct rte_mbuf*mbuf,
 		switch(priv->e_service)
 		{
 			case e_line_service:
+				printf("flag2\n");
 				csp_cache->is_e_line=1;
 				if((!(csp_cache->eline=find_e_line_service(priv->service_index)))||
 					(!(csp_cache->eline_nexthop=find_common_nexthop(csp_cache->eline->NHLFE)))||
@@ -78,6 +82,11 @@ inline uint64_t _csp_process_input_packet(struct rte_mbuf*mbuf,
 		csp_cache->is_valid=1;
 	}
 	continue_go:
+	printf("eline:%p\n",csp_cache->eline);
+	printf("eline_nexthop:%p\n",csp_cache->eline_nexthop);
+	printf("eline_src_pif:%p\n",csp_cache->eline_src_pif);
+	printf("eline_neighbor:%p\n",csp_cache->eline_neighbor);
+	
 	if(PREDICT_FALSE(!csp_cache->is_valid))
 		goto ret;
 	if(csp_cache->is_e_line){
@@ -85,8 +94,9 @@ inline uint64_t _csp_process_input_packet(struct rte_mbuf*mbuf,
 		*here it can crash if no room to prepend.
 		*increase the mbuf's header room space could resolve this issue
 		*/
+		printf("flag3\n");
 		struct ether_hdr* outer_eth_hdr=(struct ether_hdr*)rte_pktmbuf_prepend(mbuf,18);
-		struct mpls_hdr * outer_mpls_hdr=(struct mpls_hdr*)outer_eth_hdr;
+		struct mpls_hdr * outer_mpls_hdr=(struct mpls_hdr*)(outer_eth_hdr+1);
 		rte_memcpy(outer_eth_hdr->d_addr.addr_bytes,
 			csp_cache->eline_neighbor->mac,
 			6);
@@ -99,7 +109,7 @@ inline uint64_t _csp_process_input_packet(struct rte_mbuf*mbuf,
 		set_mpls_exp(outer_mpls_hdr,0);
 		set_mpls_ttl(outer_mpls_hdr,0x40);
 		set_mpls_label(outer_mpls_hdr,csp_cache->eline->label_to_push);
-		fwd_id=MAKE_UINT64(ETHER_PROTO_MPLS_UNICAST,csp_cache->eline_nexthop->local_e3iface);
+		fwd_id=MAKE_UINT64(CSP_PROCESS_INPUT_ELAN_UNICAST_FWD,csp_cache->eline_nexthop->local_e3iface);
 	}else{
 		mcache_index=eth_hdr->d_addr.addr_bytes[5];
 		mcache_index&=CSP_MAC_CACHE_MASK;
@@ -130,7 +140,7 @@ inline uint64_t _csp_process_input_packet(struct rte_mbuf*mbuf,
 				*let's do encapsulation first
 				*/
 				struct ether_hdr* outer_eth_hdr=(struct ether_hdr*)rte_pktmbuf_prepend(mbuf,18);
-				struct mpls_hdr * outer_mpls_hdr=(struct mpls_hdr*)outer_eth_hdr;
+				struct mpls_hdr * outer_mpls_hdr=(struct mpls_hdr*)(outer_eth_hdr+1);
 
 				rte_memcpy(outer_eth_hdr->d_addr.addr_bytes,
 					mcache->neighbor->mac,
@@ -260,6 +270,7 @@ inline void _post_csp_input_packet_process(struct E3Interface*pif,
 		case CSP_PROCESS_INPUT_ELINE_FWD:
 		case CSP_PROCESS_INPUT_ELAN_UNICAST_FWD:
 			{
+				printf("helloo world\n");
 				uint32_t dst_iface=LOW_UINT64(fwd_id);
 				struct E3Interface *pdst=NULL;
 				if(PREDICT_FALSE(!(pdst=find_e3interface_by_index(dst_iface)))){
@@ -364,6 +375,7 @@ int customer_service_port_iface_output_iface(void * arg)
 	if(!(nr_rx=rte_ring_sc_dequeue_burst(pnode->node_ring,(void**)mbufs,32,NULL)))
 		return 0;
 	nr_tx=rte_eth_tx_burst(iface_id,queue_id,mbufs,nr_rx);
+	printf("xmit:%d\n",nr_tx);
 	for(idx=nr_tx;idx<nr_rx;idx++)
 		rte_pktmbuf_free(mbufs[idx]);
 	return 0;
@@ -374,7 +386,7 @@ int customer_service_port_iface_post_setup(struct E3Interface * pif)
 	pif->hwiface_role=E3IFACE_ROLE_CUSTOMER_USER_FACING_PORT;
 	memset(priv,0x0,sizeof(struct csp_private));
 	/*setup vlan stripping here*/
-	return 0;
+	return rte_eth_dev_set_vlan_offload(pif->port_id,ETH_VLAN_STRIP_OFFLOAD);
 }
 int customer_service_port_iface_delete(struct E3Interface * pif)
 {
@@ -402,3 +414,86 @@ void csp_init(void)
 
 E3_init(csp_init,(TASK_PTIORITY_LOW+1));
 
+void customer_service_port_module_test(void)
+{
+	struct E3Interface *pif=find_e3interface_by_index(0);
+	struct csp_private*priv;
+	E3_ASSERT(pif->hwiface_role==E3IFACE_ROLE_CUSTOMER_USER_FACING_PORT);
+	E3_ASSERT(priv=(struct csp_private*)pif->private);
+	
+	struct common_neighbor neighbor={
+		.neighbour_ip_as_le=0x12345678,
+		.mac={0x08,0x00,0x27,0x53,0x9d,0x44},/*08:00:27:53:9d:44*/
+	};
+	E3_ASSERT(register_common_neighbor(&neighbor)==0);
+	struct common_nexthop nexthop={
+		.local_e3iface=0,
+		.common_neighbor_index=0,
+	};
+	E3_ASSERT(register_common_nexthop(&nexthop)==0);
+
+	struct ether_e_line eline={
+		.label_to_push=123,
+		.NHLFE=0,
+		.e3iface=0,
+		.vlan_tci=0,
+	};
+	E3_ASSERT(register_e_line_service(&eline)==0);
+
+	priv->e_service=e_line_service;
+	priv->service_index=0;
+	priv->vlan_tci=100;
+	priv->attached=1;
+
+	
+	#if 0
+	/*register nexthop*/
+	struct common_neighbor neighbor={
+		.neighbour_ip_as_le=0x12345678,
+		.mac={0x12,0x12,0x12,0x12,0x12,0x12},
+	};
+	E3_ASSERT(register_common_neighbor(&neighbor)==0);
+	struct common_nexthop nexthop={
+		.local_e3iface=0,
+		.common_neighbor_index=0,
+	};
+	E3_ASSERT(register_common_nexthop(&nexthop)==0);
+	/*register an e-line service*/
+	struct ether_e_line eline={
+		.label_to_push=123,
+		.NHLFE=0,
+		.e3iface=0,
+		.vlan_tci=0,
+	};
+	E3_ASSERT(register_e_line_service(&eline)==0);
+
+	/*register a fib entry on if0*/
+	/*
+	struct leaf_label_entry lentry={
+		.e3_service=e_line_service,
+		.service_index=0,
+	};
+	E3_ASSERT(!set_leaf_label_entry(priv->label_base,925516,&lentry));
+	*/
+	/*register an e-lan service*/
+	E3_ASSERT(register_e_lan_service()==0);
+	E3_ASSERT(register_e_lan_port(0,0,0)==0);
+	E3_ASSERT(register_e_lan_port(0,1,0)==1);
+	struct leaf_label_entry lentry={
+		.e3_service=e_lan_service,
+		.service_index=0,
+	};
+	E3_ASSERT(!set_leaf_label_entry(priv->label_base,925516,&lentry));
+	E3_ASSERT(!set_leaf_label_entry(priv->label_base,925516,&lentry));
+	
+	struct e_lan_fwd_entry fwd_entry={
+		.is_port_entry=1,
+		.e3iface=0,
+		.vlan_tci=0,
+	};
+	//08:00:27:53:9d:44
+	uint8_t mac[6]={0x08,0x00,0x27,0x53,0x9d,0x44};
+	E3_ASSERT(!register_e_lan_fwd_entry(0,mac,&fwd_entry));	
+
+	#endif
+}

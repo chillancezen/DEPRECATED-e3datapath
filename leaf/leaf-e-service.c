@@ -167,6 +167,7 @@ void post_delete_e_lan_service(struct rcu_head * rcu)
 }
 int delete_e_lan_service(int index)
 {
+	
 	struct ether_e_lan * elan=find_e_lan_service(index);
 	if((!elan)||(!elan->is_valid))
 		return -E3_ERR_ILLEGAL;

@@ -16,9 +16,9 @@ include $(RTE_SDK)/mk/rte.vars.mk
 APP = api_export
 
 # all source are stored in SRCS-y
-SRCS-y := export_e3api.c
+SRCS-y := export-e3api.c
 
-CFLAGS += -O3 -I/$(E3_SDK) -include $(E3_SDK)/config/e3_config.h 
+CFLAGS += -O3 -I/$(E3_SDK) -include $(E3_SDK)/config/e3-config.h 
 CFLAGS += -I/root/jzheng/userspace-rcu-master/src -L/root/mywork/userspace-rcu/src/.libs
 CFLAGS += -L/lib64
 LDFLAGS += -lurcu-qsbr -le3datapath -lzmq 

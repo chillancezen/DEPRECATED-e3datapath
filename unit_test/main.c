@@ -25,11 +25,11 @@ void global_test_setup(void)
 {
 	int  pport;
 	char * cbp_pci_addr=get_ini_option_string("test","cbp_pci_addr");
-	E3_ASSERT(!create_e3iface(0,
+	create_e3iface(0,
 		cbp_pci_addr,
 		E3IFACE_MODEL_GENERIC_SINGLY_QUEUE,
 		E3IFACE_ROLE_CUSTOMER_BACKBONE_FACING_PORT,
-		&pport));
+		&pport);
 }
 int main(int argc, char **argv)
 {	

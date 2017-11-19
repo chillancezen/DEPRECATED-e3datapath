@@ -357,7 +357,6 @@ int provider_backbone_port_iface_output_iface(void * arg)
 
 int provider_backbone_port_iface_post_setup(struct E3Interface * pif)
 {
-	int numa_socket;
 	struct pbp_private * priv=(struct pbp_private*)pif->private;
 	pif->hwiface_role=E3IFACE_ROLE_PROVIDER_BACKBONE_PORT;
 	/*setup the label base for the e3interface*/
