@@ -7,6 +7,8 @@
 #include <e3net/include/common-nhlfe.h>
 #include <e3infra/include/fast-index.h>
 #include <urcu-qsbr.h>
+#include <rte_spinlock.h>
+#include <rte_rwlock.h>
 
 #define MAX_E_LINE_SERVICES 4096
 #define MAX_E_LAN_SERVICES 4096
@@ -27,6 +29,12 @@ struct ether_e_line{
 	uint16_t vlan_tci;
 	
 	uint16_t ref_cnt;
+	/*
+	*if label_to_push and NHLFE is set,is_cbp_ready will be set to 1
+	*if e3iface and vlan_tci is set,is_csp_ready is set to 1
+	*/
+	uint8_t is_cbp_ready;
+	uint8_t is_csp_ready;
 }__attribute__((packed));
 
 
@@ -61,7 +69,7 @@ struct ether_e_lan{
 extern struct ether_e_line * e_line_base;
 #define _find_e_line_service(index) ((((index)>=0)&&((index)<MAX_E_LINE_SERVICES))?&e_line_base[(index)]:NULL)
 #define find_e_line_service(index) (((((index)>=0)&&((index)<MAX_E_LINE_SERVICES))&&(e_line_base[(index)].is_valid))?&e_line_base[(index)]:NULL)
-int register_e_line_service(struct ether_e_line * eline);
+int register_e_line_service(void);
 int reference_e_line_service(int index);
 int dereference_e_line_service(int index);
 int delete_e_line_service(int index);

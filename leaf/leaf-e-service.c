@@ -8,8 +8,27 @@
 #include <e3infra/include/util.h>
 struct ether_e_line * e_line_base;
 struct ether_e_lan  * e_lan_base;
+
+/*
+*e_service_guard is shared by both e-line and e-lan services
+*/
+rte_rwlock_t e_line_guard;
+rte_rwlock_t e_lan_guard;
+
+#define RLOCK_ELINE() 	rte_rwlock_read_lock(&e_line_guard)
+#define WLOCK_ELINE() 	rte_rwlock_write_lock(&e_line_guard)
+#define RUNLOCK_ELINE() rte_rwlock_read_unlock(&e_line_guard)
+#define WUNLOCK_ELINE() rte_rwlock_write_unlock(&e_line_guard)
+#define RLOCK_ELAN() 	rte_rwlock_read_lock(&e_lan_guard)
+#define WLOCK_ELAN() 	rte_rwlock_write_lock(&e_lan_guard)
+#define RUNLOCK_ELAN() 	rte_rwlock_read_unlock(&e_lan_guard)
+#define WUNLOCK_ELAN() 	rte_rwlock_write_unlock(&e_lan_guard)
+
+
+
 void init_e_service(void)
 {
+	
 	e_line_base=rte_zmalloc(NULL,
 			sizeof(struct ether_e_line)*MAX_E_LINE_SERVICES,
 			64);
@@ -18,6 +37,8 @@ void init_e_service(void)
 			sizeof(struct ether_e_lan)*MAX_E_LAN_SERVICES,
 			64);
 	E3_ASSERT(e_lan_base);
+	rte_rwlock_init(&e_line_guard);
+	rte_rwlock_init(&e_lan_guard);
 }
 
 E3_init(init_e_service,TASK_PRIORITY_RESOURCE_INIT);
@@ -27,6 +48,31 @@ E3_init(init_e_service,TASK_PRIORITY_RESOURCE_INIT);
 *if successful, the actual index(which is greater than or equal to 0)
 *is returned,otherwise, a negative value indicates failure
 */
+int register_e_line_service(void)
+{
+	int idx=0;
+	int target=-1;
+	RLOCK_ELINE();
+	for(idx=0;idx<MAX_E_LINE_SERVICES;idx++)
+		if(!e_line_base[idx].is_valid)
+			continue;
+	if(idx<MAX_E_LINE_SERVICES){
+		target=idx;
+		e_line_base[idx].index=idx;
+		e_line_base[idx].label_to_push=0;
+		e_line_base[idx].NHLFE=-1;
+		e_line_base[idx].e3iface=-1;
+		e_line_base[idx].vlan_tci=0;
+		e_line_base[idx].ref_cnt=0;
+		e_line_base[idx].is_cbp_ready=0;
+		e_line_base[idx].is_csp_ready=0;
+		__sync_synchronize();
+		e_line_base[idx].is_valid=1;
+	}	
+	WUNLOCK_ELINE();
+	return target;
+}
+#if 0
 int register_e_line_service(struct ether_e_line * eline)
 {
 	/*
@@ -67,7 +113,7 @@ int register_e_line_service(struct ether_e_line * eline)
 	e_line_base[idx].is_valid=1;
 	return idx;
 }
-
+#endif
 /*
 *find the target e-line service,
 *and increment the ref count,0 returned upon success
