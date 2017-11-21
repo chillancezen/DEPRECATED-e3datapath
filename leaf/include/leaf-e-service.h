@@ -15,7 +15,14 @@
 
 
 struct ether_e_line{
-	uint16_t is_valid;
+	/*
+	*if label_to_push and NHLFE is set,is_cbp_ready will be set to 1
+	*if e3iface and vlan_tci is set,is_csp_ready is set to 1
+	*/
+	uint16_t  is_cbp_ready:1;
+	uint16_t  is_csp_ready:1;
+	uint16_t  is_valid:1;
+	
 	uint16_t index;
 	/*
 	*bacbone side fields
@@ -29,12 +36,6 @@ struct ether_e_line{
 	uint16_t vlan_tci;
 	
 	uint16_t ref_cnt;
-	/*
-	*if label_to_push and NHLFE is set,is_cbp_ready will be set to 1
-	*if e3iface and vlan_tci is set,is_csp_ready is set to 1
-	*/
-	uint8_t is_cbp_ready;
-	uint8_t is_csp_ready;
 }__attribute__((packed));
 
 
@@ -70,6 +71,9 @@ extern struct ether_e_line * e_line_base;
 #define _find_e_line_service(index) ((((index)>=0)&&((index)<MAX_E_LINE_SERVICES))?&e_line_base[(index)]:NULL)
 #define find_e_line_service(index) (((((index)>=0)&&((index)<MAX_E_LINE_SERVICES))&&(e_line_base[(index)].is_valid))?&e_line_base[(index)]:NULL)
 int register_e_line_service(void);
+int register_e_line_port(int eline_index,int e3iface,int vlan_tci);
+int register_e_line_nhlfe(int eline_index,int NHLFE,int label_to_push);
+
 int reference_e_line_service(int index);
 int dereference_e_line_service(int index);
 int delete_e_line_service(int index);

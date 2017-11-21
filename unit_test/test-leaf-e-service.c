@@ -9,6 +9,7 @@ DECLARE_TEST_CASE(tc_leaf_e_service);
 
 START_TEST(leaf_e_line_service_general){
 	int idx=0;
+	#if 0
 	int last_offset=0,last_size=0;
 	printf("dump definition of ether_e_line:\n");
 	dump_field(struct ether_e_line,is_valid);
@@ -18,6 +19,7 @@ START_TEST(leaf_e_line_service_general){
 	dump_field(struct ether_e_line,e3iface);
 	dump_field(struct ether_e_line,vlan_tci);
 	dump_field(struct ether_e_line,ref_cnt);
+	#endif
 
 	ck_assert(!!_find_e_line_service(0));
 	ck_assert(!!_find_e_line_service(MAX_E_LINE_SERVICES-1));
@@ -44,44 +46,63 @@ START_TEST(leaf_e_line_service_general){
 	eline.vlan_tci=12;
 	eline.label_to_push=0x322;
 	eline.NHLFE=0;
-
+	int eline_index=0;
 	/*
 	*maximum number of services supported
 	*/
 	for(idx=0;idx<MAX_E_LINE_SERVICES;idx++){
-		ck_assert(register_e_line_service(&eline)>=0);
+		ck_assert((eline_index=register_e_line_service())>=0);
+		ck_assert(!register_e_line_port(eline_index,eline.e3iface,eline.vlan_tci));
+		ck_assert(!register_e_line_nhlfe(eline_index,eline.NHLFE,eline.label_to_push));
 		eline.vlan_tci++;
 		eline.label_to_push++;
 	}
+	
 	eline.vlan_tci++;
 	eline.label_to_push++;
-	ck_assert(register_e_line_service(&eline)<0);
+	ck_assert((eline_index=register_e_line_service())<0);
+	ck_assert(register_e_line_port(eline_index,eline.e3iface,eline.vlan_tci));
+	ck_assert(register_e_line_nhlfe(eline_index,eline.NHLFE,eline.label_to_push));
+	
 	for(idx=0;idx<MAX_E_LINE_SERVICES;idx++){
 		e_line_base[idx].is_valid=0;
 	}
 	/*
 	*element duplication
 	*/
-	ck_assert(register_e_line_service(&eline)>=0);
-	ck_assert(register_e_line_service(&eline)<0);
+	ck_assert((eline_index=register_e_line_service())>=0);
+	ck_assert(!register_e_line_port(eline_index,eline.e3iface,eline.vlan_tci));
+
+	ck_assert((eline_index=register_e_line_service())>=0);
+	ck_assert(register_e_line_port(eline_index,eline.e3iface,eline.vlan_tci));
 	eline.vlan_tci++;
-	ck_assert(register_e_line_service(&eline)<0);
-	eline.label_to_push++;
-	ck_assert(register_e_line_service(&eline)>=0);
-	ck_assert(register_e_line_service(&eline)<0);
-
-	/*
-	*referenece count affairs
-	*/
-
-	ck_assert(reference_e_line_service(2)<0);
-	ck_assert(!delete_e_line_service(0));
+	ck_assert(!register_e_line_port(eline_index,eline.e3iface,eline.vlan_tci));
+	ck_assert(!!find_e_line_service(eline_index));
+	ck_assert(find_e_line_service(eline_index)->is_csp_ready);
 	
-	ck_assert(!reference_e_line_service(1));
-	ck_assert(delete_e_line_service(1)<0);
-	ck_assert(!dereference_e_line_service(1));
-	ck_assert(!delete_e_line_service(1));
+	ck_assert((eline_index=register_e_line_service())>=0);
+	ck_assert(!register_e_line_nhlfe(eline_index,eline.NHLFE,eline.label_to_push));
 
+	ck_assert((eline_index=register_e_line_service())>=0);
+	ck_assert(register_e_line_nhlfe(eline_index,eline.NHLFE,eline.label_to_push));
+	eline.label_to_push++;
+	ck_assert(!register_e_line_nhlfe(eline_index,eline.NHLFE,eline.label_to_push));
+	ck_assert(!!find_e_line_service(eline_index));
+	ck_assert(find_e_line_service(eline_index)->is_cbp_ready);
+
+
+	ck_assert((eline_index=register_e_line_service())>=0);
+	ck_assert(reference_e_line_service(MAX_E_LINE_SERVICES-1));
+	ck_assert(reference_e_line_service(MAX_E_LINE_SERVICES));
+	ck_assert(!reference_e_line_service(eline_index));
+
+	ck_assert(delete_e_line_service(eline_index));
+	ck_assert(!!find_e_line_service(eline_index));
+
+	ck_assert(!dereference_e_line_service(eline_index));
+	ck_assert(!delete_e_line_service(eline_index));
+	ck_assert(!find_e_line_service(eline_index));
+	
 	/*
 	*environmental cleanup
 	*/

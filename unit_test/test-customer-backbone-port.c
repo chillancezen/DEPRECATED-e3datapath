@@ -75,7 +75,9 @@ START_TEST(cbp_generic){
 		.NHLFE=0,
 		
 	};
-	ck_assert(register_e_line_service(&eline)==0);
+	ck_assert(register_e_line_service()==0);
+	ck_assert(!register_e_line_port(0,eline.e3iface,eline.vlan_tci));
+	ck_assert(!register_e_line_nhlfe(0,eline.NHLFE,eline.label_to_push));
 
 	struct leaf_label_entry lentry0={
 		.e3_service=e_line_service,

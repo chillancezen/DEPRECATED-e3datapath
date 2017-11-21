@@ -40,10 +40,16 @@ START_TEST(leaf_fib_general){
 	eline.vlan_tci=12;
 	eline.label_to_push=0x322;
 	eline.NHLFE=0;
-	ck_assert(register_e_line_service(&eline)==0);
+	ck_assert(register_e_line_service()==0);
+	ck_assert(!register_e_line_port(0,eline.e3iface,eline.vlan_tci));
+	ck_assert(!register_e_line_nhlfe(0,eline.NHLFE,eline.label_to_push));
+	
 	eline.vlan_tci++;
 	eline.label_to_push++;
-	ck_assert(register_e_line_service(&eline)==1);
+	ck_assert(register_e_line_service()==1);
+	ck_assert(!register_e_line_port(1,eline.e3iface,eline.vlan_tci));
+	ck_assert(!register_e_line_nhlfe(1,eline.NHLFE,eline.label_to_push));
+	
 	ck_assert(find_e_line_service(0)->ref_cnt==0);
 	ck_assert(find_e_line_service(1)->ref_cnt==0);
 	

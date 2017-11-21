@@ -425,14 +425,9 @@ void cbp_module_test(void)
 	};
 	E3_ASSERT(register_common_nexthop(&nexthop)==0);
 	/*register an e-line service*/
-	struct ether_e_line eline={
-		.label_to_push=123,
-		.NHLFE=0,
-		.e3iface=0,
-		.vlan_tci=0,
-	};
-	E3_ASSERT(register_e_line_service(&eline)==0);
-
+	E3_ASSERT(register_e_line_service()==0);
+	E3_ASSERT(!register_e_line_port(0,0,0));
+	E3_ASSERT(!register_e_line_nhlfe(0,0,123));
 	/*register a fib entry on if0*/
 	/*
 	struct leaf_label_entry lentry={

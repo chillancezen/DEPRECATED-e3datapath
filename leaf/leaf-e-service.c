@@ -52,10 +52,10 @@ int register_e_line_service(void)
 {
 	int idx=0;
 	int target=-1;
-	RLOCK_ELINE();
+	WLOCK_ELINE();
 	for(idx=0;idx<MAX_E_LINE_SERVICES;idx++)
 		if(!e_line_base[idx].is_valid)
-			continue;
+			break;
 	if(idx<MAX_E_LINE_SERVICES){
 		target=idx;
 		e_line_base[idx].index=idx;
@@ -68,73 +68,102 @@ int register_e_line_service(void)
 		e_line_base[idx].is_csp_ready=0;
 		__sync_synchronize();
 		e_line_base[idx].is_valid=1;
-	}	
+	}
 	WUNLOCK_ELINE();
 	return target;
 }
-#if 0
-int register_e_line_service(struct ether_e_line * eline)
+
+int register_e_line_port(int eline_index,int e3iface,int vlan_tci)
 {
-	/*
-	* check whether data fields conflict
-	*/
+	int ret=-E3_ERR_GENERIC;
 	int idx=0;
+	struct ether_e_line * eline;
+	WLOCK_ELINE();
+	if(!(eline=find_e_line_service(eline_index)))
+		goto out;
 	for(idx=0;idx<MAX_E_LINE_SERVICES;idx++){
+		if(idx==eline_index)
+			continue;
 		if(!e_line_base[idx].is_valid)
 			continue;
-		if((e_line_base[idx].label_to_push==eline->label_to_push)&&
-			(e_line_base[idx].NHLFE==eline->NHLFE))
-			return -E3_ERR_ILLEGAL;
-		#if 0
-			/*
-			* a VLAN must be dedicated to a E-LINE service
-			*/
-			if((e_line_base[idx].e3iface==eline->e3iface)&&
-				(e_line_base[idx].vlan_tci==eline->vlan_tci))
-				return -2;
-		#else
-			if(e_line_base[idx].vlan_tci==eline->vlan_tci)
-				return -E3_ERR_ILLEGAL;
-		#endif
+		if((e_line_base[idx].e3iface==e3iface)&&
+			(e_line_base[idx].vlan_tci==vlan_tci))
+			goto out;/*no duplicated port in the E-line instance*/		
 	}
-	for(idx=0;idx<MAX_E_LINE_SERVICES;idx++)
-		if(!e_line_base[idx].is_valid)
-			break;
-	if(idx>=MAX_E_LINE_SERVICES)
-		return -E3_ERR_OUT_OF_RES;
-	if(reference_common_nexthop(eline->NHLFE))
-		return -E3_ERR_ILLEGAL;
-	e_line_base[idx].index=idx;
-	e_line_base[idx].e3iface=eline->e3iface;
-	e_line_base[idx].label_to_push=eline->label_to_push;
-	e_line_base[idx].NHLFE=eline->NHLFE;
-	e_line_base[idx].vlan_tci=eline->vlan_tci;
-	e_line_base[idx].ref_cnt=0;
-	e_line_base[idx].is_valid=1;
-	return idx;
+	eline->e3iface=e3iface;
+	eline->vlan_tci=vlan_tci;
+	eline->is_csp_ready=1;
+	ret=E3_OK;
+	out:
+	WUNLOCK_ELINE();
+	return ret;
 }
-#endif
+int register_e_line_nhlfe(int eline_index,int NHLFE,int label_to_push)
+{
+	int ret=-E3_ERR_GENERIC;
+	int idx=0;
+	struct ether_e_line * eline;
+	WLOCK_ELINE();
+	if(!(eline=find_e_line_service(eline_index)))
+		goto out;
+	for(idx=0;idx<MAX_E_LINE_SERVICES;idx++){
+		if(idx==eline_index)
+			continue;
+		if(!e_line_base[idx].is_valid)
+			continue;
+		if((e_line_base[idx].NHLFE==NHLFE)&&
+			(e_line_base[idx].label_to_push==label_to_push))
+			goto out;/*no duplicated nhlfe in the E-line instance*/	
+	}
+	if(reference_common_nexthop(NHLFE))
+		goto out;
+	/*release previous nhlfe binding*/
+	if(eline->is_cbp_ready){
+		dereference_common_nexthop(eline->NHLFE);
+		eline->NHLFE=-1;
+		eline->label_to_push=0;
+		eline->is_cbp_ready=0;
+	}
+	eline->NHLFE=NHLFE;
+	eline->label_to_push=label_to_push;
+	eline->is_cbp_ready=1;
+	ret=E3_OK;
+	out:
+	WUNLOCK_ELINE();
+	return ret;
+}
+
 /*
 *find the target e-line service,
 *and increment the ref count,0 returned upon success
 */
 int reference_e_line_service(int index)
 {
-	struct ether_e_line * eline=find_e_line_service(index);
-	if(!eline||!eline->is_valid)
-		return -E3_ERR_ILLEGAL;
+	int ret=-E3_ERR_GENERIC;
+	struct ether_e_line * eline;
+	WLOCK_ELINE();
+	if(!(eline=find_e_line_service(index)))
+		goto out;
 	eline->ref_cnt++;
-	return 0;
+	ret=E3_OK;
+	out:
+	WUNLOCK_ELINE();
+	return ret;
 }
 
 int dereference_e_line_service(int index)
 {
-	struct ether_e_line * eline=find_e_line_service(index);
-	if(!eline||!eline->is_valid)
-		return -E3_ERR_ILLEGAL;
+	int ret=-E3_ERR_GENERIC;
+	struct ether_e_line * eline;
+	WLOCK_ELINE();
+	if(!(eline=find_e_line_service(index)))
+		goto out;
 	if(eline->ref_cnt>0)
 		eline->ref_cnt--;
-	return 0;	
+	ret=E3_OK;
+	out:
+	WUNLOCK_ELINE();
+	return ret;	
 }
 
 /*
@@ -143,16 +172,36 @@ int dereference_e_line_service(int index)
 *other cases will return non-zero
 */
 int delete_e_line_service(int index)
-{
-	struct ether_e_line * eline=find_e_line_service(index);
-	if(!eline||!eline->is_valid)
-		return -E3_ERR_ILLEGAL;
-	if(eline->ref_cnt)/*still being used by other entity*/
-		return -E3_ERR_IN_USE;
-	dereference_common_nexthop(eline->NHLFE);
+{	
+	int ret=-E3_ERR_GENERIC;
+	struct ether_e_line * eline;
+	WLOCK_ELINE();
+	if((!(eline=find_e_line_service(index)))||
+		(eline->ref_cnt))/*it's still referenced by other entity*/
+		goto out;
+	if(eline->is_csp_ready){
+		eline->vlan_tci=0;
+		eline->e3iface=-1;
+		eline->is_csp_ready=0;
+	}
+	if(eline->is_cbp_ready){
+		dereference_common_nexthop(eline->NHLFE);
+		eline->NHLFE=-1;
+		eline->label_to_push=0;
+		eline->is_cbp_ready=0;
+	}
 	eline->is_valid=0;
-	return E3_OK;
+	ret=E3_OK;
+	out:
+	WUNLOCK_ELINE();
+	return ret;
 }
+
+
+
+
+
+
 
 int register_e_lan_service(void)
 {
