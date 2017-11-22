@@ -19,8 +19,10 @@ START_TEST(leaf_fib_general){
 	/*environmrntal presetup*/
 	for(idx=0;idx<MAX_E_LINE_SERVICES;idx++)
 		e_line_base[idx].is_valid=0;
-	for(idx=0;idx<MAX_E_LAN_SERVICES;idx++)
+	for(idx=0;idx<MAX_E_LAN_SERVICES;idx++){
 		e_lan_base[idx].is_valid=0;
+		e_lan_base[idx].is_releasing=0;
+	}
 	for(idx=0;idx<MAX_COMMON_NEIGHBORS;idx++)
 		neighbor_base[idx].is_valid=0;
 	for(idx=0;idx<MAX_COMMON_NEXTHOPS;idx++)

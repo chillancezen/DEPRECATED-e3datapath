@@ -51,13 +51,14 @@ E3_init(init_e_service,TASK_PRIORITY_RESOURCE_INIT);
 int register_e_line_service(void)
 {
 	int idx=0;
-	int target=-1;
+	int target=-E3_ERR_OUT_OF_RES;
 	WLOCK_ELINE();
 	for(idx=0;idx<MAX_E_LINE_SERVICES;idx++)
 		if(!e_line_base[idx].is_valid)
 			break;
 	if(idx<MAX_E_LINE_SERVICES){
 		target=idx;
+		memset(&e_line_base[idx],0x0,sizeof(struct ether_e_line));
 		e_line_base[idx].index=idx;
 		e_line_base[idx].label_to_push=0;
 		e_line_base[idx].NHLFE=-1;
@@ -205,13 +206,16 @@ int delete_e_line_service(int index)
 
 int register_e_lan_service(void)
 {
+	int ret=-E3_ERR_OUT_OF_RES;
 	int idx=0;
+	WLOCK_ELAN();
 	for(idx=0;idx<MAX_E_LAN_SERVICES;idx++)
-		if((!e_lan_base[idx].is_valid)||
-			e_lan_base[idx].is_releasing)
+		if((!e_lan_base[idx].is_valid)&&
+			(!e_lan_base[idx].is_releasing))
 			break;
 	if(idx>=MAX_E_LAN_SERVICES)
-		return -E3_ERR_OUT_OF_RES;
+		goto out;
+	memset(&e_lan_base[idx],0x0,sizeof(struct ether_e_lan));
 	e_lan_base[idx].index=idx;
 	e_lan_base[idx].multicast_label=0;
 	e_lan_base[idx].multicast_NHLFE=-1;
@@ -219,30 +223,46 @@ int register_e_lan_service(void)
 	e_lan_base[idx].nr_nhlfes=0;
 	e_lan_base[idx].ref_cnt=0;
 	if(!(e_lan_base[idx].fib_base=allocate_findex_2_4_base()))
-		return -E3_ERR_OUT_OF_MEM;
+		goto out;
 	e_lan_base[idx].is_releasing=0;
 	e_lan_base[idx].is_valid=1;
-	return idx;
+	ret=idx;
+	out:
+	WUNLOCK_ELAN();
+	return ret;
 }
 
 int reference_e_lan_service(int index)
-{
-	struct ether_e_lan * elan=find_e_lan_service(index);
-	if((!elan)||(!elan->is_valid))
-		return -E3_ERR_ILLEGAL;
+{	
+	int ret=-E3_ERR_ILLEGAL;
+	struct ether_e_lan *elan; 
+	WLOCK_ELAN();
+	elan=find_e_lan_service(index);
+	if(!elan)
+		goto out;
 	elan->ref_cnt++;
-	return E3_OK;
+	ret=E3_OK;
+	out:
+	WUNLOCK_ELAN();
+	return ret;
 }
+
 int dereference_e_lan_service(int index)
 {
-	struct ether_e_lan * elan=find_e_lan_service(index);
-	if((!elan)||(!elan->is_valid))
-		return -E3_ERR_ILLEGAL;
+	int ret=-E3_ERR_ILLEGAL;	
+	struct ether_e_lan * elan;
+	WLOCK_ELAN();
+	elan=find_e_lan_service(index);
+	if(!elan)
+		goto out;
 	if(elan->ref_cnt>0)
 		elan->ref_cnt--;
-	return E3_OK;
+	ret=E3_OK;
+	out:
+	WUNLOCK_ELAN();
+	return ret;
 }
-void post_delete_e_lan_service(struct rcu_head * rcu)
+static void post_delete_e_lan_service(struct rcu_head * rcu)
 {
 	int idx=0;
 	struct ether_e_lan * elan=container_of(rcu,struct ether_e_lan,rcu);
@@ -258,68 +278,100 @@ void post_delete_e_lan_service(struct rcu_head * rcu)
 			continue;
 		dereference_common_nexthop(elan->nhlfes[idx].NHLFE);
 	}
-	elan->is_releasing=0;/*mark it reuseable*/
+	/*mark it reuseable*/
+	elan->is_releasing=0;
 }
 int delete_e_lan_service(int index)
 {
-	
-	struct ether_e_lan * elan=find_e_lan_service(index);
-	if((!elan)||(!elan->is_valid))
-		return -E3_ERR_ILLEGAL;
-	if(elan->ref_cnt)
-		return -E3_ERR_IN_USE;
+	int ret=-E3_ERR_ILLEGAL;
+	struct ether_e_lan * elan;
+	WLOCK_ELAN();
+	elan=find_e_lan_service(index);
+	if(!elan)
+		goto out;
+	if(elan->ref_cnt){
+		ret=-E3_ERR_IN_USE;
+		goto out;
+	}
 	elan->is_releasing=1;
 	elan->is_valid=0;
 	call_rcu(&elan->rcu,post_delete_e_lan_service);
-	return E3_OK;
+	ret=E3_OK;
+	out:
+	WUNLOCK_ELAN();
+	return ret;
 }
+
 int register_e_lan_port(int elan_index,uint16_t e3iface,uint16_t vlan_tci)
 {
+	int ret=-E3_ERR_ILLEGAL;
 	int idx=0;
-	struct ether_e_lan *elan=find_e_lan_service(elan_index);
-	if((!elan)||(!elan->is_valid))
-		return -E3_ERR_ILLEGAL;
+	struct ether_e_lan *elan;
+	WLOCK_ELAN();
+	elan=find_e_lan_service(elan_index);
+	if(!elan)
+		goto out;
 	/*
-	*check arguments are leagal
+	*check whether arguments are leagal
 	*/
 	for(idx=0;idx<MAX_PORTS_IN_E_LAN_SERVICE;idx++){
 		if(!elan->ports[idx].is_valid)
 			continue;
 		if((elan->ports[idx].vlan_tci==vlan_tci)&&
 			(elan->ports[idx].iface==e3iface))
-			return -E3_ERR_ILLEGAL;
+			goto out;
 	}
 	for(idx=0;idx<MAX_PORTS_IN_E_LAN_SERVICE;idx++)
 		if(!elan->ports[idx].is_valid)
 			break;
-	if(idx>=MAX_PORTS_IN_E_LAN_SERVICE)
-		return -E3_ERR_OUT_OF_RES;
+	if(idx>=MAX_PORTS_IN_E_LAN_SERVICE){
+		ret=-E3_ERR_OUT_OF_RES;
+		goto out;
+	}
 	elan->ports[idx].iface=e3iface;
 	elan->ports[idx].vlan_tci=vlan_tci;
 	elan->ports[idx].is_valid=1;
 	elan->nr_ports++;
 	E3_ASSERT(elan->nr_ports<=MAX_PORTS_IN_E_LAN_SERVICE);
-	return idx;
+	ret=idx;
+	out:
+	WUNLOCK_ELAN();
+	return ret;
+}
+
+int find_e_lan_port_locked(int elan_index,uint16_t e3iface,uint16_t vlan_tci)
+{
+	int rc;
+	RLOCK_ELAN();
+	rc=find_e_lan_port(elan_index,e3iface,vlan_tci);
+	RUNLOCK_ELAN();
+	return rc;
 }
 
 int find_e_lan_port(int elan_index,uint16_t e3iface,uint16_t vlan_tci)
 {
+	int ret=-E3_ERR_ILLEGAL;
 	int idx=0;
-	struct ether_e_lan *elan=find_e_lan_service(elan_index);
-	if((!elan)||(!elan->is_valid))
-		return -E3_ERR_ILLEGAL;
+	struct ether_e_lan *elan;
+	elan=find_e_lan_service(elan_index);
+	if(!elan)
+		goto out;
 	for(idx=0;idx<MAX_PORTS_IN_E_LAN_SERVICE;idx++){
 		if(!elan->ports[idx].is_valid)
 			continue;
 		if((elan->ports[idx].iface==e3iface)&&
-			(elan->ports[idx].vlan_tci==vlan_tci))
-			return idx;
+			(elan->ports[idx].vlan_tci==vlan_tci)){
+			ret=idx;
+			break;
+		}
 	}
-	return -E3_ERR_GENERIC;
+	out:
+	return ret;
 }
 
 int delete_e_lan_port(int elan_index,int port_index)
 {
+	int ret=-E3_ERR_GENERIC;
     int is_skipping=0;
     int idx=0;
     int iptr=0;
@@ -332,13 +384,15 @@ int delete_e_lan_port(int elan_index,int port_index)
     struct findex_2_4_key   key;
     e3_bitmap tmp_bitmap;
     
-	struct ether_e_lan *elan=find_e_lan_service(elan_index);
-	if((!elan)||(!elan->is_valid))
-		return -E3_ERR_ILLEGAL;
+	struct ether_e_lan *elan;
+	WLOCK_ELAN();
+	elan=find_e_lan_service(elan_index);
+	if(!elan)
+		goto out;
 	if((port_index<0)||
 		(port_index>=MAX_PORTS_IN_E_LAN_SERVICE)||
 		(!elan->ports[port_index].is_valid))
-		return -E3_ERR_ILLEGAL;
+		goto out;
 	/*
 	*delete mac entries 
 	*which is relelated to this port
@@ -372,52 +426,76 @@ int delete_e_lan_port(int elan_index,int port_index)
 	elan->ports[port_index].is_valid=0;
 	elan->nr_ports--;
 	E3_ASSERT(elan->nr_ports>=0);
-	return E3_OK;
+
+	ret=E3_OK;
+	out:
+	WUNLOCK_ELAN();
+	return ret;
 }
 int register_e_lan_nhlfe(int elan_index,uint16_t nhlfe,uint32_t label_to_push)
 {
+	int ret=-E3_ERR_ILLEGAL;
 	int idx=0;
-	struct ether_e_lan *elan=find_e_lan_service(elan_index);
-	if((!elan)||(!elan->is_valid))
-		return -E3_ERR_ILLEGAL;
+	struct ether_e_lan *elan;
+	WLOCK_ELAN();
+	elan=find_e_lan_service(elan_index);
+	if(!elan)
+		goto out;
 	for(idx=0;idx<MAX_NHLFE_IN_E_LAN_SERVICE;idx++){
 		if(!elan->nhlfes[idx].is_valid)
 			continue;
 		if((elan->nhlfes[idx].NHLFE==nhlfe)&&
 			(elan->nhlfes[idx].label_to_push==label_to_push))
-			return -E3_ERR_ILLEGAL;
+			goto out;
 	}
 	for(idx=0;idx<MAX_NHLFE_IN_E_LAN_SERVICE;idx++)
 		if(!elan->nhlfes[idx].is_valid)
 			break;
 	if(idx>=MAX_NHLFE_IN_E_LAN_SERVICE)
-		return -E3_ERR_OUT_OF_RES;
+		goto out;
 	if(reference_common_nexthop(nhlfe))
-		return -E3_ERR_ILLEGAL;
+		goto out;
 	elan->nhlfes[idx].NHLFE=nhlfe;
 	elan->nhlfes[idx].label_to_push=label_to_push;
 	elan->nhlfes[idx].is_valid=1;
 	elan->nr_nhlfes++;
 	E3_ASSERT(elan->nr_nhlfes<=MAX_NHLFE_IN_E_LAN_SERVICE);
-	return idx;
+	ret=idx;
+	out:
+	WUNLOCK_ELAN();
+	return ret;
+}
+int find_e_lan_nhlfe_locked(int elan_index,uint16_t nhlfe,uint32_t label_to_push)
+{
+	int rc;
+	RLOCK_ELAN();
+	rc=find_e_lan_nhlfe(elan_index,nhlfe,label_to_push);
+	RUNLOCK_ELAN();
+	return rc;
 }
 int find_e_lan_nhlfe(int elan_index,uint16_t nhlfe,uint32_t label_to_push)
 {
+	int ret=-E3_ERR_ILLEGAL;
 	int idx=0;
-	struct ether_e_lan *elan=find_e_lan_service(elan_index);
-	if((!elan)||(!elan->is_valid))
-		return -E3_ERR_ILLEGAL;
+	struct ether_e_lan *elan;
+	elan=find_e_lan_service(elan_index);
+	if(!elan)
+		goto out;
 	for(idx=0;idx<MAX_NHLFE_IN_E_LAN_SERVICE;idx++){
 		if(!elan->nhlfes[idx].is_valid)
 			continue;
 		if((elan->nhlfes[idx].NHLFE==nhlfe)&&
-			(elan->nhlfes[idx].label_to_push==label_to_push))
-			return idx;
+			(elan->nhlfes[idx].label_to_push==label_to_push)){
+			ret=idx;
+			break;
+		}
 	}
-	return -E3_ERR_GENERIC;
+	out:
+	return ret;
 }
 int delete_e_lan_nhlfe(int elan_index,int nhlfe_index)
 {
+	int ret=-E3_ERR_ILLEGAL;
     int is_skipping=0;
     int idx=0;
     int iptr=0;
@@ -430,14 +508,15 @@ int delete_e_lan_nhlfe(int elan_index,int nhlfe_index)
     struct findex_2_4_key   key;
     e3_bitmap tmp_bitmap;
     
-	struct ether_e_lan *elan=find_e_lan_service(elan_index);
-	if((!elan)||(!elan->is_valid))
-		return -E3_ERR_ILLEGAL;
-	
+	struct ether_e_lan *elan;
+	WLOCK_ELAN();
+	elan=find_e_lan_service(elan_index);
+	if(!elan)
+		goto out;
 	if((nhlfe_index<0)||
 		(nhlfe_index>=MAX_NHLFE_IN_E_LAN_SERVICE)||
 		(!elan->nhlfes[nhlfe_index].is_valid))
-		return -E3_ERR_ILLEGAL;
+		goto out;
 	/*
 	*delete mac entries 
 	*which is relelated to this nhlfe entry
@@ -473,36 +552,57 @@ int delete_e_lan_nhlfe(int elan_index,int nhlfe_index)
 	elan->nhlfes[nhlfe_index].is_valid=0;
 	elan->nr_nhlfes--;
 	E3_ASSERT(elan->nr_nhlfes>=0);
-	return 0;
+	ret=E3_OK;
+	out:
+	WUNLOCK_ELAN();
+	return ret;
 }
 int register_e_lan_fwd_entry(int elan_index,uint8_t * mac,struct e_lan_fwd_entry * fwd_entry)
 {
+	int ret=-E3_ERR_ILLEGAL;
     struct findex_2_4_key key;
-    struct ether_e_lan * elan=find_e_lan_service(elan_index);
-    if((!elan)||(!elan->is_valid))
-        return -E3_ERR_ILLEGAL;
+    struct ether_e_lan * elan;
+	WLOCK_ELAN();
+	elan=find_e_lan_service(elan_index);
+    if(!elan)
+        goto out;
     if(fwd_entry->is_port_entry){
-        if(find_e_lan_port(elan_index,fwd_entry->e3iface,fwd_entry->vlan_tci)<0)
-            return -E3_ERR_NOT_FOUND;
+        if(find_e_lan_port(elan_index,fwd_entry->e3iface,fwd_entry->vlan_tci)<0){
+			ret=-E3_ERR_NOT_FOUND;
+			goto out;
+        }
     }else{
-        if(find_e_lan_nhlfe(elan_index,fwd_entry->NHLFE,fwd_entry->label_to_push)<0)
-            return -E3_ERR_NOT_FOUND;
+        if(find_e_lan_nhlfe(elan_index,fwd_entry->NHLFE,fwd_entry->label_to_push)<0){
+			ret=-E3_ERR_NOT_FOUND;
+			goto out;
+        }
     }
     mac_to_findex_2_4_key(mac,&key);
     key.value_as_u64=fwd_entry->entry_as_u64;
-    if(add_index_2_4_item_unsafe(elan->fib_base,&key))/*out of memory*/
-        return -E3_ERR_OUT_OF_MEM;
-    return E3_OK;
+    if(add_index_2_4_item_unsafe(elan->fib_base,&key))/*out of memory*/{
+		ret=-E3_ERR_OUT_OF_MEM;
+		goto out;
+    }
+	ret=E3_OK;
+	out:
+	WUNLOCK_ELAN();
+    return ret;
 }
 
 int delete_e_lan_fwd_entry(int elan_index,uint8_t *mac)
-{
+{	
+	int ret=-E3_ERR_ILLEGAL;
     struct findex_2_4_key key;
-    struct ether_e_lan * elan=find_e_lan_service(elan_index);
-    if((!elan)||(!elan->is_valid))
-        return -E3_ERR_ILLEGAL;
+    struct ether_e_lan * elan;
+	WLOCK_ELAN();
+	elan=find_e_lan_service(elan_index);
+    if(!elan)
+    	goto out;
     mac_to_findex_2_4_key(mac,&key);
     delete_index_2_4_item_unsafe(elan->fib_base,&key);
-    return E3_OK;
+	ret=E3_OK;
+	out:
+	WUNLOCK_ELAN();
+    return ret;
 }
 

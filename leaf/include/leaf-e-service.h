@@ -87,10 +87,11 @@ int dereference_e_lan_service(int index);
 int delete_e_lan_service(int index);
 int register_e_lan_port(int elan_index,uint16_t e3iface,uint16_t vlan_tci);
 int find_e_lan_port(int elan_index,uint16_t e3iface,uint16_t vlan_tci);
+int find_e_lan_port_locked(int elan_index,uint16_t e3iface,uint16_t vlan_tci);
 int delete_e_lan_port(int elan_index,int port_index);
-
 int register_e_lan_nhlfe(int elan_index,uint16_t nhlfe,uint32_t label_to_push);
 int find_e_lan_nhlfe(int elan_index,uint16_t nhlfe,uint32_t label_to_push);
+int find_e_lan_nhlfe_locked(int elan_index,uint16_t nhlfe,uint32_t label_to_push);
 int delete_e_lan_nhlfe(int elan_index,int nhlfe_index);
 
 struct e_lan_fwd_entry{

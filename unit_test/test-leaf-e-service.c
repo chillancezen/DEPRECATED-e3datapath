@@ -385,6 +385,13 @@ START_TEST(leaf_e_lan_service_general){
 	ck_assert(elan->nr_nhlfes==0);
 	ck_assert(fast_index_2_4_item_safe(elan->fib_base,&key1));
 
+	ck_assert(reference_e_lan_service(MAX_E_LAN_SERVICES));
+	ck_assert(reference_e_lan_service(MAX_E_LAN_SERVICES-1));
+	ck_assert(!reference_e_lan_service(0));
+	ck_assert(delete_e_lan_service(0));
+	ck_assert(dereference_e_lan_service(MAX_E_LAN_SERVICES));
+	ck_assert(dereference_e_lan_service(MAX_E_LAN_SERVICES-1));
+	ck_assert(!dereference_e_lan_service(0));
 	ck_assert(!delete_e_lan_service(0));
 }
 END_TEST
