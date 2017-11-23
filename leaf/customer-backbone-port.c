@@ -16,6 +16,11 @@
 
 extern struct e3iface_role_def  role_defs[E3IFACE_ROLE_MAX_ROLES];
 
+/*
+*DESIGN NOTE:
+*before acquiring CBP's guard,
+*obtain E3IFACE's READ LOCK first 
+*/
 
 
 static int cbp_capability_check(int port_id)
@@ -375,6 +380,7 @@ int customer_backbone_port_iface_post_setup(struct E3Interface * pif)
 	priv->label_base=allocate_leaf_label_base(-1);
 	if(!priv->label_base)
 		return -1;
+	rte_rwlock_init(&priv->cbp_guard);
 	return 0;
 }
 

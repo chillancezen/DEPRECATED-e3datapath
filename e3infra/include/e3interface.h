@@ -60,7 +60,10 @@ __attribute__((aligned(64)))
 	struct rcu_head rcu;
 	int (*interface_up)(int iface);
 	int (*interface_down)(int iface);
-	/*interface delete callback function*/
+	/*
+	*interface delete callback function
+	*this is be invoked in RCU context
+	*/
 	int (*interface_delete)(struct E3Interface*);
 __attribute__((aligned(64)))
 			   void * private[0];

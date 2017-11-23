@@ -32,57 +32,63 @@ static int csp_capability_check(int port_id)
 	return 0;
 }
 inline uint64_t _csp_process_input_packet(struct rte_mbuf*mbuf,
-	struct csp_cache_entry *csp_cache,
-	struct mac_cache_entry *mac_cache,
+	struct csp_cache_entry *_csp_cache,
+	struct mac_cache_entry *_mac_cache,
 	struct csp_private * priv)
 {
 	uint64_t fwd_id=MAKE_UINT64(CSP_PROCESS_INPUT_DROP,0);	
 	struct ether_hdr *eth_hdr=rte_pktmbuf_mtod(mbuf,struct ether_hdr*);
 	uint16_t pkt_vlan_tci=0;
+	uint16_t vlan_index=0;
 	uint16_t mcache_index;
+	struct csp_cache_entry * vcache;
 	struct mac_cache_entry * mcache;
 	if(mbuf->ol_flags&PKT_RX_VLAN_STRIPPED){
 		pkt_vlan_tci=mbuf->vlan_tci;
 	}
+	vlan_index=pkt_vlan_tci&CSP_CACHE_MASK;
+	
+	
 	/*
-	*vlan must be the same as the priv's vlan_tci
+	*process csp_cache, cache vlan entry,
+	*if cache hits, next time accessing priv vlan distribution
+	*will be skipped.
 	*/
-	if(PREDICT_FALSE(priv->vlan_tci!=pkt_vlan_tci))
-		goto ret;
-	/*
-	*process csp_cache
-	*/
-	if(PREDICT_FALSE(csp_cache->vlan_tci!=pkt_vlan_tci)){
-		csp_cache->vlan_tci=pkt_vlan_tci;
-		csp_cache->is_valid=0;
-		if(!priv->attached)
+	vcache=&_csp_cache[vlan_index];
+	if(PREDICT_FALSE(vcache->vlan_tci!=pkt_vlan_tci)){
+		vcache->vlan_tci=pkt_vlan_tci;
+		vcache->is_valid=0;
+		/*
+		*vlan-id must be enabled in priv VLAN distribution table
+		*/
+		if(!priv->vlans[pkt_vlan_tci].is_valid)
 			goto continue_go;
-		switch(priv->e_service)
+		switch(priv->vlans[pkt_vlan_tci].e_service)
 		{
 			case e_line_service:
-				csp_cache->is_e_line=1;
-				if((!(csp_cache->eline=find_e_line_service(priv->service_index)))||
-					(!(csp_cache->eline_nexthop=find_common_nexthop(csp_cache->eline->NHLFE)))||
-					(!(csp_cache->eline_src_pif=find_e3interface_by_index(csp_cache->eline_nexthop->local_e3iface)))||
-					(!(csp_cache->eline_neighbor=find_common_neighbor(csp_cache->eline_nexthop->common_neighbor_index))))
+				vcache->is_e_line=1;
+				if((!(vcache->eline=find_e_line_service(priv->vlans[pkt_vlan_tci].service_index)))||
+					(!(vcache->eline_nexthop=find_common_nexthop(vcache->eline->NHLFE)))||
+					(!(vcache->eline_src_pif=find_e3interface_by_index(vcache->eline_nexthop->local_e3iface)))||
+					(!(vcache->eline_neighbor=find_common_neighbor(vcache->eline_nexthop->common_neighbor_index))))
 					goto continue_go;
 				break;
 			case e_lan_service:
-				csp_cache->is_e_line=0;
-				if(!(csp_cache->elan=find_e_lan_service(priv->service_index)))
+				vcache->is_e_line=0;
+				if(!(vcache->elan=find_e_lan_service(priv->vlans[pkt_vlan_tci].service_index)))
 					goto continue_go;
 				break;
 			default:
 				goto continue_go;
 				break;
 		}
-		csp_cache->is_valid=1;
+		vcache->is_valid=1;
 	}
 	continue_go:
 	
-	if(PREDICT_FALSE(!csp_cache->is_valid))
+	if(PREDICT_FALSE(!vcache->is_valid))
 		goto ret;
-	if(csp_cache->is_e_line){
+	if(vcache->is_e_line){
 		/*
 		*here it can crash if no room to prepend.
 		*increase the mbuf's header room space could resolve this issue
@@ -90,22 +96,22 @@ inline uint64_t _csp_process_input_packet(struct rte_mbuf*mbuf,
 		struct ether_hdr* outer_eth_hdr=(struct ether_hdr*)rte_pktmbuf_prepend(mbuf,18);
 		struct mpls_hdr * outer_mpls_hdr=(struct mpls_hdr*)(outer_eth_hdr+1);
 		rte_memcpy(outer_eth_hdr->d_addr.addr_bytes,
-			csp_cache->eline_neighbor->mac,
+			vcache->eline_neighbor->mac,
 			6);
 		rte_memcpy(outer_eth_hdr->s_addr.addr_bytes,
-			csp_cache->eline_src_pif->mac_addrs,
+			vcache->eline_src_pif->mac_addrs,
 			6);
 		outer_eth_hdr->ether_type=ETHER_PROTO_MPLS_UNICAST;
 
 		set_mpls_bottom(outer_mpls_hdr);
 		set_mpls_exp(outer_mpls_hdr,0);
 		set_mpls_ttl(outer_mpls_hdr,0x40);
-		set_mpls_label(outer_mpls_hdr,csp_cache->eline->label_to_push);
-		fwd_id=MAKE_UINT64(CSP_PROCESS_INPUT_ELAN_UNICAST_FWD,csp_cache->eline_nexthop->local_e3iface);
+		set_mpls_label(outer_mpls_hdr,vcache->eline->label_to_push);
+		fwd_id=MAKE_UINT64(CSP_PROCESS_INPUT_ELAN_UNICAST_FWD,vcache->eline_nexthop->local_e3iface);
 	}else{
 		mcache_index=eth_hdr->d_addr.addr_bytes[5];
 		mcache_index&=CSP_MAC_CACHE_MASK;
-		mcache=&mac_cache[mcache_index];
+		mcache=&_mac_cache[mcache_index];
 
 		if(PREDICT_FALSE(!IS_MAC_EQUAL(mcache->mac,eth_hdr->d_addr.addr_bytes))){
 			struct findex_2_4_key key={
@@ -114,7 +120,7 @@ inline uint64_t _csp_process_input_packet(struct rte_mbuf*mbuf,
 			mcache->is_valid=0;
 			rte_memcpy(mcache->mac,eth_hdr->d_addr.addr_bytes,6);
 			mac_to_findex_2_4_key(mcache->mac,&key);
-			if(!fast_index_2_4_item_safe(csp_cache->elan->fib_base,&key)){
+			if(!fast_index_2_4_item_safe(vcache->elan->fib_base,&key)){
 				mcache->fwd_entry.entry_as_u64=key.value_as_u64;
 				mcache->is_valid=1;
 				if((!mcache->fwd_entry.is_port_entry)&&(
@@ -155,7 +161,7 @@ inline uint64_t _csp_process_input_packet(struct rte_mbuf*mbuf,
 				fwd_id=MAKE_UINT64(CSP_PROCESS_INPUT_ELAN_UNICAST_FWD,mcache->fwd_entry.e3iface);
 			}
 		}else{
-			fwd_id=MAKE_UINT64(CSP_PROCESS_INPUT_ELAN_MULTICAST_FWD,0);
+			fwd_id=MAKE_UINT64(CSP_PROCESS_INPUT_ELAN_MULTICAST_FWD,pkt_vlan_tci);
 		}
 	}
 	ret:
@@ -164,8 +170,10 @@ inline uint64_t _csp_process_input_packet(struct rte_mbuf*mbuf,
 inline int _csp_multicast_forward_slow_path(struct E3Interface *pif,
 		struct node * pnode,
 		struct rte_mbuf **mbufs,
-		int nr_mbufs)
+		int nr_mbufs,
+		uint32_t vlan_tci)
 {
+	
 	struct rte_mempool * mempool=get_mempool_by_socket_id(lcore_to_socket_id(pnode->lcore_id));
 	struct csp_private *priv=(struct csp_private*)pif->private;
 	int nr_ports=0;
@@ -183,17 +191,22 @@ inline int _csp_multicast_forward_slow_path(struct E3Interface *pif,
 	struct common_neighbor * mc_neighbor=NULL;
 	struct E3Interface     * mc_src_if=NULL;
 	
-	if(PREDICT_FALSE((!priv->attached)||
-		(priv->e_service!=e_lan_service)||
-		(!(elan=find_e_lan_service(priv->service_index)))))
+	if(PREDICT_FALSE((!priv->vlans[vlan_tci].is_valid)||
+		(priv->vlans[vlan_tci].e_service!=e_lan_service)||
+		(!(elan=find_e_lan_service(priv->vlans[vlan_tci].service_index)))))
 		return 0;
 	nr_ports=elan->nr_ports;
 
 	for(port_id=0;(port_id<MAX_PORTS_IN_E_LAN_SERVICE)&&(nr_port<nr_ports);port_id++){
 		if(!elan->ports[port_id].is_valid)
 			continue;
-		pif_dst=find_e3interface_by_index(elan->ports[port_id].iface);
-		if(!pif_dst){
+		/*
+		*skip the port which is regarded as 
+		*input port or dst port not found
+		*/
+		if(((elan->ports[port_id].iface==pif->port_id)&&
+			(elan->ports[port_id].vlan_tci==vlan_tci))||
+			(!(pif_dst=find_e3interface_by_index(elan->ports[port_id].iface)))){
 			nr_port++;
 			continue;
 		}
@@ -278,12 +291,16 @@ inline void _post_csp_input_packet_process(struct E3Interface*pif,
 			}
 			break;
 		case CSP_PROCESS_INPUT_ELAN_MULTICAST_FWD:
-			nr_deliveded=_csp_multicast_forward_slow_path(pif,
-				pnode,
-				mbufs,
-				nr_mbufs);
-			drop_start=nr_deliveded;
-			nr_dropped=nr_mbufs-drop_start;
+			{
+				uint16_t vlan_tci=LOW_UINT64(fwd_id);
+				nr_deliveded=_csp_multicast_forward_slow_path(pif,
+					pnode,
+					mbufs,
+					nr_mbufs,
+					vlan_tci);
+				drop_start=nr_deliveded;
+				nr_dropped=nr_mbufs-drop_start;
+			}
 			break;
 		default:
 			nr_dropped=nr_mbufs;
@@ -308,11 +325,9 @@ int customer_service_port_iface_input_iface(void * arg)
 	uint64_t 			last_fwd_id;
 	struct E3Interface*	pif=find_e3interface_by_index(iface);
 	struct csp_private*	priv=NULL;
-	struct csp_cache_entry csp_cache={
-		.vlan_tci=-1,
-		.is_valid=0,
-	};
+	struct csp_cache_entry csp_cache[CSP_CACHE_SIZE];
 	struct mac_cache_entry mac_cache[CSP_MAC_CACHE_SIZE];
+	memset(csp_cache,0x0,sizeof(csp_cache));
 	memset(mac_cache,0x0,sizeof(mac_cache));
 	
 	DEF_EXPRESS_DELIVERY_VARS();
@@ -320,15 +335,13 @@ int customer_service_port_iface_input_iface(void * arg)
 	if(PREDICT_FALSE(!pif))
 		return 0;
 	priv=(struct csp_private*)pif->private;
-	if(PREDICT_FALSE(!priv->attached))
-		return 0;
 	
 	
 	nr_rx=rte_eth_rx_burst(iface,queue_id,mbufs,CSP_NODE_BURST_SIZE);
 	pre_setup_env(nr_rx);
 	while((iptr=peek_next_mbuf())>=0){
 		prefetch_next_mbuf(mbufs,iptr);
-		fwd_id=_csp_process_input_packet(mbufs[iptr],&csp_cache,mac_cache,priv);
+		fwd_id=_csp_process_input_packet(mbufs[iptr],csp_cache,mac_cache,priv);
 		process_rc=proceed_mbuf(iptr,fwd_id);
 		if(process_rc==MBUF_PROCESS_RESTART){
 			fetch_pending_index(start_index,end_index);
@@ -376,18 +389,22 @@ int customer_service_port_iface_post_setup(struct E3Interface * pif)
 	struct csp_private * priv=(struct csp_private*)pif->private;
 	pif->hwiface_role=E3IFACE_ROLE_CUSTOMER_USER_FACING_PORT;
 	memset(priv,0x0,sizeof(struct csp_private));
+	rte_rwlock_init(&priv->csp_guard);
 	/*setup vlan stripping here*/
 	return rte_eth_dev_set_vlan_offload(pif->port_id,ETH_VLAN_STRIP_OFFLOAD);
 }
 int customer_service_port_iface_delete(struct E3Interface * pif)
 {
+	#if 0
 	struct csp_private * priv=(struct csp_private*)pif->private;
+	
 	if(priv->attached&&(priv->e_service==e_lan_service)){
 		int elan_port_id=find_e_lan_port(priv->service_index,pif->port_id,priv->vlan_tci);
 		if(elan_port_id>=0){
 			delete_e_lan_port(priv->service_index,elan_port_id);
 		}
-	}	
+	}
+	#endif
 	return 0;
 }
 
@@ -429,10 +446,12 @@ void customer_service_port_module_test(void)
 	/*
 	*test for e-line service
 	*/
+	#if 0
 	priv->e_service=e_line_service;
 	priv->service_index=0;
 	priv->vlan_tci=100;
 	priv->attached=1;
+	#endif
 
 	/*
 	test for e-lan multicast forwarding
@@ -445,11 +464,12 @@ void customer_service_port_module_test(void)
 
 	elan->multicast_NHLFE=0;
 	elan->multicast_label=1024;
-
+	#if 0
 	priv->e_service=e_lan_service;
 	priv->service_index=0;
 	priv->vlan_tci=100;
 	priv->attached=1;
+	#endif
 	//08:00:27:1c:d8:fa
 	uint8_t mac[6]={0x08,0x00,0x27,0x1c,0xd8,0xfa};
 
