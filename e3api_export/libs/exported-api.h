@@ -1,6 +1,3 @@
-/*
-*Copyright (c) 2016-2017 Jie Zheng
-*/
 #include<stdint.h>
 uint64_t delete_label_entry(uint64_t * api_ret,
 	uint16_t arg0,

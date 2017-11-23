@@ -1,8 +1,5 @@
-/*
-*Copyright (c) 2016-2017 Jie Zheng
-*/
 #include <exported-api.h>
-#include <e3-api-wrapper.h>
+#include <e3api/include/e3-api-wrapper.h>
 DECLARE_E3_API(e3_exported_api0)={
 	.api_name="delete_label_entry",
 	.api_desc="invalidate a label entry at a given index",
