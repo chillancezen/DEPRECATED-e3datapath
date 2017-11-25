@@ -6,7 +6,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
-
+#include <semaphore.h>
+#include <time.h>
+static sem_t sem_quota;
+static int g_client_cnt=0;
 static void * zmq_context=NULL;
 static struct tlv_major_index_base * api_tlv_index_base=NULL;
 static struct tlv_major_index_base * client_api_tlv_index_base=NULL;
@@ -487,6 +490,7 @@ int issue_e3_api_request(struct e3_api_client * client)
 
 void publish_e3_api_client(struct e3_api_client * client)
 {
+	
 	if(!g_e3_api_client_ptr){
 		client->next_api_client=client;
 		g_e3_api_client_ptr=client;
@@ -496,7 +500,18 @@ void publish_e3_api_client(struct e3_api_client * client)
 			lplast=lplast->next_api_client;
 		client->next_api_client=g_e3_api_client_ptr;
 		lplast->next_api_client=client;
-	}	
+	}
+	/*
+	*update semaphore of api-clients
+	*this demands that it should be called several times 
+	*before accessing any API calls
+	*/
+	g_client_cnt++;
+	
+	if(sem_init(&sem_quota,0,g_client_cnt)){
+		fprintf(stderr,"can not initialize semaphore(initial:%d) for E3 API\n"
+			,g_client_cnt);
+	}
 }
 int register_e3_api_client(char * endpoint_address)
 {
@@ -508,15 +523,30 @@ int register_e3_api_client(char * endpoint_address)
 }
 struct e3_api_client * reference_e3_api_client()
 {
-
 	static struct e3_api_client * last_client_used=NULL;
 	struct e3_api_client * lptr=NULL;
 	struct e3_api_client * lpfound=NULL;
-
-	/*fix the bug that when no endpoint is registered, trying to reference
-	crashes the program*/
+	struct timespec ts_wait;
+	/*fix the bug that when no endpoint is registered,
+	*trying to reference
+	*crashes the program
+	*/
 	if(!g_e3_api_client_ptr)
 		return NULL;
+	/*
+	*try to consume the client quantum with 1, 
+	*if not successful, other endpoint must be using them.
+	*we do not try and return immediately upon failure.
+	*instead, we wait for reasonable time.
+	*note this not guarantee the client endpoint will get allocated one reference,
+	*but make waiting part of this module.
+	*/
+	clock_gettime(CLOCK_REALTIME,&ts_wait);
+	ts_wait.tv_sec+=MAXIMUM_SECONDS_TO_ACUIRE_SEMA;
+	ts_wait.tv_nsec+=MAXIMUM_NANO_SECONDS_TO_ACQUIRE_SEMA;
+	if(sem_timedwait(&sem_quota,&ts_wait))
+		return NULL;
+	
 	pthread_mutex_lock(&api_allocator_guard);
 	if(!last_client_used)
 		last_client_used=g_e3_api_client_ptr;
@@ -531,9 +561,17 @@ struct e3_api_client * reference_e3_api_client()
 	}while(lptr!=last_client_used);
 
 	pthread_mutex_unlock(&api_allocator_guard);
+	/*
+	*still not found, release sema_quota.
+	*note the client endpoint should never dereference_e3_api_client()
+	*yes I am quite sure if called still, it will crash as some bug must be existing
+	*/
+	if(!lpfound)
+		sem_post(&sem_quota);
 	return lpfound;
 }
 void dereference_e3_api_client(struct e3_api_client * client)
 {
 	pthread_mutex_unlock(&client->client_guard);
+	sem_post(&sem_quota);
 }

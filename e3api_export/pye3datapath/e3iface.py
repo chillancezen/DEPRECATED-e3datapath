@@ -78,15 +78,16 @@ class E3Interface(Structure):
                 
 #return the list() of e3datapath interfaces 
 #return the attached interface index
-def attach_e3iface(dev_params,model,role):
+def attach_e3iface(dev_params,model,role,with_slowpath=False):
     api_ret=c_uint64(0);
     _dev_parames=create_string_buffer(128)
     _dev_parames.value=dev_params.encode()
     _model=c_uint8(model)
     _role=c_uint8(role)
+    _with_slowpath=c_uint8(with_slowpath)
     _port=c_uint32(0)
     
-    rc=clib.create_e3iface(byref(api_ret),_dev_parames,_model,_role,byref(_port))
+    rc=clib.create_e3iface(byref(api_ret),_dev_parames,_model,_role,_with_slowpath,byref(_port))
     if rc!=0:
         raise api_call_exception()
     if api_ret.value!=0:
@@ -147,7 +148,7 @@ def get_e3iface_list():
 import time
 if __name__=='__main__':
     register_service_endpoint('ipc:///var/run/e3datapath.sock')
-    #print(attach_e3iface('0000:00:08.0',E3IFACE_MODEL_GENERIC_SINGLY_QUEUE,E3IFACE_ROLE_PROVIDER_BACKBONE_PORT))
+    print(attach_e3iface('0000:00:08.0',E3IFACE_MODEL_GENERIC_SINGLY_QUEUE,E3IFACE_ROLE_PROVIDER_BACKBONE_PORT,True))
     #print(attach_e3iface('0000:00:08.0',E3IFACE_MODEL_GENERIC_SINGLY_QUEUE,E3IFACE_ROLE_CUSTOMER_BACKBONE_FACING_PORT))
     #E3IFACE_ROLE_CUSTOMER_USER_FACING_PORT
     #print(attach_e3iface('0000:00:08.0',E3IFACE_MODEL_GENERIC_SINGLY_QUEUE,E3IFACE_ROLE_CUSTOMER_USER_FACING_PORT)) 
@@ -160,4 +161,4 @@ if __name__=='__main__':
     for ifidx in if_lst:
         print(get_e3iface(ifidx))
     pass
-    #print(reclaim_e3iface(1))
+    print(reclaim_e3iface(0))

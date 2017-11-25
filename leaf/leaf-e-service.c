@@ -99,6 +99,23 @@ int register_e_line_port(int eline_index,int e3iface,int vlan_tci)
 	WUNLOCK_ELINE();
 	return ret;
 }
+int delete_e_line_port(int eline_index)
+{
+	int ret=-E3_ERR_GENERIC;
+	struct ether_e_line * eline;
+	WLOCK_ELINE();
+	if((!(eline=find_e_line_service(eline_index)))||
+		(!eline->is_csp_ready))
+		goto out;
+	eline->is_csp_ready=0;
+	__sync_synchronize();
+	eline->e3iface=-1;
+	eline->vlan_tci=0;
+	ret=E3_OK;
+	out:
+	WUNLOCK_ELINE();
+	return ret;
+}
 int register_e_line_nhlfe(int eline_index,int NHLFE,int label_to_push)
 {
 	int ret=-E3_ERR_GENERIC;
@@ -128,6 +145,25 @@ int register_e_line_nhlfe(int eline_index,int NHLFE,int label_to_push)
 	eline->NHLFE=NHLFE;
 	eline->label_to_push=label_to_push;
 	eline->is_cbp_ready=1;
+	ret=E3_OK;
+	out:
+	WUNLOCK_ELINE();
+	return ret;
+}
+int delete_e_line_nhlfe(int eline_index)
+{
+	int ret=-E3_ERR_GENERIC;
+	struct ether_e_line * eline;
+	WLOCK_ELINE();
+	eline=find_e_line_service(eline_index);
+	if((!eline)||
+		(!eline->is_cbp_ready))
+		goto out;
+	eline->is_cbp_ready=0;
+	__sync_synchronize();
+	dereference_common_nexthop(eline->NHLFE);
+	eline->NHLFE=-1;
+	eline->label_to_push=0;
 	ret=E3_OK;
 	out:
 	WUNLOCK_ELINE();
@@ -191,6 +227,7 @@ int delete_e_line_service(int index)
 		eline->label_to_push=0;
 		eline->is_cbp_ready=0;
 	}
+	__sync_synchronize();
 	eline->is_valid=0;
 	ret=E3_OK;
 	out:

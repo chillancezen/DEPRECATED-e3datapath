@@ -73,6 +73,7 @@ extern struct ether_e_line * e_line_base;
 int register_e_line_service(void);
 int register_e_line_port(int eline_index,int e3iface,int vlan_tci);
 int register_e_line_nhlfe(int eline_index,int NHLFE,int label_to_push);
+int delete_e_line_port(int eline_index);
 
 int reference_e_line_service(int index);
 int dereference_e_line_service(int index);

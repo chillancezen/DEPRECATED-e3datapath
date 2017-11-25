@@ -77,12 +77,14 @@ e3_type create_e3iface(e3_type service,
 		e3_type dev_params,
 		e3_type model,
 		e3_type role,
+		e3_type with_slowpath,
 		e3_type pport)
 {
 	#define _(c) if(!(c)) goto error
 	char * 		_dev_paarams=(char*)e3_type_to_uint8_t_ptr(dev_params);
 	int    		_model=e3_type_to_uint8_t(model);
 	int    		_role=e3_type_to_uint8_t(role);
+	int			_with_slow_path=e3_type_to_uint8_t(with_slowpath);
 	uint32_t *  _pport=(uint32_t*)e3_type_to_uint8_t_ptr(pport);
 	e3_type			rc=0;
 	struct E3Interface_ops ops;
@@ -107,7 +109,10 @@ e3_type create_e3iface(e3_type service,
 	
 	memcpy(ops.edges,role_defs[_role].edges,sizeof(ops.edges));
 	WLOCK_E3IFACE_INVT();
-	rc=create_e3iface_with_slowpath(_dev_paarams,&ops,(int*)_pport);
+	if(_with_slow_path)
+		rc=create_e3iface_with_slowpath(_dev_paarams,&ops,(int*)_pport);
+	else
+		rc=register_e3interface(_dev_paarams,&ops,(int*)_pport);
 	WUNLOCK_E3IFACE_INVT();
 	return rc;
 	#undef _
@@ -120,6 +125,7 @@ DECLARE_E3_API(e3iface_creation)={
 	.api_callback_func=(api_callback_func)create_e3iface,
 	.args_desc={
 		{.type=e3_arg_type_uint8_t_ptr,.behavior=e3_arg_behavior_input,.len=128},
+		{.type=e3_arg_type_uint8_t,.behavior=e3_arg_behavior_input,},
 		{.type=e3_arg_type_uint8_t,.behavior=e3_arg_behavior_input,},
 		{.type=e3_arg_type_uint8_t,.behavior=e3_arg_behavior_input,},
 		{.type=e3_arg_type_uint8_t_ptr,.behavior=e3_arg_behavior_output,.len=4},
@@ -178,5 +184,6 @@ void e3iface_tmp_test(void)
 		(e3_type)"0000:00:08.0",
 		E3IFACE_MODEL_GENERIC_SINGLY_QUEUE,
 		E3IFACE_ROLE_CUSTOMER_USER_FACING_PORT,
+		1,
 		(e3_type)&port);
 }

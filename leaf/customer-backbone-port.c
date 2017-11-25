@@ -67,12 +67,12 @@ inline uint64_t _process_cbp_input_packet(struct rte_mbuf* mbuf,
 			{
 				case e_line_service:
 					ccache->eline=find_e_line_service(ccache->lentry->service_index);
-					if(!ccache->eline||!ccache->eline->is_valid)
+					if(!ccache->eline||!ccache->eline->is_csp_ready)
 						goto normal;
 					break;
 				case e_lan_service:
 					ccache->elan=find_e_lan_service(ccache->lentry->service_index);
-					if(!ccache->elan||!ccache->elan->is_valid)
+					if(!ccache->elan)
 						goto normal;
 					break;
 				default:

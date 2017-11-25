@@ -68,6 +68,7 @@ inline uint64_t _csp_process_input_packet(struct rte_mbuf*mbuf,
 			case e_line_service:
 				vcache->is_e_line=1;
 				if((!(vcache->eline=find_e_line_service(priv->vlans[pkt_vlan_tci].service_index)))||
+					(!vcache->eline->is_cbp_ready)||/*let it be detected earlier if CBP not ready*/
 					(!(vcache->eline_nexthop=find_common_nexthop(vcache->eline->NHLFE)))||
 					(!(vcache->eline_src_pif=find_e3interface_by_index(vcache->eline_nexthop->local_e3iface)))||
 					(!(vcache->eline_neighbor=find_common_neighbor(vcache->eline_nexthop->common_neighbor_index))))
@@ -335,8 +336,6 @@ int customer_service_port_iface_input_iface(void * arg)
 	if(PREDICT_FALSE(!pif))
 		return 0;
 	priv=(struct csp_private*)pif->private;
-	
-	
 	nr_rx=rte_eth_rx_burst(iface,queue_id,mbufs,CSP_NODE_BURST_SIZE);
 	pre_setup_env(nr_rx);
 	while((iptr=peek_next_mbuf())>=0){
@@ -395,16 +394,43 @@ int customer_service_port_iface_post_setup(struct E3Interface * pif)
 }
 int customer_service_port_iface_delete(struct E3Interface * pif)
 {
-	#if 0
+	int idx=0;
 	struct csp_private * priv=(struct csp_private*)pif->private;
-	
-	if(priv->attached&&(priv->e_service==e_lan_service)){
-		int elan_port_id=find_e_lan_port(priv->service_index,pif->port_id,priv->vlan_tci);
-		if(elan_port_id>=0){
-			delete_e_lan_port(priv->service_index,elan_port_id);
+	/*
+	*delete all the ports in e-services,
+	*no RWLOCK is aquired,since it's called in RCU context
+	*/
+	for (idx=0;idx<4096;idx++){
+		if(!priv->vlans[idx].is_valid)
+			continue;
+		switch(priv->vlans[idx].e_service)
+		{
+			case e_line_service:
+				if(delete_e_line_port(priv->vlans[idx].service_index)){
+					E3_ERROR("error occurs during detach port %d\n from E-LINE service %d\n",
+						pif->port_id,
+						priv->vlans[idx].service_index);
+				}
+				break;
+			case e_lan_service:
+				{
+					int elan_port_id=find_e_lan_port_locked(priv->vlans[idx].service_index,
+						pif->port_id,
+						idx);
+					if(elan_port_id<0)
+						break;
+					if(delete_e_lan_port(priv->vlans[idx].service_index,elan_port_id)){
+						E3_ERROR("error occurs during detach port %d\n from E-LAN service %d\n",
+							pif->port_id,
+							priv->vlans[idx].service_index);
+					}
+				}
+				break;
+			default:
+				E3_ERROR("as a matter of fact, it never reach here\n");
+				break;
 		}
 	}
-	#endif
 	return 0;
 }
 

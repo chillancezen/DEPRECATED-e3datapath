@@ -102,7 +102,28 @@ START_TEST(leaf_e_line_service_general){
 	ck_assert(!dereference_e_line_service(eline_index));
 	ck_assert(!delete_e_line_service(eline_index));
 	ck_assert(!find_e_line_service(eline_index));
-	
+
+	ck_assert((eline_index=register_e_line_service())>=0);
+	ck_assert(register_e_line_port(eline_index,eline.e3iface,eline.vlan_tci));
+	ck_assert(delete_e_line_port(eline_index));
+	ck_assert(!find_e_line_service(eline_index)->is_csp_ready);
+	eline.vlan_tci++;
+	ck_assert(!register_e_line_port(eline_index,eline.e3iface,eline.vlan_tci));
+	ck_assert(find_e_line_service(eline_index)->is_csp_ready);
+	ck_assert(!delete_e_line_port(eline_index));
+	ck_assert(!find_e_line_service(eline_index)->is_csp_ready);
+
+	ck_assert((eline_index=register_e_line_service())>=0);
+	ck_assert(register_e_line_nhlfe(eline_index,eline.NHLFE,eline.label_to_push));
+	ck_assert(delete_e_line_nhlfe(eline_index));
+	eline.label_to_push++;
+	int ref_cnt_old=find_common_nexthop(eline.NHLFE)->ref_cnt;
+	ck_assert(!register_e_line_nhlfe(eline_index,eline.NHLFE,eline.label_to_push));
+	ck_assert(find_common_nexthop(eline.NHLFE)->ref_cnt==(ref_cnt_old+1));
+	ck_assert(find_e_line_service(eline_index)->is_cbp_ready);
+	ck_assert(!delete_e_line_nhlfe(eline_index));
+	ck_assert(!find_e_line_service(eline_index)->is_cbp_ready);
+	ck_assert(find_common_nexthop(eline.NHLFE)->ref_cnt==ref_cnt_old);
 	/*
 	*environmental cleanup
 	*/

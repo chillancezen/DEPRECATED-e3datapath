@@ -8,6 +8,8 @@
 #include <pthread.h>
 
 /*system global definition*/
+#define MAXIMUM_SECONDS_TO_ACUIRE_SEMA 5
+#define MAXIMUM_NANO_SECONDS_TO_ACQUIRE_SEMA 0
 
 enum e3_tlv_major_type{
 	e3_tlv_major_type_none=0,
