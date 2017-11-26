@@ -48,7 +48,6 @@ inline uint64_t _csp_process_input_packet(struct rte_mbuf*mbuf,
 	}
 	vlan_index=pkt_vlan_tci&CSP_CACHE_MASK;
 	
-	
 	/*
 	*process csp_cache, cache vlan entry,
 	*if cache hits, next time accessing priv vlan distribution
@@ -472,13 +471,10 @@ void customer_service_port_module_test(void)
 	/*
 	*test for e-line service
 	*/
-	#if 0
-	priv->e_service=e_line_service;
-	priv->service_index=0;
-	priv->vlan_tci=100;
-	priv->attached=1;
-	#endif
-
+	priv->vlans[100].e_service=e_line_service;
+	priv->vlans[100].service_index=0;
+	priv->vlans[100].is_valid=1;
+	
 	/*
 	test for e-lan multicast forwarding
 	*/
@@ -490,12 +486,11 @@ void customer_service_port_module_test(void)
 
 	elan->multicast_NHLFE=0;
 	elan->multicast_label=1024;
-	#if 0
-	priv->e_service=e_lan_service;
-	priv->service_index=0;
-	priv->vlan_tci=100;
-	priv->attached=1;
-	#endif
+	
+	priv->vlans[100].e_service=e_lan_service;
+	priv->vlans[100].service_index=0;
+	priv->vlans[100].is_valid=1;
+	
 	//08:00:27:1c:d8:fa
 	uint8_t mac[6]={0x08,0x00,0x27,0x1c,0xd8,0xfa};
 
@@ -506,6 +501,7 @@ void customer_service_port_module_test(void)
 		.vlan_tci=200,
 	};
 	E3_ASSERT(!register_e_lan_fwd_entry(0,mac,&fwd_entry));
+	
 	/*MPLS entry*/
 	E3_ASSERT(register_e_lan_nhlfe(0,0,1023)>=0);
 	struct e_lan_fwd_entry fwd_entry1={

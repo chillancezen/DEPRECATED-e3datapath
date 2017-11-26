@@ -148,7 +148,7 @@ def get_e3iface_list():
 import time
 if __name__=='__main__':
     register_service_endpoint('ipc:///var/run/e3datapath.sock')
-    print(attach_e3iface('0000:00:08.0',E3IFACE_MODEL_GENERIC_SINGLY_QUEUE,E3IFACE_ROLE_PROVIDER_BACKBONE_PORT,True))
+    #print(attach_e3iface('0000:00:08.0',E3IFACE_MODEL_GENERIC_SINGLY_QUEUE,E3IFACE_ROLE_PROVIDER_BACKBONE_PORT,True))
     #print(attach_e3iface('0000:00:08.0',E3IFACE_MODEL_GENERIC_SINGLY_QUEUE,E3IFACE_ROLE_CUSTOMER_BACKBONE_FACING_PORT))
     #E3IFACE_ROLE_CUSTOMER_USER_FACING_PORT
     #print(attach_e3iface('0000:00:08.0',E3IFACE_MODEL_GENERIC_SINGLY_QUEUE,E3IFACE_ROLE_CUSTOMER_USER_FACING_PORT)) 
@@ -161,4 +161,4 @@ if __name__=='__main__':
     for ifidx in if_lst:
         print(get_e3iface(ifidx))
     pass
-    print(reclaim_e3iface(0))
+    #print(reclaim_e3iface(0))
