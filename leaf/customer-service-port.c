@@ -115,13 +115,13 @@ inline uint64_t _csp_process_input_packet(struct rte_mbuf*mbuf,
 
 		if(PREDICT_FALSE(!IS_MAC_EQUAL(mcache->mac,eth_hdr->d_addr.addr_bytes))){
 			struct findex_2_4_key key={
-				.value_as_u64=0,
+				.leaf_fwd_entry_as_64=0,
 			};
 			mcache->is_valid=0;
 			rte_memcpy(mcache->mac,eth_hdr->d_addr.addr_bytes,6);
 			mac_to_findex_2_4_key(mcache->mac,&key);
 			if(!fast_index_2_4_item_safe(vcache->elan->fib_base,&key)){
-				mcache->fwd_entry.entry_as_u64=key.value_as_u64;
+				mcache->fwd_entry.entry_as_u64=key.leaf_fwd_entry_as_64;
 				mcache->is_valid=1;
 				if((!mcache->fwd_entry.is_port_entry)&&(
 					(!(mcache->nexthop=find_common_nexthop(mcache->fwd_entry.NHLFE)))||

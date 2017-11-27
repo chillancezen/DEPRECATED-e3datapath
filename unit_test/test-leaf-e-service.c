@@ -257,7 +257,7 @@ START_TEST(leaf_e_lan_service_general){
 	
 	mac_to_findex_2_4_key(mac2,&key1);
 	ck_assert(!fast_index_2_4_item_safe(elan->fib_base,&key1));
-	ck_assert(key1.value_as_u64==fwd_entry.entry_as_u64);
+	ck_assert(key1.leaf_fwd_entry_as_64==fwd_entry.entry_as_u64);
 	
 	mac2[5]=0x37;
 	mac_to_findex_2_4_key(mac2,&key1);
@@ -339,7 +339,7 @@ START_TEST(leaf_e_lan_service_general){
 	
 	ck_assert(!!elan->fib_base[key1.key_index].next);
 	ck_assert(!fast_index_2_4_item_safe(elan->fib_base,&key1));
-	ck_assert(fwd_entry.entry_as_u64==key1.value_as_u64);
+	ck_assert(fwd_entry.entry_as_u64==key1.leaf_fwd_entry_as_64);
 
 	ck_assert(!delete_e_lan_fwd_entry(0,mac2));
 	ck_assert(fast_index_2_4_item_safe(elan->fib_base,&key1));

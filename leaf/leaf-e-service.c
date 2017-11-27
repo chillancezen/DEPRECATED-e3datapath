@@ -440,7 +440,7 @@ int delete_e_lan_port(int elan_index,int port_index)
             for(iptr=0,is_skipping=0;iptr<FINDEX_2_4_TAGS_LENGTH;iptr++){
                 if(!e3_bitmap_is_bit_set(pentry->tag_avail,iptr))
                     continue;
-                fwd_entry.entry_as_u64=pentry->values[iptr];
+                fwd_entry.entry_as_u64=pentry->_values[iptr].leaf_fwd_entry_as_64;
                 if((!fwd_entry.is_port_entry)||
                    (fwd_entry.e3iface!=elan->ports[port_index].iface))
                     continue;
@@ -564,7 +564,7 @@ int delete_e_lan_nhlfe(int elan_index,int nhlfe_index)
             for(iptr=0,is_skipping=0;iptr<FINDEX_2_4_TAGS_LENGTH;iptr++){
                 if(!e3_bitmap_is_bit_set(pentry->tag_avail,iptr))
                     continue;
-                fwd_entry.entry_as_u64=pentry->values[iptr];
+                fwd_entry.entry_as_u64=pentry->_values[iptr].leaf_fwd_entry_as_64;
                 if((fwd_entry.is_port_entry)||
                    (fwd_entry.NHLFE!=elan->nhlfes[nhlfe_index].NHLFE))
                     continue;
@@ -615,7 +615,7 @@ int register_e_lan_fwd_entry(int elan_index,uint8_t * mac,struct e_lan_fwd_entry
         }
     }
     mac_to_findex_2_4_key(mac,&key);
-    key.value_as_u64=fwd_entry->entry_as_u64;
+    key.leaf_fwd_entry_as_64=fwd_entry->entry_as_u64;
     if(add_index_2_4_item_unsafe(elan->fib_base,&key))/*out of memory*/{
 		ret=-E3_ERR_OUT_OF_MEM;
 		goto out;

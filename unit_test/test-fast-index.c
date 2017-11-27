@@ -54,21 +54,21 @@ START_TEST(findex_2_4){
     key.key_index=0x234;
     key.tag1=0x23;
     key.tag2=0x34;
-    key.value_as_u64=0x12345678;
+    key.leaf_fwd_entry_as_64=0x12345678;
     ck_assert(fast_index_2_4_item_safe(base,&key));
     ck_assert_msg(!add_index_2_4_item_unsafe(base,&key),"not enough memory");
     ck_assert(!!base[key.key_index].next);
-    key.value_as_u64=0;
+    key.leaf_fwd_entry_as_64=0;
     //dump_findex_2_4_base(base);
 	ck_assert(!fast_index_2_4_item_safe(base,&key));
-	ck_assert(key.value_as_u64==0x12345678);
+	ck_assert(key.leaf_fwd_entry_as_64==0x12345678);
 
     key.tag2=0x78;
-    key.value_as_u64=0x12345679;
+    key.leaf_fwd_entry_as_64=0x12345679;
     ck_assert_msg(!add_index_2_4_item_unsafe(base,&key),"not enough memory");
-    key.value_as_u64=0;
+    key.leaf_fwd_entry_as_64=0;
 	ck_assert(!fast_index_2_4_item_safe(base,&key));
-	ck_assert(key.value_as_u64==0x12345679);
+	ck_assert(key.leaf_fwd_entry_as_64==0x12345679);
 
     key.tag2=0x34;
     delete_index_2_4_item_unsafe(base,&key);
@@ -81,7 +81,7 @@ START_TEST(findex_2_4){
     key.key_index=0x325;
     for(idx=0;idx<48*3;idx++){
         key.tag2=idx;
-        key.value_as_u64=idx;
+        key.leaf_fwd_entry_as_64=idx;
         ck_assert_msg(!add_index_2_4_item_unsafe(base,&key),"not enough memory");
         
     }
@@ -89,7 +89,7 @@ START_TEST(findex_2_4){
     for(idx=0;idx<48*3;idx++){
         key.tag2=idx;
         ck_assert(!fast_index_2_4_item_safe(base,&key));
-        ck_assert(key.value_as_u64==(uint64_t)idx);
+        ck_assert(key.leaf_fwd_entry_as_64==(uint64_t)idx);
     }
     /*
     *delete last entry
