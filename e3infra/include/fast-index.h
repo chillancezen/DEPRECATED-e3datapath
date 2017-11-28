@@ -370,8 +370,11 @@ int add_index_2_4_item_unsafe(struct findex_2_4_base * base,struct findex_2_4_ke
 void delete_index_2_4_item_unsafe(struct findex_2_4_base * base,struct findex_2_4_key * key);
 void dump_findex_2_4_base(struct findex_2_4_base * base);
 
+
 __attribute__((always_inline))
-    static inline int fast_index_2_4_item_safe(struct findex_2_4_base * base,struct findex_2_4_key* key)
+    static inline int _fast_index_2_4_item_safe(struct findex_2_4_base * base,
+        struct findex_2_4_key* key,
+        int update)
 {
     struct findex_2_4_entry *pentry;
     int idx;
@@ -430,7 +433,11 @@ __attribute__((always_inline))
                     found_index=index_base+local_index;
                     ret=!e3_bitmap_is_bit_set(pentry->tag_avail,found_index);
                     if(!ret){
-                        COPY_FROM_FINDEX_2_2_VALUE(pentry,found_index,key->leaf_fwd_entry_as_64,key->ts_last_updated);
+                        if(update){
+                            COPY_TO_FINDEX_2_2_VALUE(pentry,found_index,key->leaf_fwd_entry_as_64,key->ts_last_updated);
+                        }else{
+                            COPY_FROM_FINDEX_2_2_VALUE(pentry,found_index,key->leaf_fwd_entry_as_64,key->ts_last_updated);
+                        }
                         break;
                     }
                 }
@@ -453,18 +460,26 @@ __attribute__((always_inline))
                     found_index=index_base+local_index;
                     ret=!e3_bitmap_is_bit_set(pentry->tag_avail,found_index);
                     if(!ret){
-                        COPY_FROM_FINDEX_2_2_VALUE(pentry,found_index,key->leaf_fwd_entry_as_64,key->ts_last_updated);
+                        if(update){
+                            COPY_TO_FINDEX_2_2_VALUE(pentry,found_index,key->leaf_fwd_entry_as_64,key->ts_last_updated);
+                        }else{
+                            COPY_FROM_FINDEX_2_2_VALUE(pentry,found_index,key->leaf_fwd_entry_as_64,key->ts_last_updated);
+                        }
                         break;
                     }
                 }
                 e3_bitmap_foreach_set_bit_end();
             }
         #else
-        #error "machine still not supported"
+        #error "machine yet not supported"
         #endif
     }
     return ret;
 }
+
+#define fast_index_2_4_item_safe(base,key) _fast_index_2_4_item_safe((base),(key),0)
+#define update_index_2_4_item_safe(base,key) _fast_index_2_4_item_safe((base),(key),1)
+
 void cleanup_findex_2_4_entries(struct findex_2_4_base * base);
 
 #endif
