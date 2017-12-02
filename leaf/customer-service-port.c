@@ -17,6 +17,9 @@
 #include <rte_ethdev.h>
 #include <e3net/include/common-cache.h>
 #include <e3infra/include/lcore-extension.h>
+#include <leaf/include/mac-learning.h>
+#include <rte_cycles.h>
+
 extern struct e3iface_role_def  role_defs[E3IFACE_ROLE_MAX_ROLES];
 
 //#define CSP_PROCESS_INPUT_HOST_STACK 0x4
@@ -34,6 +37,9 @@ static int csp_capability_check(int port_id)
 inline uint64_t _csp_process_input_packet(struct rte_mbuf*mbuf,
 	struct csp_cache_entry *_csp_cache,
 	struct mac_cache_entry *_mac_cache,
+	struct mac_learning_cache_entry *mac_learning_cache,
+	int	*  nr_mac_learning_cache,
+	int e3iface,
 	struct csp_private * priv)
 {
 	uint64_t fwd_id=MAKE_UINT64(CSP_PROCESS_INPUT_DROP,0);	
@@ -41,6 +47,7 @@ inline uint64_t _csp_process_input_packet(struct rte_mbuf*mbuf,
 	uint16_t pkt_vlan_tci=0;
 	uint16_t vlan_index=0;
 	uint16_t mcache_index;
+	uint16_t idx=0;
 	struct csp_cache_entry * vcache;
 	struct mac_cache_entry * mcache;
 	if(mbuf->ol_flags&PKT_RX_VLAN_STRIPPED){
@@ -109,6 +116,10 @@ inline uint64_t _csp_process_input_packet(struct rte_mbuf*mbuf,
 		set_mpls_label(outer_mpls_hdr,vcache->eline->label_to_push);
 		fwd_id=MAKE_UINT64(CSP_PROCESS_INPUT_ELAN_UNICAST_FWD,vcache->eline_nexthop->local_e3iface);
 	}else{
+		/*
+		*enter E-LAN logics,do mac based forwarding,
+		*and snoop for mac learning
+		*/
 		mcache_index=eth_hdr->d_addr.addr_bytes[5];
 		mcache_index&=CSP_MAC_CACHE_MASK;
 		mcache=&_mac_cache[mcache_index];
@@ -162,6 +173,29 @@ inline uint64_t _csp_process_input_packet(struct rte_mbuf*mbuf,
 			}
 		}else{
 			fwd_id=MAKE_UINT64(CSP_PROCESS_INPUT_ELAN_MULTICAST_FWD,pkt_vlan_tci);
+		}
+		/*
+		*inspect the inner ether header,and learn mac and port+vlan mapping
+		*in E-LAN's fib base,first make sure the customer source mac is legal unicast
+		* address
+		*/
+		if(PREDICT_TRUE(!(eth_hdr->s_addr.addr_bytes[0]&0x1))){
+			for(idx=0;idx<*nr_mac_learning_cache;idx++){
+				if(IS_MAC_EQUAL(eth_hdr->s_addr.addr_bytes,mac_learning_cache[idx].mac))
+					break;
+			}
+			if(idx==*nr_mac_learning_cache){
+				struct e_lan_fwd_entry _fwd_entry={
+					.is_port_entry=1,
+					.e3iface=e3iface,
+					.vlan_tci=pkt_vlan_tci,
+				};
+				copy_ether_address(mac_learning_cache[idx].mac,
+					eth_hdr->s_addr.addr_bytes);
+				mac_learning_cache[idx].elan_index=vcache->elan->index;
+				mac_learning_cache[idx].fwd_entry_as64=_fwd_entry.entry_as_u64;
+				(*nr_mac_learning_cache)++;
+			}
 		}
 	}
 	ret:
@@ -315,6 +349,7 @@ int customer_service_port_iface_input_iface(void * arg)
 	struct rte_mbuf * 	mbufs[CSP_NODE_BURST_SIZE];
 	int 				nr_rx;
 	int 				iptr;
+	int 				idx;
 	int 				process_rc;
 	int					start_index;
 	int					end_index;
@@ -327,6 +362,9 @@ int customer_service_port_iface_input_iface(void * arg)
 	struct csp_private*	priv=NULL;
 	struct csp_cache_entry csp_cache[CSP_CACHE_SIZE];
 	struct mac_cache_entry mac_cache[CSP_MAC_CACHE_SIZE];
+	struct mac_learning_cache_entry mac_learning_cache[CSP_NODE_BURST_SIZE];
+	int nr_mac_learning_cache=0;
+	uint64_t ts_now;
 	memset(csp_cache,0x0,sizeof(csp_cache));
 	memset(mac_cache,0x0,sizeof(mac_cache));
 	
@@ -339,7 +377,13 @@ int customer_service_port_iface_input_iface(void * arg)
 	pre_setup_env(nr_rx);
 	while((iptr=peek_next_mbuf())>=0){
 		prefetch_next_mbuf(mbufs,iptr);
-		fwd_id=_csp_process_input_packet(mbufs[iptr],csp_cache,mac_cache,priv);
+		fwd_id=_csp_process_input_packet(mbufs[iptr],
+			csp_cache,
+			mac_cache,
+			mac_learning_cache,
+			&nr_mac_learning_cache,
+			iface,
+			priv);
 		process_rc=proceed_mbuf(iptr,fwd_id);
 		if(process_rc==MBUF_PROCESS_RESTART){
 			fetch_pending_index(start_index,end_index);
@@ -361,6 +405,12 @@ int customer_service_port_iface_input_iface(void * arg)
 				&mbufs[start_index],
 				end_index-start_index+1,
 				last_fwd_id);
+	if(nr_mac_learning_cache){
+		ts_now=rte_get_tsc_cycles();
+		for(idx=0;idx<nr_mac_learning_cache;idx++){
+			update_mac_learning_cache(&mac_learning_cache[idx],ts_now);
+		}
+	}
 	return 0;
 }
 int customer_service_port_iface_output_iface(void * arg)

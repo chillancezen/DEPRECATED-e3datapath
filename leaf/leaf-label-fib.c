@@ -103,6 +103,7 @@ int set_leaf_label_entry(struct leaf_label_entry * base,
 			elan=find_e_lan_service(tmp_entry->service_index);
 			if(!elan||!elan->is_valid)
 				return -E3_ERR_ILLEGAL;
+			tmp_entry->egress_nhlfe_index=0x7f;
 			break;
 		default:
 			return -E3_ERR_GENERIC;
@@ -118,6 +119,8 @@ int set_leaf_label_entry(struct leaf_label_entry * base,
 	}
 	base[index].e3_service=tmp_entry->e3_service;
 	base[index].service_index=tmp_entry->service_index;
+	base[index].egress_nhlfe_index=tmp_entry->egress_nhlfe_index;
+	__sync_synchronize();
 	base[index].is_valid=1;
 	update_leaf_label_entry_relationship(base,
 		index,
@@ -133,4 +136,38 @@ void reset_leaf_label_entry(struct leaf_label_entry *base,int index)
 	pentry=leaf_label_entry_at(base,index);
 	if(pentry)
 		pentry->is_valid=0;
+}
+int set_leaf_label_entry_egress_nhlfe_index(struct leaf_label_entry *base,
+	uint32_t label_index,
+	uint32_t NHLFE,
+	uint32_t label_to_push)
+{
+	struct ether_e_lan *elan;
+	struct leaf_label_entry *llentry=NULL;
+	int egress_nhlfe_index=0x7f;
+
+	if((!(llentry=leaf_label_entry_at(base,label_index)))||
+		(!llentry->is_valid)||
+		(llentry->e3_service!=e_lan_service)||
+		(!(elan=find_e_lan_service(llentry->service_index))))
+		return -E3_ERR_ILLEGAL;
+	/*
+	*make sure <NHLFE, label_to_push> is an nhlfe in e-lan's nhlfes array
+	*the will acquire E_LAN's global Read Lock
+	*/
+	if((egress_nhlfe_index=find_e_lan_nhlfe_locked(elan->index,NHLFE,label_to_push))<0)
+		return -E3_ERR_ILLEGAL;
+	llentry->egress_nhlfe_index=egress_nhlfe_index;
+	return E3_OK;
+}
+
+int clear_leaf_label_entry_egress_nhlfe_index(struct leaf_label_entry * base,
+	uint32_t label_index)
+{
+	struct leaf_label_entry * llentry=leaf_label_entry_at(base,label_index);
+	if(!llentry||
+		!llentry->is_valid)
+		return -E3_ERR_ILLEGAL;
+	llentry->egress_nhlfe_index=0x7f;
+	return E3_OK;
 }

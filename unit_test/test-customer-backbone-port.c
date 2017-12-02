@@ -21,6 +21,8 @@ DECLARE_TEST_CASE(tc_customer_backbone_port);
 inline uint64_t _process_cbp_input_packet(struct rte_mbuf* mbuf,
 	struct cbp_cache_entry* cbp_cache,
 	struct mac_cache_entry* mac_cache,
+	struct mac_learning_cache_entry * mac_learning_cache,
+	int * nr_mac_learning_cache,
 	struct cbp_private * priv);
 
 
@@ -57,6 +59,8 @@ START_TEST(cbp_generic){
 	
 	struct cbp_cache_entry cbp_cache[CBP_CACHE_SIZE];
 	struct mac_cache_entry mac_cache[MAC_CACHE_SIZE];
+	struct mac_learning_cache_entry mac_learning_cache[CBP_NODE_BURST_SIZE];
+	int nr_mac_learning_cache=0;
 	memset(cbp_cache,0x0,sizeof(cbp_cache));
 	memset(mac_cache,0x0,sizeof(mac_cache));
 
@@ -116,9 +120,12 @@ START_TEST(cbp_generic){
 	ck_assert(!!(eth_hdr=(struct ether_hdr*)rte_pktmbuf_append(mbuf,82)));
 	memset(eth_hdr,0x0,82);
 	eth_hdr->ether_type=0x0008;
+	nr_mac_learning_cache=0;
 	fwd_id=_process_cbp_input_packet(mbuf,
 		cbp_cache,
 		mac_cache,
+		mac_learning_cache,
+		&nr_mac_learning_cache,
 		priv);
 	ck_assert(HIGH_UINT64(fwd_id)==CBP_PROCESS_INPUT_HOST_STACK);
 
@@ -128,14 +135,19 @@ START_TEST(cbp_generic){
 	fwd_id=_process_cbp_input_packet(mbuf,
 		cbp_cache,
 		mac_cache,
+		mac_learning_cache,
+		&nr_mac_learning_cache,
 		priv);
 	ck_assert(HIGH_UINT64(fwd_id)==CBP_PROCESS_INPUT_DROP);
 	label=0x1235;
 	set_mpls_ttl(mpls_hdr,60);
 	set_mpls_label(mpls_hdr,label);
+	nr_mac_learning_cache=0;
 	fwd_id=_process_cbp_input_packet(mbuf,
 		cbp_cache,
 		mac_cache,
+		mac_learning_cache,
+		&nr_mac_learning_cache,
 		priv);
 	ck_assert(HIGH_UINT64(fwd_id)==CBP_PROCESS_INPUT_DROP);
 
@@ -143,10 +155,12 @@ START_TEST(cbp_generic){
 	label=0x1234;
 	set_mpls_label(mpls_hdr,label);
 	inner_eth_hdr=(struct ether_hdr*)(mpls_hdr+1);
-	
+	nr_mac_learning_cache=0;
 	fwd_id=_process_cbp_input_packet(mbuf,
 		cbp_cache,
 		mac_cache,
+		mac_learning_cache,
+		&nr_mac_learning_cache,
 		priv);
 	ck_assert(HIGH_UINT64(fwd_id)==CBP_PROCESS_INPUT_ELINE_FWD);
 	ck_assert(mbuf->pkt_len==64);
@@ -176,9 +190,12 @@ START_TEST(cbp_generic){
 	label=0x2345;
 	set_mpls_label(mpls_hdr,label);
 	set_mpls_ttl(mpls_hdr,64);
+	nr_mac_learning_cache=0;
 	fwd_id=_process_cbp_input_packet(mbuf,
 		cbp_cache,
 		mac_cache,
+		mac_learning_cache,
+		&nr_mac_learning_cache,
 		priv);
 	ck_assert(HIGH_UINT64(fwd_id)==CBP_PROCESS_INPUT_ELAN_UNICAST_FWD);
 	label_index=label&CBP_CACHE_MASK;
@@ -210,9 +227,12 @@ START_TEST(cbp_generic){
 	label=0x2345;
 	set_mpls_label(mpls_hdr,label);
 	set_mpls_ttl(mpls_hdr,64);
+	nr_mac_learning_cache=0;
 	fwd_id=_process_cbp_input_packet(mbuf,
 		cbp_cache,
 		mac_cache,
+		mac_learning_cache,
+		&nr_mac_learning_cache,
 		priv);
 	/*
 	*can not find such mac entry any more

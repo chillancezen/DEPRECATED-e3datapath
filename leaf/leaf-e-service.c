@@ -24,7 +24,25 @@ rte_rwlock_t e_lan_guard;
 #define RUNLOCK_ELAN() 	rte_rwlock_read_unlock(&e_lan_guard)
 #define WUNLOCK_ELAN() 	rte_rwlock_write_unlock(&e_lan_guard)
 
-
+/*
+*only read locks are exported
+*/
+void __read_lock_eline()
+{
+	RLOCK_ELINE();
+}
+void __read_unlock_eline()
+{
+	RUNLOCK_ELINE();
+}
+void __read_lock_elan()
+{
+	RLOCK_ELAN();
+}
+void __read_unlock_elan()
+{
+	RUNLOCK_ELAN();
+}
 
 void init_e_service(void)
 {
@@ -263,6 +281,7 @@ int register_e_lan_service(void)
 		goto out;
 	e_lan_base[idx].is_releasing=0;
 	e_lan_base[idx].is_valid=1;
+	rte_spinlock_init(&e_lan_base[idx].per_e_lan_guard);
 	ret=idx;
 	out:
 	WUNLOCK_ELAN();

@@ -14,6 +14,7 @@
 #include <rte_malloc.h>
 #include <e3net/include/common-cache.h>
 
+
 extern struct e3iface_role_def  role_defs[E3IFACE_ROLE_MAX_ROLES];
 
 /*
@@ -21,7 +22,6 @@ extern struct e3iface_role_def  role_defs[E3IFACE_ROLE_MAX_ROLES];
 *before acquiring CBP's guard,
 *obtain E3IFACE's READ LOCK first 
 */
-
 
 static int cbp_capability_check(int port_id)
 {
@@ -35,13 +35,15 @@ static int cbp_capability_check(int port_id)
 inline uint64_t _process_cbp_input_packet(struct rte_mbuf* mbuf,
 	struct cbp_cache_entry* cbp_cache,
 	struct mac_cache_entry* mac_cache,
+	struct mac_learning_cache_entry * mac_learning_cache,
+	int	*  nr_mac_learning_cache,
 	struct cbp_private * priv)
 {
 	uint64_t fwd_id=MAKE_UINT64(CBP_PROCESS_INPUT_DROP,0);
 	uint32_t label;
 	uint16_t ccache_index;
 	uint16_t mcache_index;
-	
+	int idx=0;
 	struct cbp_cache_entry * ccache;
 	struct mac_cache_entry * mcache;
 	struct ether_hdr * inner_eth_hdr;
@@ -148,6 +150,33 @@ inline uint64_t _process_cbp_input_packet(struct rte_mbuf* mbuf,
 				*forward to all the ports associated with the E_LAN service
 				*/
 				fwd_id=MAKE_UINT64(CBP_PROCESS_INPUT_ELAN_MULTICAST_FWD,ccache->elan->index);
+			}
+			/*
+			*do e-lan mac learning
+			*/
+			if(PREDICT_TRUE(!(inner_eth_hdr->s_addr.addr_bytes[0]&0x1))){
+				if((ccache->lentry->egress_nhlfe_index<0)||
+					(ccache->lentry->egress_nhlfe_index>=MAX_NHLFE_IN_E_LAN_SERVICE)||
+					(!ccache->elan->nhlfes[ccache->lentry->egress_nhlfe_index].is_valid))
+					goto mac_learning_out;
+				for(idx=0;idx<*nr_mac_learning_cache;idx++){
+					if(IS_MAC_EQUAL(inner_eth_hdr->s_addr.addr_bytes,mac_learning_cache[idx].mac))
+						break;
+				}
+				if(idx==*nr_mac_learning_cache){
+					struct e_lan_fwd_entry _fwd_entry={
+						.is_port_entry=0,
+						.label_to_push=ccache->elan->nhlfes[ccache->lentry->egress_nhlfe_index].label_to_push,
+						.NHLFE=ccache->elan->nhlfes[ccache->lentry->egress_nhlfe_index].NHLFE,
+					};
+					copy_ether_address(mac_learning_cache[idx].mac,
+						inner_eth_hdr->s_addr.addr_bytes);
+					mac_learning_cache[idx].elan_index=ccache->elan->index;
+					mac_learning_cache[idx].fwd_entry_as64=_fwd_entry.entry_as_u64;
+					(*nr_mac_learning_cache)++;
+				}
+			mac_learning_out:
+				;
 			}
 			break;
 	}
@@ -320,7 +349,8 @@ int customer_backbone_port_iface_input_iface(void * arg)
 	uint64_t last_fwd_id;
 	struct cbp_cache_entry cbp_cache[CBP_CACHE_SIZE];
 	struct mac_cache_entry mac_cache[MAC_CACHE_SIZE];
-	
+	struct mac_learning_cache_entry mac_learning_cache[CBP_NODE_BURST_SIZE];
+	int nr_mac_learning_cache=0;
 	if(PREDICT_FALSE(!pif))
 		return 0;
 	memset(cbp_cache,0x0,sizeof(cbp_cache));
@@ -330,7 +360,12 @@ int customer_backbone_port_iface_input_iface(void * arg)
 	pre_setup_env(nr_rx);
 	while((iptr=peek_next_mbuf())>=0){
 		prefetch_next_mbuf(mbufs,iptr);
-		fwd_id=_process_cbp_input_packet(mbufs[iptr],cbp_cache,mac_cache,priv);
+		fwd_id=_process_cbp_input_packet(mbufs[iptr],
+			cbp_cache,
+			mac_cache,
+			mac_learning_cache,
+			&nr_mac_learning_cache,
+			priv);
 		process_rc=proceed_mbuf(iptr,fwd_id);
 		if(process_rc==MBUF_PROCESS_RESTART){
 			fetch_pending_index(start_index,end_index);

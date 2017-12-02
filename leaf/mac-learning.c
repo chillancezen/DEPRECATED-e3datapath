@@ -6,6 +6,9 @@
 #include <e3infra/include/e3-init.h>
 #include <e3infra/include/util.h>
 #include <e3infra/include/lcore-extension.h>
+#include <rte_ring.h>
+#include <rte_cycles.h>
+struct node_class * pmac_learning_class;
 void mac_learning_node_class_init(void)
 {
     struct node_class * pclass=rte_zmalloc(NULL,sizeof(struct node_class),64);
@@ -15,12 +18,40 @@ void mac_learning_node_class_init(void)
     pclass->node_class_priv=NULL;
     E3_ASSERT(!register_node_class(pclass));
     E3_ASSERT(find_node_class_by_name(MAC_LEARNING_CLASSNAME)==pclass);
-    E3_LOG("register node class:%s\n",(char*)pclass->class_name);
+    E3_LOG("register node class:%s(class id:%d)\n",
+		(char*)pclass->class_name,
+		(int)pclass->node_class_index);
+	pmac_learning_class=pclass;
 }
 E3_init(mac_learning_node_class_init,TASK_PRIORITY_RESOURCE_INIT);
 
 int mac_learning_node_process_func(void *arg)
 {
+	struct node * pnode=(struct node*)arg;
+	struct mac_learning_cache_entry cache_entry;
+	struct ether_e_lan * elan;
+	struct findex_2_4_key key;
+	int idx=0;
+	uint64_t ts_now=rte_get_tsc_cycles();
+	for(idx=0;idx<16;idx++){
+		if(rte_ring_sc_dequeue_bulk(pnode->node_ring,
+			cache_entry.u64,
+			2,
+			NULL)!=2)
+			break;
+		/*
+		*do updates,usually a new MAC entry should be 
+		*inserted into E-LAN's fib base
+		*/
+		if(!(elan=find_e_lan_service(cache_entry.elan_index)))
+			continue;
+		mac_to_findex_2_4_key(cache_entry.mac,&key);
+		key.leaf_fwd_entry_as_64=cache_entry.fwd_entry_as64;
+		key.ts_last_updated=ts_now;
+		get_e_lan(elan);
+		add_index_2_4_item_unsafe(elan->fib_base,&key);
+		put_e_lan(elan);
+	}
     return 0;
 }
 int register_mac_learning_node(int socket_id,int node_id)
@@ -78,5 +109,6 @@ void mac_learning_node_init(void)
     foreach_numa_socket(socket_id){
         E3_ASSERT(!register_mac_learning_node(socket_id,0));
     }
+	
 }
 E3_init(mac_learning_node_init,TASK_PRIORITY_RESOURCE_INIT+1);

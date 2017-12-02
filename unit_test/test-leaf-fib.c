@@ -138,6 +138,18 @@ START_TEST(leaf_fib_general){
 	ck_assert(find_e_lan_service(0)->ref_cnt==1);
 	reset_leaf_label_entry(base1,NR_LEAF_LABEL_ENTRY-1);
 	ck_assert(find_e_lan_service(0)->ref_cnt==0);
+
+
+	entry.e3_service=e_lan_service;
+	entry.service_index=0;
+	ck_assert(!set_leaf_label_entry(base,507,&entry));
+	ck_assert(set_leaf_label_entry_egress_nhlfe_index(base,508,0,100));
+	ck_assert(set_leaf_label_entry_egress_nhlfe_index(base,507,0,100));
+	ck_assert(register_e_lan_nhlfe(0,0,100)>=0);
+	ck_assert(!set_leaf_label_entry_egress_nhlfe_index(base,507,0,100));
+	ck_assert(set_leaf_label_entry_egress_nhlfe_index(base,508,0,100));
+	ck_assert(clear_leaf_label_entry_egress_nhlfe_index(base,508));
+	ck_assert(!clear_leaf_label_entry_egress_nhlfe_index(base,507));
 	/*environmrntal post-setup*/
 	for(idx=0;idx<MAX_E_LINE_SERVICES;idx++)
 		e_line_base[idx].is_valid=0;
@@ -148,6 +160,7 @@ START_TEST(leaf_fib_general){
 	for(idx=0;idx<MAX_COMMON_NEXTHOPS;idx++)
 		nexthop_base[idx].is_valid=0;
 	rte_free(base);
+	rte_free(base1);
 }
 END_TEST
 ADD_TEST(leaf_fib_general);

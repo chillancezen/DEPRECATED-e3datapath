@@ -4,6 +4,7 @@
 #ifndef _CUSTOMER_BACKBONE_PORT_H
 #define _CUSTOMER_BACKBONE_PORT_H
 #include <leaf/include/leaf-label-fib.h>
+#include <leaf/include/mac-learning.h>
 #include <rte_rwlock.h>
 struct cbp_private{
 	rte_rwlock_t cbp_guard;

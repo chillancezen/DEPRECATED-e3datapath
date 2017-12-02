@@ -40,8 +40,11 @@ struct ether_e_line{
 
 
 
-#define MAX_PORTS_IN_E_LAN_SERVICE 128
-#define MAX_NHLFE_IN_E_LAN_SERVICE 128
+#define MAX_PORTS_IN_E_LAN_SERVICE 64
+#define MAX_NHLFE_IN_E_LAN_SERVICE 64
+/*
+*MAX_NHLFE_IN_E_LAN_SERVICE must be less than 128
+*/
 
 struct ether_e_lan{
 	uint8_t is_valid;
@@ -65,7 +68,23 @@ struct ether_e_lan{
 		uint32_t label_to_push;
 	}nhlfes[MAX_NHLFE_IN_E_LAN_SERVICE];
 	struct rcu_head rcu;
+	rte_spinlock_t per_e_lan_guard;
+	/*
+	*per_e_lan_guard is being used for securing e-lan's
+	*inner data fields.
+	*/
 }__attribute__((packed));
+
+__attribute__((always_inline))
+	static inline void get_e_lan(struct ether_e_lan * elan)
+{
+	rte_spinlock_lock(&elan->per_e_lan_guard);
+}
+__attribute__((always_inline))
+	static inline void put_e_lan(struct ether_e_lan * elan)
+{
+	rte_spinlock_unlock(&elan->per_e_lan_guard);
+}
 
 extern struct ether_e_line * e_line_base;
 #define _find_e_line_service(index) ((((index)>=0)&&((index)<MAX_E_LINE_SERVICES))?&e_line_base[(index)]:NULL)
