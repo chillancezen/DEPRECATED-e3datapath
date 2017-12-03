@@ -68,7 +68,7 @@ def register_ether_line_service():
     if rc!=0:
         raise api_call_exception()
     if api_ret.value!=0:
-        raise api_return_exception('make sure eline resource is not running out')
+        raise api_return_exception('make sure eline resource is not running out,api_ret:%x'%(api_ret.value))
     return eline_number.value
 
 def get_ether_line_service(index):
@@ -79,7 +79,7 @@ def get_ether_line_service(index):
     if rc!=0:
         raise api_call_exception()
     if api_ret.value!=0:
-        raise api_return_exception('invalid e-line index or something else is wrong')
+        raise api_return_exception('invalid e-line index or something else is wrong,api_ret:%x'%(api_ret.value))
     return eline
 def list_ether_line_services():
     lst=list()
@@ -93,7 +93,7 @@ def list_ether_line_services():
     if rc!=0:
         raise api_call_exception()
     if api_ret.value!=0:
-        raise api_return_exception('never suppose it happens here')
+        raise api_return_exception('never suppose it happens here,api_ret:%x'%(api_ret.value))
     for i in range(nr_entries.value):
         lst.append(a.a[i])
     return lst
@@ -104,7 +104,7 @@ def delete_ether_line_service(index):
     if rc!=0:
         raise api_call_exception()
     if api_ret.value!=0:
-        raise api_return_exception('make sure it\'s deletable first')
+        raise api_return_exception('make sure it\'s deletable first,api_ret:%x'%(api_ret.value))
 def register_ether_line_port(eline_index,e3iface,vlan_tci):
     api_ret=c_int64(0)
     _eline_index=c_int16(eline_index)
@@ -114,7 +114,7 @@ def register_ether_line_port(eline_index,e3iface,vlan_tci):
     if rc!=0:
         raise api_call_exception()
     if api_ret.value!=0:
-        raise api_return_exception('it conflicts with other e-line services or parameter is not valid')
+        raise api_return_exception('it conflicts with other e-line services or parameter is not valid,api_ret:%x'%(api_ret.value))
 def delete_ether_line_port(eline_index):
     api_ret=c_int64(0)
     _eline_index=c_int16(eline_index)
@@ -122,7 +122,27 @@ def delete_ether_line_port(eline_index):
     if rc!=0:
         raise api_call_exception()
     if api_ret.value!=0:
-        raise api_return_exception('make sure this eline port is deletable')
+        raise api_return_exception('make sure this eline port is deletable,api_ret:%x'%(api_ret.value))
+#not tested
+def register_ether_line_nhlfe(eline_index,nhlfe,label_to_push):
+    api_ret=c_int64(0)
+    _eline_index=c_int16(eline_index)
+    _nhlfe=c_int32(nhlfe)
+    _label_to_push=c_int32(label_to_push)
+    rc=clib.leaf_api_register_e_service_nhlfe(byref(api_ret),1,_eline_index,_nhlfe,_label_to_push)
+    if rc!=0:
+        raise api_call_exception()
+    if api_ret.value!=0:
+        raise api_return_exception('something is wrong with the arguments,api_ret:%x'%(api_ret.value))
+#not tested
+def delete_ether_line_nhlfe(eline_index):
+    api_ret=c_int64(0)
+    _eline_index=c_int16(eline_index)
+    rc=clib.leaf_api_delete_e_service_nhlfe(byref(api_ret),1,_eline_index)
+    if rc!=0:
+        raise api_call_exception()
+    if api_ret.value!=0:
+        raise api_return_exception('deleting eline fails,api_ret:%x'%(api_ret.value))
 
 if __name__=='__main__':
     register_service_endpoint('ipc:///var/run/e3datapath.sock')
@@ -132,7 +152,9 @@ if __name__=='__main__':
     #print(get_ether_line_service(0))
     #print(get_ether_line_service(1))
     print(register_ether_line_port(0,1,4095))
+    #print(register_ether_line_nhlfe(0,0,0x123))
     #print(delete_ether_line_port(0))
+    print(delete_ether_line_nhlfe(0))
     lst=list_ether_line_services()
     print(lst)
     for eline in lst:

@@ -13,7 +13,7 @@
 *it applies to both e-line and e-lan 
 */
 
-e3_type leaf_api_register_e_service(e3_type service,e3_type is_eline,e3_type pservice_id)
+e3_type leaf_api_register_e_service(e3_type e3service,e3_type is_eline,e3_type pservice_id)
 {
 	uint8_t    _is_eline=e3_type_to_uint8_t(is_eline);
 	uint32_t * _pservice_id=(uint32_t*)e3_type_to_uint8_t_ptr(pservice_id);
@@ -44,7 +44,7 @@ DECLARE_E3_API(e_service_registration)={
 /*
 *E-LINE only
 */
-e3_type leaf_api_get_e_line(e3_type service,e3_type eline_index,e3_type peline)
+e3_type leaf_api_get_e_line(e3_type e3service,e3_type eline_index,e3_type peline)
 {
 	uint32_t _eline_index=e3_type_to_uint32_t(eline_index);
 	struct ether_e_line *_peline=(struct ether_e_line *)e3_type_to_uint8_t_ptr(peline);
@@ -84,7 +84,7 @@ DECLARE_E3_API(e_line_retrieve)={
 #error "MAX_E_LINE_SERVICES must be equal to MAX_E_LINE_SERVICES"
 #endif
 
-e3_type leaf_api_list_e_services(e3_type service,e3_type is_eline,e3_type pnr_services,e3_type pservices)
+e3_type leaf_api_list_e_services(e3_type e3service,e3_type is_eline,e3_type pnr_services,e3_type pservices)
 {
 	uint8_t    _is_eline    =e3_type_to_uint8_t(is_eline);
 	uint32_t * _pnr_services=(uint32_t *)e3_type_to_uint8_t_ptr(pnr_services);
@@ -132,7 +132,7 @@ DECLARE_E3_API(e_services_list)={
 /*
 *this api routine applies to both E-LINE and E-LAN services
 */
-e3_type leaf_api_delete_e_service(e3_type service,e3_type is_eline,e3_type service_index)
+e3_type leaf_api_delete_e_service(e3_type e3service,e3_type is_eline,e3_type service_index)
 {
 	int8_t 	_is_eline	=e3_type_to_uint8_t(is_eline);
 	int32_t _service_index=e3_type_to_uint32_t(service_index);
@@ -156,7 +156,7 @@ DECLARE_E3_API(e_service_deletion)={
 *however, they should be treated seperatedly since their
 *return values have completely different meanings.
 */
-e3_type leaf_api_register_e_service_port(e3_type service,
+e3_type leaf_api_register_e_service_port(e3_type e3service,
 	e3_type is_eline,
 	e3_type service_index,
 	e3_type e3iface_index,
@@ -185,7 +185,7 @@ DECLARE_E3_API(service_port_registration)={
 /*
 *E-LAN&E-LINE capable
 */
-e3_type leaf_api_delete_e_service_port(e3_type service,
+e3_type leaf_api_delete_e_service_port(e3_type e3service,
 	e3_type is_eline,
 	e3_type service_index,
 	e3_type inner_port_id)
@@ -207,4 +207,60 @@ DECLARE_E3_API(service_port_deletion)={
 		{.type=e3_arg_type_uint16_t,.behavior=e3_arg_behavior_input,},
 		{.type=e3_arg_type_none,},
 	}
+};
+/*
+*both e-line&e-lan capable
+*/
+e3_type leaf_api_register_e_service_nhlfe(e3_type e3service,
+	e3_type is_eline,
+	e3_type service_index,
+	e3_type nhlfe,
+	e3_type label_to_push)
+{
+	int8_t  _is_eline		=e3_type_to_uint8_t(is_eline);
+	int16_t _service_index	=e3_type_to_uint16_t(service_index);
+	int32_t _nhlfe			=e3_type_to_uint32_t(nhlfe);
+	int32_t _label_to_push	=e3_type_to_uint32_t(label_to_push);
+	if(_is_eline)
+		return register_e_line_nhlfe(_service_index,_nhlfe,_label_to_push);
+	return register_e_lan_nhlfe(_service_index,_nhlfe,_label_to_push);
+}
+DECLARE_E3_API(service_nhlfe_registeration)={
+	.api_name="leaf_api_register_e_service_nhlfe",
+	.api_desc="register a nhlfe for both ether service",
+	.api_callback_func=(api_callback_func)leaf_api_register_e_service_nhlfe,
+	.args_desc={
+		{.type=e3_arg_type_uint8_t,.behavior=e3_arg_behavior_input,},
+		{.type=e3_arg_type_uint16_t,.behavior=e3_arg_behavior_input,},
+		{.type=e3_arg_type_uint32_t,.behavior=e3_arg_behavior_input,},
+		{.type=e3_arg_type_uint32_t,.behavior=e3_arg_behavior_input,},
+		{.type=e3_arg_type_none,}
+	},
+};
+
+/*
+*both e-line&e-lan capable
+*/
+e3_type leaf_api_delete_e_service_nhlfe(e3_type service,
+	e3_type is_eline,
+	e3_type service_index,
+	e3_type inner_nhlfe_index)
+{
+	int8_t _is_eline=e3_type_to_uint8_t(is_eline);
+	int16_t _service_index=e3_type_to_uint16_t(service_index);
+	int16_t _inner_nhlfe_index=e3_type_to_uint16_t(inner_nhlfe_index);
+	if(_is_eline)
+		return delete_e_line_nhlfe(_service_index);
+	return delete_e_lan_nhlfe(_service_index,_inner_nhlfe_index);
+}
+DECLARE_E3_API(service_nhlfe_deletion)={
+	.api_name="leaf_api_delete_e_service_nhlfe",
+	.api_desc="delete a nhlfe of an ether service",
+	.api_callback_func=(api_callback_func)leaf_api_delete_e_service_nhlfe,
+	.args_desc={
+		{.type=e3_arg_type_uint8_t,.behavior=e3_arg_behavior_input,},
+		{.type=e3_arg_type_uint16_t,.behavior=e3_arg_behavior_input,},
+		{.type=e3_arg_type_uint16_t,.behavior=e3_arg_behavior_input,},
+		{.type=e3_arg_type_none,}
+	},
 };
