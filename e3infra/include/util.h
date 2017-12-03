@@ -4,6 +4,8 @@
 #ifndef _UTIL_H
 #define _UTIL_H
 #include <x86intrin.h>
+#include <inttypes.h>
+
 #ifndef typeof
 #define typeof __typeof__
 #endif
@@ -104,5 +106,11 @@ enum e3error{
     E3_ERR_OUT_OF_MEM,/*out of memory*/
     E3_ERR_OUT_OF_RES,/*out of other resource*/
 };
-
+/*
+*API exportation relevant
+*/
+uint32_t _ip_string_to_u32_le(const char * ip_string);
+void _mac_string_to_byte_array(const char * mac_string,uint8_t  *mac_stub);
+#define E3API_IP_STRING_LENGTH 16
+#define E3API_MAC_STRING_LENGTH 18
 #endif
