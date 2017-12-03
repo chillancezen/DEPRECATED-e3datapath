@@ -13,7 +13,7 @@
 #include <e3infra/include/lcore-extension.h>
 #include <rte_malloc.h>
 #include <e3net/include/common-cache.h>
-
+#include <rte_cycles.h>
 
 extern struct e3iface_role_def  role_defs[E3IFACE_ROLE_MAX_ROLES];
 
@@ -335,9 +335,11 @@ int customer_backbone_port_iface_input_iface(void * arg)
 	struct rte_mbuf * 	mbufs[CBP_NODE_BURST_SIZE];
 	int 				nr_rx;
 	int 				iptr;
+	int 				idx;
 	int 				process_rc;
 	int					start_index;
 	int					end_index;
+	uint64_t			ts_now;
 	struct node *		pnode=(struct node*)arg;
 	int 				iface=HIGH_UINT64((uint64_t)pnode->node_priv);
 	int					queue_id=LOW_UINT64((uint64_t)pnode->node_priv);
@@ -387,6 +389,12 @@ int customer_backbone_port_iface_input_iface(void * arg)
 				&mbufs[start_index],
 				end_index-start_index+1,
 				last_fwd_id);
+	if(nr_mac_learning_cache){
+		ts_now=rte_get_tsc_cycles();
+		for(idx=0;idx<nr_mac_learning_cache;idx++){
+			update_mac_learning_cache(&mac_learning_cache[idx],ts_now);
+		}
+	}
 	return 0;
 }
 int customer_backbone_port_iface_output_iface(void * arg)
@@ -487,7 +495,9 @@ void cbp_module_test(void)
 	};
 	E3_ASSERT(!set_leaf_label_entry(priv->label_base,925516,&lentry));
 	E3_ASSERT(!set_leaf_label_entry(priv->label_base,925516,&lentry));
-	
+	E3_ASSERT(register_e_lan_nhlfe(0,0,123)>=0);
+	E3_ASSERT(!set_leaf_label_entry_egress_nhlfe_index(priv->label_base,925516,0,123));
+	return ;
 	struct e_lan_fwd_entry fwd_entry={
 		.is_port_entry=1,
 		.e3iface=0,

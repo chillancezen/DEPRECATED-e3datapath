@@ -62,9 +62,11 @@ int register_mac_learning_node(int socket_id,int node_id)
         return -E3_ERR_OUT_OF_MEM;
     }
     sprintf((char*)pnode->name,"mac-learn-%d.%d",socket_id,node_id);
-    
-    pnode->lcore_id=get_lcore_by_socket_id(socket_id);
-    
+    #if 0
+    	pnode->lcore_id=get_lcore_by_socket_id(socket_id);
+    #else
+		pnode->lcore_id=rte_get_master_lcore();
+	#endif
     if(!validate_lcore_id(pnode->lcore_id)){
         E3_ERROR("no valid lcore(this:%d) for node:%s\n",pnode->lcore_id,(char*)pnode->name);
         goto error_node_dealloc;

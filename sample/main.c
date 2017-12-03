@@ -33,8 +33,9 @@ main(int argc, char **argv)
 	if (ret < 0)
 		rte_panic("Cannot init EAL\n");
 	init_registered_tasks();
-	e3iface_tmp_test();
-	customer_service_port_module_test();
+	//e3iface_tmp_test();
+	//customer_service_port_module_test();
+	//cbp_module_test();
 	RTE_LCORE_FOREACH_SLAVE(lcore_id) {
 		rte_eal_remote_launch(lcore_default_entry, NULL, lcore_id);
 	}

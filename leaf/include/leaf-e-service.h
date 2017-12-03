@@ -19,9 +19,10 @@ struct ether_e_line{
 	*if label_to_push and NHLFE is set,is_cbp_ready will be set to 1
 	*if e3iface and vlan_tci is set,is_csp_ready is set to 1
 	*/
-	uint16_t  is_cbp_ready:1;
-	uint16_t  is_csp_ready:1;
-	uint16_t  is_valid:1;
+	uint8_t  is_cbp_ready:1;
+	uint8_t  is_csp_ready:1;
+	uint8_t  is_valid:1;
+	uint8_t  reserved0;
 	
 	uint16_t index;
 	/*
@@ -39,6 +40,19 @@ struct ether_e_line{
 }__attribute__((packed));
 
 
+/*
+Python definition:
+<Field type=c_ubyte, ofs=0:0, bits=1> :ether_eline.is_cbp_ready
+<Field type=c_ubyte, ofs=0:1, bits=1> :ether_eline.is_csp_ready
+<Field type=c_ubyte, ofs=0:2, bits=1> :ether_eline.is_valid
+<Field type=c_ubyte, ofs=1, size=1>   :ether_eline.reserved0
+<Field type=c_ushort, ofs=2, size=2>  :ether_eline.index
+<Field type=c_uint, ofs=4, size=4>    :ether_eline.label_to_push
+<Field type=c_ushort, ofs=8, size=2>  :ether_eline.NHLFE
+<Field type=c_ushort, ofs=10, size=2> :ether_eline.e3iface
+<Field type=c_ushort, ofs=12, size=2> :ether_eline.vlan_tci
+<Field type=c_ushort, ofs=14, size=2> :ether_eline.ref_cnt
+*/
 
 #define MAX_PORTS_IN_E_LAN_SERVICE 64
 #define MAX_NHLFE_IN_E_LAN_SERVICE 64
@@ -149,5 +163,15 @@ struct e_lan_fwd_entry{
 }
 int register_e_lan_fwd_entry(int elan_index,uint8_t * mac,struct e_lan_fwd_entry * fwd_entry);
 int delete_e_lan_fwd_entry(int elan_index,uint8_t *mac);
+
+/*
+*the criticl section which is guarded by those read locks below
+*will not acquire any write locks anymore, or call any fucntion
+*that acuiqures write locks
+*/
+void __read_lock_eline();
+void __read_unlock_eline();
+void __read_lock_elan();
+void __read_unlock_elan();
 
 #endif
