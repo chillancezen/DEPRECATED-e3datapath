@@ -11,7 +11,6 @@ e3_type e3net_api_register_common_neighbor(e3_type e3service,
 	struct common_neighbor  neighbor;
 	neighbor.neighbour_ip_as_le=_ip_string_to_u32_le(_ip_string);
 	_mac_string_to_byte_array(_mac_string,neighbor.mac);
-	printf("hello worlf\n");
 	return register_common_neighbor(&neighbor);
 }
 DECLARE_E3_API(common_neighbor_registeration)={

@@ -17,7 +17,7 @@ def register_neighbor(ip,mac):
     mac_string=create_string_buffer(E3API_MAC_STRING_LENGTH)
     ip_string.value=ip.encode()
     mac_string.value=mac.encode()
-    
+    print(ip_string) 
     rc=clib.e3net_api_register_common_neighbor(byref(api_ret),ip_string,mac_string)
     if rc!=0:
         raise api_call_exception(rc)
@@ -27,5 +27,5 @@ def register_neighbor(ip,mac):
 
     
 if __name__=='__main__':
-    register_service_endpoint('ipc:///var/run/e4datapath.sock')
+    register_service_endpoint('ipc:///var/run/e3datapath.sock')
     print(register_neighbor('2.3.2.232','09:22:2:3:43:2'))
