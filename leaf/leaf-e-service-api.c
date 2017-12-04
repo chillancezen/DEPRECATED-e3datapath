@@ -267,3 +267,31 @@ DECLARE_E3_API(service_nhlfe_deletion)={
 		{.type=e3_arg_type_none,}
 	},
 };
+
+
+e3_type leaf_api_get_e_lan(e3_type e3service,
+	e3_type elan_index,
+	e3_type pelan)
+{
+	int16_t _elan_index=e3_type_to_uint16_t(elan_index);
+	struct ether_e_lan * _pelan=(struct ether_e_lan*)e3_type_to_uint8_t_ptr(pelan);
+	struct ether_e_lan * elan=NULL;
+	__read_lock_elan();
+	elan=_find_e_lan_service(_elan_index);
+	__read_unlock_elan();
+	if(elan){
+		rte_memcpy(_pelan,elan,sizeof(struct ether_e_lan));
+		return E3_OK;
+	}
+	return -E3_ERR_NOT_FOUND;
+}
+DECLARE_E3_API(e_lan_retrieval)={
+	.api_name="leaf_api_get_e_lan",
+	.api_desc="retrieve an e-lan service entry",
+	.api_callback_func=(api_callback_func)leaf_api_get_e_lan,
+	.args_desc={
+		{.type=e3_arg_type_uint16_t,.behavior=e3_arg_behavior_input,},
+		{.type=e3_arg_type_uint8_t_ptr,.behavior=e3_arg_behavior_output,.len=sizeof(struct ether_e_lan)},
+		{.type=e3_arg_type_none,},
+	},	
+};

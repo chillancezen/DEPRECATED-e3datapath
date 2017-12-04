@@ -142,19 +142,23 @@ def delete_ether_line_nhlfe(eline_index):
     if rc!=0:
         raise api_call_exception()
     if api_ret.value!=0:
-        raise api_return_exception('deleting eline fails,api_ret:%x'%(api_ret.value))
+        raise api_return_exception('deleting eline nhlfe fails,api_ret:%x'%(api_ret.value))
 
 if __name__=='__main__':
+    from pye3datapath.common.neighbor import *
+    from pye3datapath.common.nexthop import *
     register_service_endpoint('ipc:///var/run/e3datapath.sock')
+    register_neighbor('130.140.150.1','08:00:27:ab:24:62')
+    register_nexthop(0,0)
     #print(sizeof(ether_eline))
     #ether_eline().dump_definition()
     print(register_ether_line_service())
     #print(get_ether_line_service(0))
     #print(get_ether_line_service(1))
     print(register_ether_line_port(0,1,4095))
-    #print(register_ether_line_nhlfe(0,0,0x123))
+    print(register_ether_line_nhlfe(0,0,0x123))
     #print(delete_ether_line_port(0))
-    print(delete_ether_line_nhlfe(0))
+    #print(delete_ether_line_nhlfe(0))
     lst=list_ether_line_services()
     print(lst)
     for eline in lst:
