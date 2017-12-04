@@ -21,6 +21,8 @@
 #include <e3infra/include/lcore-extension.h>
 #include <e3infra/include/e3-init.h>
 #include <e3infra/include/e3interface.h>
+#include <e3net/include/common-nhlfe.h>
+
 //#include <spine-label-fib.h>
 //#include <spine-label-nhlfe.h>
 int
@@ -33,6 +35,7 @@ main(int argc, char **argv)
 	if (ret < 0)
 		rte_panic("Cannot init EAL\n");
 	init_registered_tasks();
+	printf("common neighbor size:%d\n",sizeof(struct common_neighbor));
 	//e3iface_tmp_test();
 	//customer_service_port_module_test();
 	//cbp_module_test();

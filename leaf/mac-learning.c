@@ -1,3 +1,6 @@
+/*
+*Copyright (c) 2016-2017 Jie Zheng
+*/
 #include <leaf/include/mac-learning.h>
 #include <e3infra/include/node.h>
 #include <e3infra/include/node-class.h>

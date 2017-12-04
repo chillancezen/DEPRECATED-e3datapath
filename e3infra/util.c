@@ -1,3 +1,7 @@
+/*
+*Copyright (c) 2016-2017 Jie Zheng
+*/
+
 #include <e3infra/include/util.h>
 #include <stdio.h>
 

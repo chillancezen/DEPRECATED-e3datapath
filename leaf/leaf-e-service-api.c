@@ -1,3 +1,6 @@
+/*
+*Copyright (c) 2016-2017 Jie Zheng
+*/
 #include <leaf/include/leaf-e-service.h>
 #include <e3api/include/e3-api-wrapper.h>
 #include <e3infra/include/util.h>
@@ -66,7 +69,7 @@ e3_type leaf_api_get_e_line(e3_type e3service,e3_type eline_index,e3_type peline
 	__read_unlock_eline();
 	return E3_OK;
 }
-DECLARE_E3_API(e_line_retrieve)={
+DECLARE_E3_API(e_line_retrieval)={
 	.api_name="leaf_api_get_e_line",
 	.api_desc="copy an e-line to other client endpoit",
 	.api_callback_func=(api_callback_func)leaf_api_get_e_line,

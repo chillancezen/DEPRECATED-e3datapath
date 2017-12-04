@@ -13,7 +13,17 @@ struct common_neighbor{
 	uint8_t  is_valid;
 	uint8_t  reserved0;
 }__attribute__((packed));
+/*
+Python definition:
+size of neighbor: 16
+<Field type=c_ubyte_Array_4, ofs=0, size=4> neighbor.neighbour_ip_as_le
+<Field type=c_short, ofs=4, size=2> neighbor.ref_cnt
+<Field type=c_short, ofs=6, size=2> neighbor.index
+<Field type=c_ubyte_Array_6, ofs=8, size=6> neighbor.mac
+<Field type=c_ubyte, ofs=14, size=1> neighbor.is_valid
+<Field type=c_ubyte, ofs=15, size=1> neighbor.reserved0
 
+*/
 struct common_nexthop{
 	uint16_t local_e3iface;
 	uint16_t common_neighbor_index;
@@ -29,6 +39,7 @@ struct common_nexthop{
 
 extern struct common_neighbor * neighbor_base;
 int register_common_neighbor(struct common_neighbor * neighbor);
+int refresh_common_neighbor_mac(struct common_neighbor * neighbor);
 #define _find_common_neighbor(index) ((((index)>=0)&&((index)<MAX_COMMON_NEIGHBORS))?&neighbor_base[(index)]:NULL)
 #define find_common_neighbor(index) (((((index)>=0)&&((index)<MAX_COMMON_NEIGHBORS))&(neighbor_base[(index)].is_valid))?&neighbor_base[(index)]:NULL)
 int reference_common_nrighbor(int index);
@@ -44,6 +55,9 @@ int reference_common_nexthop(int index);
 int dereference_common_nexthop(int index);
 int delete_common_nexthop(int index);
 
-
+void __read_lock_neighbor(void);
+void __read_unlock_neighbor(void);
+void __read_lock_nexthop(void);
+void __read_unlock_nexthop(void);
 
 #endif

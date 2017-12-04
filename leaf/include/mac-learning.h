@@ -1,3 +1,6 @@
+/*
+*Copyright (c) 2016-2017 Jie Zheng
+*/
 #ifndef _MAC_LEARNING_H
 #define _MAC_LEARNING_H
 #include <inttypes.h>

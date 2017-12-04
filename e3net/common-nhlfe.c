@@ -23,6 +23,22 @@ static rte_rwlock_t neighbor_guard;
 #define RUNLOCK_NEIGHBOR() 	rte_rwlock_read_unlock(&neighbor_guard)
 #define WUNLOCK_NEIGHBOR() 	rte_rwlock_write_unlock(&neighbor_guard)
 
+void __read_lock_neighbor(void)
+{
+	RLOCK_NEIGHBOR();
+}
+void __read_unlock_neighbor(void)
+{
+	RUNLOCK_NEIGHBOR();
+}
+void __read_lock_nexthop(void)
+{
+	RLOCK_NEXTHOP();
+}
+void __read_unlock_nexthop(void)
+{
+	RUNLOCK_NEXTHOP();
+}
 void init_common_nhlfe(void)
 {
 	neighbor_base=rte_zmalloc(NULL,
@@ -74,6 +90,29 @@ int register_common_neighbor(struct common_neighbor * neighbor)
     WUNLOCK_NEIGHBOR();
 	return ret;
 }
+int refresh_common_neighbor_mac(struct common_neighbor * neighbor)
+{
+	int ret=-E3_ERR_GENERIC;
+	int idx=0;
+	WLOCK_NEIGHBOR();
+	for(idx=0;idx<MAX_COMMON_NEIGHBORS;idx++){
+		if(!neighbor_base[idx].is_valid)
+			continue;
+		if(neighbor_base[idx].neighbour_ip_as_le==neighbor->neighbour_ip_as_le)
+			break;
+	}
+	if(idx>=MAX_COMMON_NEIGHBORS){
+		ret=-E3_ERR_NOT_FOUND;
+		goto out;
+	}
+	rte_memcpy(neighbor_base[idx].mac,
+		neighbor->mac,
+		6);
+	ret=E3_OK;
+	out:
+	WUNLOCK_NEIGHBOR();
+	return ret;
+}
 
 int reference_common_nrighbor(int index)
 {
@@ -123,6 +162,7 @@ int delete_common_neighbor(int index)
     WUNLOCK_NEIGHBOR();
 	return ret;
 }
+
 /*
 *as with other registration entry,
 *return the actual index,negative integer is returned 
