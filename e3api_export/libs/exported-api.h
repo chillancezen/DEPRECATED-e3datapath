@@ -105,23 +105,35 @@ uint64_t create_e3iface(uint64_t * api_ret,
 	uint8_t arg74,
 	uint8_t arg75,
 	uint8_t * arg76);
-uint64_t e3net_api_delete_common_neighbor(uint64_t * api_ret,
+uint64_t e3net_api_delete_common_nexthop(uint64_t * api_ret,
 	uint16_t arg77);
-uint64_t e3net_api_list_common_neighbor_partial(uint64_t * api_ret,
+uint64_t e3net_api_list_common_nexthop_partial(uint64_t * api_ret,
 	uint8_t * arg78,
 	uint8_t * arg79,
 	uint8_t * arg80);
-uint64_t e3net_api_get_common_neighbor(uint64_t * api_ret,
+uint64_t e3net_api_get_common_nexthop(uint64_t * api_ret,
 	uint16_t arg81,
 	uint8_t * arg82);
+uint64_t e3net_api_register_common_nexthop(uint64_t * api_ret,
+	uint16_t arg83,
+	uint16_t arg84);
+uint64_t e3net_api_delete_common_neighbor(uint64_t * api_ret,
+	uint16_t arg85);
+uint64_t e3net_api_list_common_neighbor_partial(uint64_t * api_ret,
+	uint8_t * arg86,
+	uint8_t * arg87,
+	uint8_t * arg88);
+uint64_t e3net_api_get_common_neighbor(uint64_t * api_ret,
+	uint16_t arg89,
+	uint8_t * arg90);
 uint64_t e3net_api_register_or_update_common_neighbor(uint64_t * api_ret,
-	uint8_t arg83,
-	uint8_t * arg84,
-	uint8_t * arg85);
+	uint8_t arg91,
+	uint8_t * arg92,
+	uint8_t * arg93);
 uint64_t get_e3interface(uint64_t * api_ret,
-	uint16_t arg86,
-	uint8_t * arg87);
+	uint16_t arg94,
+	uint8_t * arg95);
 uint64_t list_e3interfaces(uint64_t * api_ret,
-	uint8_t * arg88,
-	uint8_t * arg89);
+	uint8_t * arg96,
+	uint8_t * arg97);
 uint64_t e3datapath_version(uint64_t * api_ret);

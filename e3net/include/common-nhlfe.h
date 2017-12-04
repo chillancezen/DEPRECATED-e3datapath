@@ -33,7 +33,17 @@ struct common_nexthop{
 	uint8_t  reserved0;
 	uint16_t reserved1;
 }__attribute__((packed));
+/*
+size of nexthop: 12
+<Field type=c_short, ofs=0, size=2> local_e3iface
+<Field type=c_short, ofs=2, size=2> common_neighbor_index
+<Field type=c_short, ofs=4, size=2> ref_cnt
+<Field type=c_short, ofs=6, size=2> index
+<Field type=c_byte, ofs=8, size=1> is_valid
+<Field type=c_ubyte, ofs=9, size=1> reserved0
+<Field type=c_ushort, ofs=10, size=2> reserved1
 
+*/
 #define MAX_COMMON_NEIGHBORS 2048
 #define MAX_COMMON_NEXTHOPS  2048
 

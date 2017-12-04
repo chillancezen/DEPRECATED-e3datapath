@@ -36,6 +36,7 @@ main(int argc, char **argv)
 		rte_panic("Cannot init EAL\n");
 	init_registered_tasks();
 	printf("common neighbor size:%d\n",sizeof(struct common_neighbor));
+	printf("common nexthop size:%d\n",sizeof(struct common_nexthop));
 	//e3iface_tmp_test();
 	//customer_service_port_module_test();
 	//cbp_module_test();

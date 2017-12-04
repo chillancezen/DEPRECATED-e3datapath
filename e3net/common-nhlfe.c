@@ -189,7 +189,9 @@ int register_common_nexthop(struct common_nexthop * hop)
 	/*
 	*make sure the target neighbor exists
 	*/
+	__read_lock_neighbor();
 	neighbor=find_common_neighbor(hop->common_neighbor_index);
+	__read_unlock_neighbor();
 	if(!neighbor){
         ret=-E3_ERR_NOT_FOUND;
 		goto out;

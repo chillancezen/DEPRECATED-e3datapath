@@ -94,7 +94,7 @@ DECLARE_E3_API(common_neighbors_enumeration)={
 	.api_callback_func=(api_callback_func)e3net_api_list_common_neighbor_partial,
 	.args_desc={
 		{.type=e3_arg_type_uint8_t_ptr,.behavior=e3_arg_behavior_input_and_output,.len=2},
-		{.type=e3_arg_type_uint8_t_ptr,.behavior=e3_arg_behavior_input_and_output,.len=2},
+		{.type=e3_arg_type_uint8_t_ptr,.behavior=e3_arg_behavior_output,.len=2},
 		{.type=e3_arg_type_uint8_t_ptr,.behavior=e3_arg_behavior_output,.len=sizeof(struct common_neighbor)*MAX_NR_NEIGHBORS_PER_FETCH},
 		{.type=e3_arg_type_none,},
 	},
@@ -114,3 +114,101 @@ DECLARE_E3_API(common_neighbor_deletion)={
 		{.type=e3_arg_type_none,},
 	},
 };
+
+
+e3_type e3net_api_register_common_nexthop(e3_type e3service,e3_type e3iface,e3_type neighbor_index)
+{
+	int16_t _e3iface=e3_type_to_uint16_t(e3iface);
+	int16_t _neighbor_index=e3_type_to_uint16_t(neighbor_index);
+	struct common_nexthop nexthop={
+		.local_e3iface=_e3iface,
+		.common_neighbor_index=_neighbor_index,
+	};
+	return register_common_nexthop(&nexthop);
+}
+DECLARE_E3_API(common_nexthop_registration)={
+	.api_name="e3net_api_register_common_nexthop",
+	.api_desc="register a common nexthop",
+	.api_callback_func=(api_callback_func)e3net_api_register_common_nexthop,
+	.args_desc={
+		{.type=e3_arg_type_uint16_t,.behavior=e3_arg_behavior_input,},
+		{.type=e3_arg_type_uint16_t,.behavior=e3_arg_behavior_input,},
+		{.type=e3_arg_type_none,},
+	},
+};
+
+e3_type e3net_api_get_common_nexthop(e3_type e3service,e3_type nexthop_index,e3_type pnexthop)
+{
+	int16_t _nexthop_index=e3_type_to_uint16_t(nexthop_index);
+	struct common_nexthop * _pnexthop=(struct common_nexthop*)e3_type_to_uint8_t_ptr(pnexthop);
+	struct common_nexthop * nexthop=NULL;
+	__read_lock_nexthop();
+	nexthop=_find_common_nexthop(_nexthop_index);
+	__read_unlock_nexthop();
+	if(nexthop){
+		rte_memcpy(_pnexthop,nexthop,sizeof(struct common_nexthop));
+		return E3_OK;
+	}
+	return -E3_ERR_NOT_FOUND;
+}
+DECLARE_E3_API(common_nexthop_retrieval)={
+	.api_name="e3net_api_get_common_nexthop",
+	.api_desc="retrieve a comon nexthop entry",
+	.api_callback_func=(api_callback_func)e3net_api_get_common_nexthop,
+	.args_desc={
+		{.type=e3_arg_type_uint16_t,.behavior=e3_arg_behavior_input,},
+		{.type=e3_arg_type_uint8_t_ptr,.behavior=e3_arg_behavior_output,.len=sizeof(struct common_nexthop)},
+		{.type=e3_arg_type_none,},
+	},
+};
+#define MAX_NR_NEXTHOPS_PER_FETCH 192
+
+e3_type e3net_api_list_common_nexthop_partial(e3_type e3service,e3_type index_to_start,e3_type nr_entries,e3_type entries)
+{
+	int16_t * _index_to_start=(int16_t *)e3_type_to_uint8_t_ptr(index_to_start);
+	int16_t * _nr_entries=(int16_t *)e3_type_to_uint8_t_ptr(nr_entries);
+	struct common_nexthop * _entries=(struct common_nexthop*)e3_type_to_uint8_t_ptr(entries);
+	struct common_nexthop * nexthop;
+	int idx=0;
+	int iptr=0;
+	__read_lock_nexthop();
+	for(idx=*_index_to_start;idx<MAX_COMMON_NEXTHOPS;idx++){
+		if(!(nexthop=find_common_nexthop(idx)))
+			continue;
+		rte_memcpy(&_entries[iptr++],nexthop,sizeof(struct common_nexthop));
+		if(iptr==MAX_NR_NEXTHOPS_PER_FETCH)
+			break;
+	}
+	*_index_to_start=idx+1;
+	*_nr_entries=iptr;
+	__read_unlock_nexthop();
+	return E3_OK;
+}
+DECLARE_E3_API(common_nexthop_enumeration)={
+	.api_name="e3net_api_list_common_nexthop_partial",
+	.api_desc="enumerate next hops list partially",
+	.api_callback_func=(api_callback_func)e3net_api_list_common_nexthop_partial,
+	.args_desc={
+		{.type=e3_arg_type_uint8_t_ptr,.behavior=e3_arg_behavior_input_and_output,.len=2},
+		{.type=e3_arg_type_uint8_t_ptr,.behavior=e3_arg_behavior_output,.len=2},
+		{.type=e3_arg_type_uint8_t_ptr,.behavior=e3_arg_behavior_output,.len=sizeof(struct common_nexthop)*MAX_NR_NEXTHOPS_PER_FETCH},
+		{.type=e3_arg_type_none,},
+	},
+};
+
+e3_type e3net_api_delete_common_nexthop(e3_type e3service,e3_type nexthop_index)
+{
+	int16_t _nexthop_index=e3_type_to_uint16_t(nexthop_index);
+	return delete_common_nexthop(_nexthop_index);
+}
+DECLARE_E3_API(common_nexthop_deletion)={
+	.api_name="e3net_api_delete_common_nexthop",
+	.api_desc="delete a common next hop entry",
+	.api_callback_func=(api_callback_func)e3net_api_delete_common_nexthop,
+	.args_desc={
+		{.type=e3_arg_type_uint16_t,.behavior=e3_arg_behavior_input,},
+		{.type=e3_arg_type_none,},
+	},
+};
+
+

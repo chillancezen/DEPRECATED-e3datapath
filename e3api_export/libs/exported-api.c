@@ -281,6 +281,42 @@ DECLARE_E3_API(e3_exported_api28)={
 	},
 };
 DECLARE_E3_API(e3_exported_api29)={
+	.api_name="e3net_api_delete_common_nexthop",
+	.api_desc="delete a common next hop entry",
+	.args_desc={
+		{.type=e3_arg_type_uint16_t,.behavior=e3_arg_behavior_input,.len=0},
+		{.type=e3_arg_type_none,.behavior=e3_arg_behavior_none,.len=0},
+	},
+};
+DECLARE_E3_API(e3_exported_api30)={
+	.api_name="e3net_api_list_common_nexthop_partial",
+	.api_desc="enumerate next hops list partially",
+	.args_desc={
+		{.type=e3_arg_type_uint8_t_ptr,.behavior=e3_arg_behavior_input_and_output,.len=2},
+		{.type=e3_arg_type_uint8_t_ptr,.behavior=e3_arg_behavior_output,.len=2},
+		{.type=e3_arg_type_uint8_t_ptr,.behavior=e3_arg_behavior_output,.len=2304},
+		{.type=e3_arg_type_none,.behavior=e3_arg_behavior_none,.len=0},
+	},
+};
+DECLARE_E3_API(e3_exported_api31)={
+	.api_name="e3net_api_get_common_nexthop",
+	.api_desc="retrieve a comon nexthop entry",
+	.args_desc={
+		{.type=e3_arg_type_uint16_t,.behavior=e3_arg_behavior_input,.len=0},
+		{.type=e3_arg_type_uint8_t_ptr,.behavior=e3_arg_behavior_output,.len=12},
+		{.type=e3_arg_type_none,.behavior=e3_arg_behavior_none,.len=0},
+	},
+};
+DECLARE_E3_API(e3_exported_api32)={
+	.api_name="e3net_api_register_common_nexthop",
+	.api_desc="register a common nexthop",
+	.args_desc={
+		{.type=e3_arg_type_uint16_t,.behavior=e3_arg_behavior_input,.len=0},
+		{.type=e3_arg_type_uint16_t,.behavior=e3_arg_behavior_input,.len=0},
+		{.type=e3_arg_type_none,.behavior=e3_arg_behavior_none,.len=0},
+	},
+};
+DECLARE_E3_API(e3_exported_api33)={
 	.api_name="e3net_api_delete_common_neighbor",
 	.api_desc="delete a common neighbour",
 	.args_desc={
@@ -288,17 +324,17 @@ DECLARE_E3_API(e3_exported_api29)={
 		{.type=e3_arg_type_none,.behavior=e3_arg_behavior_none,.len=0},
 	},
 };
-DECLARE_E3_API(e3_exported_api30)={
+DECLARE_E3_API(e3_exported_api34)={
 	.api_name="e3net_api_list_common_neighbor_partial",
 	.api_desc="retrieve part of the neighbors set",
 	.args_desc={
 		{.type=e3_arg_type_uint8_t_ptr,.behavior=e3_arg_behavior_input_and_output,.len=2},
-		{.type=e3_arg_type_uint8_t_ptr,.behavior=e3_arg_behavior_input_and_output,.len=2},
+		{.type=e3_arg_type_uint8_t_ptr,.behavior=e3_arg_behavior_output,.len=2},
 		{.type=e3_arg_type_uint8_t_ptr,.behavior=e3_arg_behavior_output,.len=2048},
 		{.type=e3_arg_type_none,.behavior=e3_arg_behavior_none,.len=0},
 	},
 };
-DECLARE_E3_API(e3_exported_api31)={
+DECLARE_E3_API(e3_exported_api35)={
 	.api_name="e3net_api_get_common_neighbor",
 	.api_desc="retrieve a common neighbor",
 	.args_desc={
@@ -307,7 +343,7 @@ DECLARE_E3_API(e3_exported_api31)={
 		{.type=e3_arg_type_none,.behavior=e3_arg_behavior_none,.len=0},
 	},
 };
-DECLARE_E3_API(e3_exported_api32)={
+DECLARE_E3_API(e3_exported_api36)={
 	.api_name="e3net_api_register_or_update_common_neighbor",
 	.api_desc="register or update a common neighbor",
 	.args_desc={
@@ -317,7 +353,7 @@ DECLARE_E3_API(e3_exported_api32)={
 		{.type=e3_arg_type_none,.behavior=e3_arg_behavior_none,.len=0},
 	},
 };
-DECLARE_E3_API(e3_exported_api33)={
+DECLARE_E3_API(e3_exported_api37)={
 	.api_name="get_e3interface",
 	.api_desc="get the e3interface of a given index,this will copy the structure",
 	.args_desc={
@@ -326,7 +362,7 @@ DECLARE_E3_API(e3_exported_api33)={
 		{.type=e3_arg_type_none,.behavior=e3_arg_behavior_none,.len=0},
 	},
 };
-DECLARE_E3_API(e3_exported_api34)={
+DECLARE_E3_API(e3_exported_api38)={
 	.api_name="list_e3interfaces",
 	.api_desc="enumerate e3 interfaces, return the list of available index",
 	.args_desc={
@@ -335,7 +371,7 @@ DECLARE_E3_API(e3_exported_api34)={
 		{.type=e3_arg_type_none,.behavior=e3_arg_behavior_none,.len=0},
 	},
 };
-DECLARE_E3_API(e3_exported_api35)={
+DECLARE_E3_API(e3_exported_api39)={
 	.api_name="e3datapath_version",
 	.api_desc="retrieve e3 datapath version dword",
 	.args_desc={
@@ -1152,6 +1188,114 @@ uint64_t create_e3iface(uint64_t * api_ret,
 	output_list[1]=arg4;
 	client->para_output_list=output_list;
 	client->nr_output_list=2;
+	_(!encode_e3_api_request(client->send_mbuf,MAX_MSG_LENGTH,api,real_args));
+	_(!issue_e3_api_request(client));
+	dereference_e3_api_client(client);
+	return 0;
+	error:
+		if(client)
+			dereference_e3_api_client(client);
+		return -1;
+	#undef _
+}
+uint64_t e3net_api_delete_common_nexthop(uint64_t * api_ret,
+	uint16_t arg0)
+{
+	#define _(con) if(!(con)) goto error;
+	e3_type real_args[MAX_ARGUMENT_SUPPORTED];
+	struct e3_api_client      * client=reference_e3_api_client();
+	struct e3_api_declaration * api=search_e3_api_by_name("e3net_api_delete_common_nexthop");
+	void                      * output_list[MAX_ARGUMENT_SUPPORTED+1];
+	_(client);
+	_(api);
+	real_args[0]=cast_to_e3_type(arg0);
+	output_list[0]=api_ret;
+	client->para_output_list=output_list;
+	client->nr_output_list=1;
+	_(!encode_e3_api_request(client->send_mbuf,MAX_MSG_LENGTH,api,real_args));
+	_(!issue_e3_api_request(client));
+	dereference_e3_api_client(client);
+	return 0;
+	error:
+		if(client)
+			dereference_e3_api_client(client);
+		return -1;
+	#undef _
+}
+uint64_t e3net_api_list_common_nexthop_partial(uint64_t * api_ret,
+	uint8_t * arg0,
+	uint8_t * arg1,
+	uint8_t * arg2)
+{
+	#define _(con) if(!(con)) goto error;
+	e3_type real_args[MAX_ARGUMENT_SUPPORTED];
+	struct e3_api_client      * client=reference_e3_api_client();
+	struct e3_api_declaration * api=search_e3_api_by_name("e3net_api_list_common_nexthop_partial");
+	void                      * output_list[MAX_ARGUMENT_SUPPORTED+1];
+	_(client);
+	_(api);
+	real_args[0]=cast_to_e3_type(arg0);
+	real_args[1]=cast_to_e3_type(arg1);
+	real_args[2]=cast_to_e3_type(arg2);
+	output_list[0]=api_ret;
+	output_list[1]=arg0;
+	output_list[2]=arg1;
+	output_list[3]=arg2;
+	client->para_output_list=output_list;
+	client->nr_output_list=4;
+	_(!encode_e3_api_request(client->send_mbuf,MAX_MSG_LENGTH,api,real_args));
+	_(!issue_e3_api_request(client));
+	dereference_e3_api_client(client);
+	return 0;
+	error:
+		if(client)
+			dereference_e3_api_client(client);
+		return -1;
+	#undef _
+}
+uint64_t e3net_api_get_common_nexthop(uint64_t * api_ret,
+	uint16_t arg0,
+	uint8_t * arg1)
+{
+	#define _(con) if(!(con)) goto error;
+	e3_type real_args[MAX_ARGUMENT_SUPPORTED];
+	struct e3_api_client      * client=reference_e3_api_client();
+	struct e3_api_declaration * api=search_e3_api_by_name("e3net_api_get_common_nexthop");
+	void                      * output_list[MAX_ARGUMENT_SUPPORTED+1];
+	_(client);
+	_(api);
+	real_args[0]=cast_to_e3_type(arg0);
+	real_args[1]=cast_to_e3_type(arg1);
+	output_list[0]=api_ret;
+	output_list[1]=arg1;
+	client->para_output_list=output_list;
+	client->nr_output_list=2;
+	_(!encode_e3_api_request(client->send_mbuf,MAX_MSG_LENGTH,api,real_args));
+	_(!issue_e3_api_request(client));
+	dereference_e3_api_client(client);
+	return 0;
+	error:
+		if(client)
+			dereference_e3_api_client(client);
+		return -1;
+	#undef _
+}
+uint64_t e3net_api_register_common_nexthop(uint64_t * api_ret,
+	uint16_t arg0,
+	uint16_t arg1)
+{
+	#define _(con) if(!(con)) goto error;
+	e3_type real_args[MAX_ARGUMENT_SUPPORTED];
+	struct e3_api_client      * client=reference_e3_api_client();
+	struct e3_api_declaration * api=search_e3_api_by_name("e3net_api_register_common_nexthop");
+	void                      * output_list[MAX_ARGUMENT_SUPPORTED+1];
+	_(client);
+	_(api);
+	real_args[0]=cast_to_e3_type(arg0);
+	real_args[1]=cast_to_e3_type(arg1);
+	output_list[0]=api_ret;
+	client->para_output_list=output_list;
+	client->nr_output_list=1;
 	_(!encode_e3_api_request(client->send_mbuf,MAX_MSG_LENGTH,api,real_args));
 	_(!issue_e3_api_request(client));
 	dereference_e3_api_client(client);
