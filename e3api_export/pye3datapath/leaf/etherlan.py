@@ -1,4 +1,5 @@
 #! /usr/bin/python3
+import tabulate
 from ctypes import *
 from pye3datapath.e3client import clib
 from pye3datapath.e3client import api_call_exception
@@ -20,6 +21,13 @@ class port_entry(Structure):
         ret['vlan_tci']=self.vlan_tci
         ret['reserved0']=self.reserved0
         return str(ret)
+    def tabulate(self):
+        lst=list()
+        lst.append(['is_valid',self.is_valid])
+        lst.append(['iface',self.iface])
+        lst.append(['vlan_tci',self.vlan_tci])
+        lst.append(['reserved0',self.reserved0])
+        return lst
     def dump_definition(self):
         print('size of port entry:',sizeof(port_entry))
         print(port_entry.is_valid,'is_valid')
@@ -81,6 +89,30 @@ class ether_lan(Structure):
             nhlfe_lst.append(str(self.nhlfes[i]))
         ret['nhlfes']=nhlfe_lst
         return str(ret)
+    def tabulate(self):
+        table=list()
+        table.append(['is_valid',self.is_valid])
+        table.append(['is_releasing',self.is_releasing])
+        table.append(['index',self.index])
+        table.append(['ref_cnt',self.ref_cnt])
+        table.append(['nr_ports',self.nr_ports])
+        table.append(['nr_nhlfes',self.nr_nhlfes])
+        table.append(['multicast_NHLFE',self.multicast_NHLFE])
+        table.append(['multicast_label',self.multicast_label])
+        table.append(['fib_base','0x%x'%(self.fib_base)])
+        ports_str=''
+        for i in range(MAX_PORTS_IN_E_LAN_SERVICE):
+            if self.ports[i].is_valid==0:
+                continue
+            ports_str=ports_str+str(self.ports[i])+'\n'
+        table.append(['ports',ports_str])
+        nhlfes_str=''
+        for i in range(MAX_NHLFE_IN_E_LAN_SERVICE):
+            if self.nhlfes[i].is_valid==0:
+                continue
+            nhlfes_str=nhlfes_str+str(self.nhlfes[i])+'\n'
+        table.append(['nhlfes',nhlfes_str])
+        print(tabulate.tabulate(table,['Field','Value'],tablefmt='psql'))
     def dump_definition(self):
         print('size of ether_lan:',sizeof(ether_lan))
         print(ether_lan.is_valid,'is_valid')
@@ -192,6 +224,8 @@ if __name__=='__main__':
     print(register_ether_lan_service())
     print(register_ether_lan_port(0,0,123))
     print(register_ether_lan_port(0,1,0))
+    print(register_ether_lan_port(0,1,1212))
+    print(register_ether_lan_port(0,112,0))
     print(register_ether_lan_nhlfe(0,0,1024))
     #delete_ether_lan_port(0,0)
     #delete_ether_lan_nhlfe(0,0)   
@@ -200,4 +234,4 @@ if __name__=='__main__':
     print(register_ether_lan_service())
     print(register_ether_lan_service())
     for elan in list_ether_lan_services():
-        print(get_ether_lan_service(elan))
+        get_ether_lan_service(elan).tabulate()
