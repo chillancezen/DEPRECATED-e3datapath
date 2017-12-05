@@ -105,6 +105,7 @@ enum e3error{
     E3_ERR_IN_USE,
     E3_ERR_OUT_OF_MEM,/*out of memory*/
     E3_ERR_OUT_OF_RES,/*out of other resource*/
+    E3_ERR_NOT_SUPPORTED,
 };
 /*
 *API exportation relevant

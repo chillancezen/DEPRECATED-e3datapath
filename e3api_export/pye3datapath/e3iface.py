@@ -1,4 +1,5 @@
 #! /usr/bin/python3
+import tabulate
 from ctypes import *
 from pye3datapath.e3client import clib
 from pye3datapath.e3client import api_call_exception
@@ -59,6 +60,33 @@ class E3Interface(Structure):
             #ret[item[0]]=getattr(self,item[0])
         #ret['raw']=repr(string_at(addressof(self),sizeof(self)))
         return repr(ret)
+    def tabulate(self):
+        table=list()
+        table.append(['name',self.name])
+        table.append(['hwiface_model',self.hwiface_model])
+        table.append(['hwiface_role',self.hwiface_role])
+        table.append(['reserved0',self.reserved0])
+        table.append(['iface_status',self.iface_status])
+        table.append(['nr_queues',self.nr_queues])
+        table.append(['under_releasing',self.under_releasing])
+        table.append(['has_peer_device',self.has_peer_device])
+        table.append(['lsc_enabled',self.lsc_enabled])
+        table.append(['port_id',self.port_id])
+        table.append(['peer_port_id',self.peer_port_id])
+        table.append(['mac_addrs','%02x:%02x:%02x:%02x:%02x:%02x'%(self.mac_addrs[0],
+                self.mac_addrs[1],
+                self.mac_addrs[2],
+                self.mac_addrs[3],
+                self.mac_addrs[4],
+                self.mac_addrs[5])])
+        input_lst=list()
+        output_lst=list()
+        for i in range(self.nr_queues):
+            input_lst.append(self.input_node[i])
+            output_lst.append(self.output_node[i])
+        table.append(['input_node',input_lst])
+        table.append(['output_node',output_lst])
+        print(tabulate.tabulate(table,['Field','Value'],tablefmt='psql'))
     def dump_definition(self):
         print('%20s%s'%('name:',E3Interface.name))
         print('%20s%s'%('hwiface_model:',E3Interface.hwiface_model))
@@ -149,7 +177,7 @@ import time
 if __name__=='__main__':
     register_service_endpoint('ipc:///var/run/e3datapath.sock')
     #print(attach_e3iface('0000:00:08.0',E3IFACE_MODEL_GENERIC_SINGLY_QUEUE,E3IFACE_ROLE_PROVIDER_BACKBONE_PORT,True))
-    #print(attach_e3iface('0000:00:08.0',E3IFACE_MODEL_GENERIC_SINGLY_QUEUE,E3IFACE_ROLE_CUSTOMER_BACKBONE_FACING_PORT))
+    print(attach_e3iface('0000:02:05.0',E3IFACE_MODEL_GENERIC_SINGLY_QUEUE,E3IFACE_ROLE_CUSTOMER_BACKBONE_FACING_PORT,True))
     #E3IFACE_ROLE_CUSTOMER_USER_FACING_PORT
     #print(attach_e3iface('0000:00:08.0',E3IFACE_MODEL_GENERIC_SINGLY_QUEUE,E3IFACE_ROLE_CUSTOMER_USER_FACING_PORT)) 
     #E3Interface().dump_definition()
@@ -159,6 +187,6 @@ if __name__=='__main__':
     print('interface index list:',if_lst)
     
     for ifidx in if_lst:
-        print(get_e3iface(ifidx))
+        get_e3iface(ifidx).tabulate()
     pass
     #print(reclaim_e3iface(0))
