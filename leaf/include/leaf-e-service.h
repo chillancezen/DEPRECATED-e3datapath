@@ -88,7 +88,22 @@ struct ether_e_lan{
 	*inner data fields.
 	*/
 }__attribute__((packed));
-
+/*
+Python definition:
+size of ether_lan: 1068
+<Field type=c_ubyte, ofs=0, size=1> is_valid
+<Field type=c_ubyte, ofs=1, size=1> is_releasing
+<Field type=c_short, ofs=2, size=2> index
+<Field type=c_short, ofs=4, size=2> ref_cnt
+<Field type=c_short, ofs=6, size=2> nr_ports
+<Field type=c_short, ofs=8, size=2> nr_nhlfes
+<Field type=c_short, ofs=10, size=2> multicast_NHLFE
+<Field type=c_uint, ofs=12, size=4> multicast_label
+<Field type=c_ulong, ofs=16, size=8> fib_base
+<Field type=port_entry_Array_64, ofs=24, size=512> ports
+<Field type=nhlfe_entry_Array_64, ofs=536, size=512> nhlfes
+<Field type=c_ubyte_Array_20, ofs=1048, size=20> reserved0
+*/
 __attribute__((always_inline))
 	static inline void get_e_lan(struct ether_e_lan * elan)
 {
