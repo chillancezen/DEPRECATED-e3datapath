@@ -109,6 +109,7 @@ int register_e_line_port(int eline_index,int e3iface,int vlan_tci)
 			(e_line_base[idx].vlan_tci==vlan_tci))
 			goto out;/*no duplicated port in the E-line instance*/		
 	}
+	E3_ASSERT(!reference_e_line_service(eline_index));
 	eline->e3iface=e3iface;
 	eline->vlan_tci=vlan_tci;
 	eline->is_csp_ready=1;
@@ -125,6 +126,7 @@ int delete_e_line_port(int eline_index)
 	if((!(eline=find_e_line_service(eline_index)))||
 		(!eline->is_csp_ready))
 		goto out;
+	E3_ASSERT(!dereference_e_line_service(eline_index));
 	eline->is_csp_ready=0;
 	__sync_synchronize();
 	eline->e3iface=-1;
@@ -192,16 +194,31 @@ int delete_e_line_nhlfe(int eline_index)
 *find the target e-line service,
 *and increment the ref count,0 returned upon success
 */
+int reference_e_line_service_locked(int index)
+{
+	int ret=-E3_ERR_GENERIC;
+	WLOCK_ELINE();
+	ret=reference_e_line_service(index);
+	WUNLOCK_ELINE();
+	return ret;
+}
 int reference_e_line_service(int index)
 {
 	int ret=-E3_ERR_GENERIC;
 	struct ether_e_line * eline;
-	WLOCK_ELINE();
 	if(!(eline=find_e_line_service(index)))
 		goto out;
 	eline->ref_cnt++;
 	ret=E3_OK;
 	out:
+	return ret;
+}
+
+int dereference_e_line_service_locked(int index)
+{
+	int ret=-E3_ERR_GENERIC;
+	WLOCK_ELINE();
+	ret=dereference_e_line_service(index);
 	WUNLOCK_ELINE();
 	return ret;
 }
@@ -210,14 +227,12 @@ int dereference_e_line_service(int index)
 {
 	int ret=-E3_ERR_GENERIC;
 	struct ether_e_line * eline;
-	WLOCK_ELINE();
 	if(!(eline=find_e_line_service(index)))
 		goto out;
 	if(eline->ref_cnt>0)
 		eline->ref_cnt--;
 	ret=E3_OK;
 	out:
-	WUNLOCK_ELINE();
 	return ret;	
 }
 
@@ -288,17 +303,32 @@ int register_e_lan_service(void)
 	return ret;
 }
 
+int reference_e_lan_service_locked(int index)
+{
+	int ret=-E3_ERR_ILLEGAL;
+	WLOCK_ELAN();
+	ret=reference_e_lan_service(index);
+	WUNLOCK_ELAN();
+	return ret;
+}
 int reference_e_lan_service(int index)
 {	
 	int ret=-E3_ERR_ILLEGAL;
 	struct ether_e_lan *elan; 
-	WLOCK_ELAN();
 	elan=find_e_lan_service(index);
 	if(!elan)
 		goto out;
 	elan->ref_cnt++;
 	ret=E3_OK;
 	out:
+	return ret;
+}
+
+int dereference_e_lan_service_locked(int index)
+{
+	int ret=-E3_ERR_ILLEGAL;
+	WLOCK_ELAN();
+	ret=dereference_e_lan_service(index);
 	WUNLOCK_ELAN();
 	return ret;
 }
@@ -307,7 +337,6 @@ int dereference_e_lan_service(int index)
 {
 	int ret=-E3_ERR_ILLEGAL;	
 	struct ether_e_lan * elan;
-	WLOCK_ELAN();
 	elan=find_e_lan_service(index);
 	if(!elan)
 		goto out;
@@ -315,7 +344,6 @@ int dereference_e_lan_service(int index)
 		elan->ref_cnt--;
 	ret=E3_OK;
 	out:
-	WUNLOCK_ELAN();
 	return ret;
 }
 static void post_delete_e_lan_service(struct rcu_head * rcu)
@@ -384,6 +412,7 @@ int register_e_lan_port(int elan_index,uint16_t e3iface,uint16_t vlan_tci)
 		ret=-E3_ERR_OUT_OF_RES;
 		goto out;
 	}
+	E3_ASSERT(!reference_e_lan_service(elan_index));
 	elan->ports[idx].iface=e3iface;
 	elan->ports[idx].vlan_tci=vlan_tci;
 	elan->ports[idx].is_valid=1;
@@ -479,6 +508,7 @@ int delete_e_lan_port(int elan_index,int port_index)
             }
         }
     }    
+	E3_ASSERT(!dereference_e_lan_service(elan_index));
 	elan->ports[port_index].is_valid=0;
 	elan->nr_ports--;
 	E3_ASSERT(elan->nr_ports>=0);

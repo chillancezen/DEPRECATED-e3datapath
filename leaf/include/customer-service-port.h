@@ -6,15 +6,15 @@
 #include <stdint.h>
 #include <rte_rwlock.h>
 
-struct csp_private{
+struct csp_distribution_entry{
+	uint8_t is_valid;
+	uint8_t e_service;
+	uint16_t service_index;
+}__attribute__((packed));
 
+struct csp_private{
 	rte_rwlock_t csp_guard;
-	__attribute__((packed))
-		struct{
-			uint8_t is_valid;
-			uint8_t e_service;
-			uint16_t service_index;
-		}vlans[4096];
+	struct csp_distribution_entry vlans[4096];
 };
 #define CSP_NODE_BURST_SIZE 48
 

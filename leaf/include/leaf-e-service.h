@@ -124,7 +124,9 @@ int register_e_line_nhlfe(int eline_index,int NHLFE,int label_to_push);
 int delete_e_line_port(int eline_index);
 int delete_e_line_nhlfe(int eline_index);
 int reference_e_line_service(int index);
+int reference_e_line_service_locked(int index);
 int dereference_e_line_service(int index);
+int dereference_e_line_service_locked(int index);
 int delete_e_line_service(int index);
 
 extern struct ether_e_lan  * e_lan_base;
@@ -132,7 +134,9 @@ extern struct ether_e_lan  * e_lan_base;
 #define find_e_lan_service(index) (((((index)>=0)&&((index)<MAX_E_LAN_SERVICES))&&(e_lan_base[(index)].is_valid))?&e_lan_base[(index)]:NULL)
 int register_e_lan_service(void);
 int reference_e_lan_service(int index);
+int reference_e_lan_service_locked(int index);
 int dereference_e_lan_service(int index);
+int dereference_e_lan_service_locked(int index);
 int delete_e_lan_service(int index);
 int register_e_lan_port(int elan_index,uint16_t e3iface,uint16_t vlan_tci);
 int find_e_lan_port(int elan_index,uint16_t e3iface,uint16_t vlan_tci);

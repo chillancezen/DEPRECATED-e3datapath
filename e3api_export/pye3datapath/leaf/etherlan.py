@@ -163,7 +163,14 @@ def list_ether_lan_services():
     for i in range(nr_entries.value):
         lst.append(i)
     return lst
-
+def delete_ether_lan_service(elan_index):
+    api_ret=c_int64(0)
+    _elan_index=c_int32(elan_index)
+    rc=clib.leaf_api_delete_e_service(byref(api_ret),0,_elan_index)
+    if rc!=0:
+        raise api_call_exception()
+    if api_ret.value!=0:
+        raise api_return_exception('make sure it\'s deletable first,api_ret:%x'%(api_ret.value))
 '''
 return the actual inner port id if successful,
 otherwise a api_return_exception() exception is raised
