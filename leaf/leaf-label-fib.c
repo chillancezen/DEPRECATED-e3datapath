@@ -46,10 +46,10 @@ void update_leaf_label_entry_relationship(struct leaf_label_entry * base,
 			}
 			if(is_removed){
 				if(!is_existing)
-					dereference_e_line_service(pentry->service_index);
+					dereference_e_line_service_locked(pentry->service_index);
 			}else{
 				if(!is_existing)
-					reference_e_line_service(pentry->service_index);
+					reference_e_line_service_locked(pentry->service_index);
 			}
 			break;
 		case e_lan_service:
@@ -67,10 +67,10 @@ void update_leaf_label_entry_relationship(struct leaf_label_entry * base,
 			}
 			if(is_removed){
 				if(!is_existing)
-					dereference_e_lan_service(pentry->service_index);
+					dereference_e_lan_service_locked(pentry->service_index);
 			}else{
 				if(!is_existing)
-					reference_e_lan_service(pentry->service_index);
+					reference_e_lan_service_locked(pentry->service_index);
 			}
 			break;
 		default:

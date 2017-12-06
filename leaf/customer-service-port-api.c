@@ -171,11 +171,11 @@ e3_type leaf_api_list_csp_distribution_table(e3_type e3service,
 		(_block_index>=CSP_TABLE_NR_BLOCK))
 		return -E3_ERR_NOT_SUPPORTED;
 	priv=(struct csp_private*)pif->private;
-	rte_rwlock_write_lock(&priv->csp_guard);
+	rte_rwlock_read_lock(&priv->csp_guard);
 	rte_memcpy(_entries,
 		&priv->vlans[CSP_TABLE_NR_ENTRIES_PER_FETCH*_block_index],
 		sizeof(struct csp_distribution_entry)*CSP_TABLE_NR_ENTRIES_PER_FETCH);
-	rte_rwlock_write_unlock(&priv->csp_guard);
+	rte_rwlock_read_unlock(&priv->csp_guard);
 	return E3_OK;
 }
 DECLARE_E3_API(csp_dist_tbl_enumeration)={
