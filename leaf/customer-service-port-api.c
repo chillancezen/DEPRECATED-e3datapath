@@ -179,5 +179,14 @@ e3_type leaf_api_list_csp_distribution_table(e3_type e3service,
 	return E3_OK;
 }
 DECLARE_E3_API(csp_dist_tbl_enumeration)={
-	
+	.api_name="leaf_api_list_csp_distribution_table",
+	.api_desc="fetch cs port's distribution table",
+	.api_callback_func=(api_callback_func)leaf_api_list_csp_distribution_table,
+	.args_desc={
+		{.type=e3_arg_type_uint16_t,.behavior=e3_arg_behavior_input,},
+		{.type=e3_arg_type_uint16_t,.behavior=e3_arg_behavior_input,},
+		{.type=e3_arg_type_uint8_t_ptr,.behavior=e3_arg_behavior_output,
+			.len=sizeof(struct csp_distribution_entry)*CSP_TABLE_NR_ENTRIES_PER_FETCH},
+		{.type=e3_arg_type_none,},
+	},
 };

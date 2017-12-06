@@ -11,7 +11,13 @@ struct csp_distribution_entry{
 	uint8_t e_service;
 	uint16_t service_index;
 }__attribute__((packed));
-
+/*
+Python definition:
+size of csport_dist_entry: 4
+<Field type=c_ubyte, ofs=0, size=1> is_valid
+<Field type=c_byte, ofs=1, size=1> e_service
+<Field type=c_short, ofs=2, size=2> service_index
+*/
 struct csp_private{
 	rte_rwlock_t csp_guard;
 	struct csp_distribution_entry vlans[4096];
