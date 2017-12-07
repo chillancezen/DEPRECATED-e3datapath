@@ -433,7 +433,7 @@ int customer_backbone_port_iface_delete(struct E3Interface *pif)
 	struct cbp_private * priv=(struct cbp_private*)pif->private;
 	E3_ASSERT(pif->hwiface_role==E3IFACE_ROLE_CUSTOMER_BACKBONE_FACING_PORT);
 	/*withdraw all the label entries*/
-	for(idx=0;idx<(1<<20);idx++){
+	for(idx=0;idx<NR_LEAF_LABEL_ENTRY;idx++){
 		if(priv->label_base[idx].is_valid)
 			reset_leaf_label_entry(priv->label_base,idx);
 	}

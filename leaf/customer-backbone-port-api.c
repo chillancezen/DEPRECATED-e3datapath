@@ -32,7 +32,7 @@ e3_type leaf_api_cbp_setup_label_entry(e3_type e3service,
 	if((!pif)||
 		(pif->hwiface_role!=E3IFACE_ROLE_CUSTOMER_BACKBONE_FACING_PORT)||
 		(_label_id<0)||
-		(_label_id>=(1<<20)))
+		(_label_id>=NR_LEAF_LABEL_ENTRY))
 		return -E3_ERR_ILLEGAL;
 	priv=(struct cbp_private *)pif->private;
 	rte_rwlock_write_lock(&priv->cbp_guard);
@@ -72,7 +72,7 @@ e3_type leaf_api_cbp_clear_label_entry(e3_type e3service,
 	if((!pif)||
 		(pif->hwiface_role!=E3IFACE_ROLE_CUSTOMER_BACKBONE_FACING_PORT)||
 		(_label_id<0)||
-		(_label_id>=(1<<20)))
+		(_label_id>=NR_LEAF_LABEL_ENTRY))
 		return -E3_ERR_ILLEGAL;
 	priv=(struct cbp_private *)pif->private;
 	rte_rwlock_write_lock(&priv->cbp_guard);
@@ -91,3 +91,88 @@ DECLARE_E3_API(cbp_label_entry_reset)={
 	},
 };
 
+e3_type leaf_api_cbp_get_label_entry(e3_type e3servie,
+	e3_type iface_id,
+	e3_type label_id,
+	e3_type entry)
+{
+	int16_t _iface_id=e3_type_to_uint16_t(iface_id);
+	int32_t _label_id=e3_type_to_uint32_t(label_id);
+	struct leaf_label_entry * _entry=(struct leaf_label_entry*)e3_type_to_uint8_t_ptr(entry);
+	struct E3Interface * pif=NULL;
+	struct cbp_private * priv=NULL;
+	
+	pif=find_e3interface_by_index(_iface_id);
+	if((!pif)||
+		(pif->hwiface_role!=E3IFACE_ROLE_CUSTOMER_BACKBONE_FACING_PORT))
+		return -E3_ERR_GENERIC;
+	priv=(struct cbp_private*)pif->private;
+	rte_rwlock_read_lock(&priv->cbp_guard);
+	rte_memcpy(_entry,&priv->label_base[_label_id],sizeof(struct leaf_label_entry));
+	rte_rwlock_read_unlock(&priv->cbp_guard);
+	return E3_OK;
+}
+DECLARE_E3_API(cbp_label_entry_retrieval)={
+	.api_name="leaf_api_cbp_get_label_entry",
+	.api_desc="retrieve a label entry of customer backbone port",
+	.api_callback_func=(api_callback_func)leaf_api_cbp_get_label_entry,
+	.args_desc={
+		{.type=e3_arg_type_uint16_t,.behavior=e3_arg_behavior_input,},
+		{.type=e3_arg_type_uint32_t,.behavior=e3_arg_behavior_input,},
+		{.type=e3_arg_type_uint8_t_ptr,.behavior=e3_arg_behavior_output,.len=sizeof(struct leaf_label_entry)},
+		{.type=e3_arg_type_none,},
+	},
+};
+
+#define CBP_MAX_NR_ENTRIES_PER_FETCH 1024
+e3_type leaf_api_cbp_list_label_entry_partial(e3_type e3service,
+		e3_type iface_id,
+		e3_type index_to_start,
+		e3_type nr_entries,
+		e3_type entries,
+		e3_type index_etries)
+{
+	int16_t _iface_id			=e3_type_to_uint16_t(iface_id);
+	int32_t * _index_to_start	=(int32_t *)e3_type_to_uint8_t_ptr(index_to_start);
+	int16_t * _nr_entries		=(int16_t*)e3_type_to_uint8_t_ptr(nr_entries);
+	struct leaf_label_entry * _entries=(struct leaf_label_entry*)e3_type_to_uint8_t_ptr(entries);
+	int32_t * _index_entries	=(int32_t *)e3_type_to_uint8_t_ptr(index_etries);
+	int idx=0;
+	int iptr=0;
+	struct E3Interface * pif=NULL;
+	struct cbp_private * priv=NULL;
+	pif=find_e3interface_by_index(_iface_id);
+	if((!pif)||
+		(pif->hwiface_role!=E3IFACE_ROLE_CUSTOMER_BACKBONE_FACING_PORT))
+		return -E3_ERR_GENERIC;
+	priv=(struct cbp_private*)pif->private;
+	rte_rwlock_read_lock(&priv->cbp_guard);
+	for(idx=*_index_to_start;idx<NR_LEAF_LABEL_ENTRY;idx++){
+		if(!priv->label_base[idx].is_valid)
+			continue;
+		rte_memcpy(&_entries[iptr],&priv->label_base[idx],sizeof(struct leaf_label_entry));
+		_index_entries[iptr]=idx;
+		iptr++;
+		if(iptr==CBP_MAX_NR_ENTRIES_PER_FETCH)
+			break;
+	}
+	*_index_to_start=idx+1;
+	*_nr_entries=iptr;
+	rte_rwlock_read_unlock(&priv->cbp_guard);
+	return E3_OK;
+}
+DECLARE_E3_API(cbp_label_entry_enumeration)={
+	.api_name="leaf_api_cbp_list_label_entry_partial",
+	.api_desc="retrieve a part of the customer backbone port's label entries",
+	.api_callback_func=(api_callback_func)leaf_api_cbp_list_label_entry_partial,
+	.args_desc={
+		{.type=e3_arg_type_uint16_t,.behavior=e3_arg_behavior_input,},
+		{.type=e3_arg_type_uint8_t_ptr,.behavior=e3_arg_behavior_input_and_output,.len=4},
+		{.type=e3_arg_type_uint8_t_ptr,.behavior=e3_arg_behavior_output,.len=2},
+		{.type=e3_arg_type_uint8_t_ptr,.behavior=e3_arg_behavior_output,
+			.len=sizeof(struct leaf_label_entry)*CBP_MAX_NR_ENTRIES_PER_FETCH},
+		{.type=e3_arg_type_uint8_t_ptr,.behavior=e3_arg_behavior_output,
+			.len=sizeof(int32_t)*CBP_MAX_NR_ENTRIES_PER_FETCH},
+		{.type=e3_arg_type_none,},
+	},
+};
