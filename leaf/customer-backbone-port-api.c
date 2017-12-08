@@ -104,7 +104,9 @@ e3_type leaf_api_cbp_get_label_entry(e3_type e3servie,
 	
 	pif=find_e3interface_by_index(_iface_id);
 	if((!pif)||
-		(pif->hwiface_role!=E3IFACE_ROLE_CUSTOMER_BACKBONE_FACING_PORT))
+		(pif->hwiface_role!=E3IFACE_ROLE_CUSTOMER_BACKBONE_FACING_PORT)||
+		(_label_id<0)||
+		(_label_id>=NR_LEAF_LABEL_ENTRY))
 		return -E3_ERR_GENERIC;
 	priv=(struct cbp_private*)pif->private;
 	rte_rwlock_read_lock(&priv->cbp_guard);
@@ -173,6 +175,86 @@ DECLARE_E3_API(cbp_label_entry_enumeration)={
 			.len=sizeof(struct leaf_label_entry)*CBP_MAX_NR_ENTRIES_PER_FETCH},
 		{.type=e3_arg_type_uint8_t_ptr,.behavior=e3_arg_behavior_output,
 			.len=sizeof(int32_t)*CBP_MAX_NR_ENTRIES_PER_FETCH},
+		{.type=e3_arg_type_none,},
+	},
+};
+
+/*
+*it succeeds if and only if the label entry is mapped into a
+*E-LAN service, and <nhlfe,label_to_push> is registered into E-LAN
+*/
+e3_type leaf_api_set_cbp_egress_nhlfe_index(e3_type e3service,
+		e3_type iface_id,
+		e3_type label_id,
+		e3_type nhlfe,
+		e3_type label_to_push)
+{
+	int ret=-E3_ERR_GENERIC;
+	int16_t _iface_id=e3_type_to_uint16_t(iface_id);
+	int32_t _label_id=e3_type_to_uint32_t(label_id);
+	int16_t _nhlfe=e3_type_to_uint16_t(nhlfe);
+	int32_t _label_to_push=e3_type_to_uint32_t(label_to_push);
+
+	struct E3Interface * pif=NULL;
+	struct cbp_private * priv=NULL;
+	pif=find_e3interface_by_index(_iface_id);
+	if((!pif)||
+		(pif->hwiface_role!=E3IFACE_ROLE_CUSTOMER_BACKBONE_FACING_PORT)||
+		(_label_id<0)||
+		(_label_id>=NR_LEAF_LABEL_ENTRY))
+		return -E3_ERR_ILLEGAL;
+	priv=(struct cbp_private *)pif->private;
+	rte_rwlock_write_lock(&priv->cbp_guard);
+	ret=set_leaf_label_entry_egress_nhlfe_index(priv->label_base,
+		_label_id,
+		_nhlfe,
+		_label_to_push);
+	rte_rwlock_write_unlock(&priv->cbp_guard);
+	return ret;
+}
+DECLARE_E3_API(cbp_egress_nhlfe_index_setup)={
+	.api_name="leaf_api_set_cbp_egress_nhlfe_index",
+	.api_desc="set the egress nhlfe index of an label entry of customer backbone port",
+	.api_callback_func=(api_callback_func)leaf_api_set_cbp_egress_nhlfe_index,
+	.args_desc={
+		{.type=e3_arg_type_uint16_t,.behavior=e3_arg_behavior_input,},
+		{.type=e3_arg_type_uint32_t,.behavior=e3_arg_behavior_input,},
+		{.type=e3_arg_type_uint16_t,.behavior=e3_arg_behavior_input,},
+		{.type=e3_arg_type_uint32_t,.behavior=e3_arg_behavior_input,},
+		{.type=e3_arg_type_none,},
+	},
+};
+
+e3_type leaf_api_clear_cbp_egress_nhlfe_index(e3_type e3service,
+	e3_type iface_id,
+	e3_type label_id)
+{
+	int ret=-E3_ERR_GENERIC;
+	int16_t _iface_id=e3_type_to_uint16_t(iface_id);
+	int32_t _label_id=e3_type_to_uint32_t(label_id);
+	struct E3Interface * pif=NULL;
+	struct cbp_private * priv=NULL;
+	pif=find_e3interface_by_index(_iface_id);
+	if((!pif)||
+		(pif->hwiface_role!=E3IFACE_ROLE_CUSTOMER_BACKBONE_FACING_PORT)||
+		(_label_id<0)||
+		(_label_id>=NR_LEAF_LABEL_ENTRY))
+		return -E3_ERR_ILLEGAL;
+	priv=(struct cbp_private *)pif->private;
+	rte_rwlock_write_lock(&priv->cbp_guard);
+	ret=clear_leaf_label_entry_egress_nhlfe_index(priv->label_base,
+		_label_id);
+	rte_rwlock_write_unlock(&priv->cbp_guard);
+	return ret;
+}
+
+DECLARE_E3_API(cbp_egress_nhlfe_index_cleanup)={
+	.api_name="leaf_api_clear_cbp_egress_nhlfe_index",
+	.api_desc="reset the egress nhlfe index of an label entry of customer backbone port",
+	.api_callback_func=(api_callback_func)leaf_api_clear_cbp_egress_nhlfe_index,
+	.args_desc={
+		{.type=e3_arg_type_uint16_t,.behavior=e3_arg_behavior_input,},
+		{.type=e3_arg_type_uint32_t,.behavior=e3_arg_behavior_input,},
 		{.type=e3_arg_type_none,},
 	},
 };

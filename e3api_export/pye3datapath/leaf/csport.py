@@ -102,13 +102,14 @@ if __name__=='__main__':
 
     print(register_ether_line_service())
     print(register_ether_lan_service())
-    print(attach_e3iface('0000:02:05.0',E3IFACE_MODEL_GENERIC_SINGLY_QUEUE,E3IFACE_ROLE_CUSTOMER_USER_FACING_PORT,True))
+    print(attach_e3iface('0000:00:08.0',E3IFACE_MODEL_GENERIC_SINGLY_QUEUE,E3IFACE_ROLE_CUSTOMER_USER_FACING_PORT,True))
      
     attach_csport_to_eline(0,100,0)
     attach_csport_to_elan(0,100,0)
     attach_csport_to_eline(0,100,0)
-    attach_csport_to_eline(0,3249,0)
-    #detach_csport(0,100)
+    attach_csport_to_elan(0,3249,0)
+    detach_csport(0,3249)
+    detach_csport(0,100)
     #delete_ether_lan_service(0)
     #delete_ether_line_service(0)
     print(get_ether_line_service(0))

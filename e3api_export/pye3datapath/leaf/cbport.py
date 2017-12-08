@@ -100,7 +100,6 @@ def list_cbport_label_entries(iface):
             raise api_call_exception()
         if api_ret.value!=0:
             raise api_return_exception('not a valid customer backbone port with api_ret:%x'%(api_ret.value))
-        print(nr_entries.value)
         for i in range(nr_entries.value):
             l=a.a[i].clone()
             l.index=b.b[i]
@@ -108,6 +107,31 @@ def list_cbport_label_entries(iface):
         if nr_entries.value!=CBP_MAX_NR_ENTRIES_PER_FETCH:
             break
     return lst
+'''
+this function set the egress nhlfe index of a label entry of
+a customer backbone port, it can succeed if and only if <nhlfe,label_to_push>
+is already registered in E-LAN service to which such label entry has been attached.
+'''
+def set_cbport_set_label_entry_peer(iface,label,nhlfe,label_to_push):
+    api_ret=c_int64(0)
+    _iface=c_int16(iface)
+    _label=c_int32(label)
+    _nhlfe=c_int16(nhlfe)
+    _label_to_push=c_int32(label_to_push)    
+    rc=clib.leaf_api_set_cbp_egress_nhlfe_index(byref(api_ret),_iface,_label,_nhlfe,_label_to_push)
+    if rc!=0:
+        raise api_call_exception()
+    if api_ret.value!=0:
+        raise api_return_exception('failed to set up the egress nhlfe index of the label entry with api_ret:%x'%(api_ret.value))
+def clear_cbport_label_entry_peer(iface,label):
+    api_ret=c_int64(0)
+    _iface=c_int16(iface)
+    _label=c_int32(label)
+    rc=clib.leaf_api_clear_cbp_egress_nhlfe_index(byref(api_ret),_iface,_label)
+    if rc!=0:
+        raise api_call_exception()
+    if api_ret.value!=0:
+        api_return_exception('failed to clean the egress nhlfe index of the label entry with api_ret:%x'%(api_ret.value))
 
 if __name__=='__main__':
     from pye3datapath.e3iface import *
@@ -116,6 +140,8 @@ if __name__=='__main__':
     from pye3datapath.leaf.etherline import *
     from pye3datapath.leaf.etherlan import *
     register_service_endpoint('ipc:///var/run/e3datapath.sock')
+    register_neighbor('123.130.13.1','02:42:06:9a:ad:19')
+    register_nexthop(0,0)
     leaf_label_entry().dump_definition()    
     print(register_ether_line_service())
     print(register_ether_lan_service())
@@ -123,8 +149,12 @@ if __name__=='__main__':
     attach_cbport_to_eline(0,100,0)
     attach_cbport_to_elan(0,101,0)
     attach_cbport_to_elan(0,102,0)
+    register_ether_lan_nhlfe(0,0,1023)
+
     #detach_cbport(0,101)
     #detach_cbport(0,102)
+    set_cbport_set_label_entry_peer(0,102,0,1023)
+    clear_cbport_label_entry_peer(0,103)
     for eline in list_ether_line_services():
         print(get_ether_line_service(eline))
     for elan in list_ether_lan_services():

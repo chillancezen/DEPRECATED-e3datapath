@@ -137,6 +137,7 @@ e3_type leaf_api_csp_withdraw_port(e3_type e3service,
 				break;
 		}
 	}
+	priv->vlans[_vlan_tci].is_valid=0;
 	rte_rwlock_write_unlock(&priv->csp_guard);
 	return E3_OK;
 }
