@@ -9,11 +9,13 @@
 #include <e3infra/include/e3-log.h>
 #include <rte_ether.h>
 #include <spine/include/spine-label-fib.h>
-#include <spine/include/spine-label-nhlfe.h>
+#include <spine/include/spine-label-mnexthop.h>
 #include <e3infra/include/lcore-extension.h>
 #include <e3infra/include/util.h>
 #include <rte_malloc.h>
 #include <e3net/include/mpls-util.h>
+#include <e3net/include/common-nhlfe.h>
+
 #define PBP_NODE_BURST_SIZE 48
 
 extern struct e3iface_role_def  role_defs[E3IFACE_ROLE_MAX_ROLES];
@@ -28,9 +30,9 @@ static int null_capability_check(int port_id)
 struct pbp_cache_entry{
 	uint32_t                      is_valid;
 	uint32_t 			 		  label;/*0 indicate invalid*/
-	struct label_entry 			* lentry;
-	struct next_hop    			* unicast_nexthop;
-	struct topological_neighbor * unicast_neighbor;
+	struct spine_label_entry 	* lentry;
+	struct common_nexthop    	* unicast_nexthop;
+	struct common_neighbor 		* unicast_neighbor;
 	struct multicast_next_hops  * multicast_nexthops;
 };
 #define PBP_CACHE_SIZE 0x8
@@ -74,21 +76,21 @@ inline uint64_t _process_pbp_input_packet(struct rte_mbuf * mbuf,
 		if(PREDICT_FALSE(cache->label!=label)){
 			cache->is_valid=0;
 			cache->label=label;
-			cache->lentry=label_entry_at(priv->label_base,label);
+			cache->lentry=spine_label_entry_at(priv->label_base,label);
 			if(!cache->lentry->is_valid)
 				goto normal;
 			if(cache->lentry->is_unicast){
 				cache->unicast_nexthop=
-					next_hop_at(cache->lentry->NHLFE);
+					find_common_nexthop(cache->lentry->NHLFE);
 				if((!(cache->unicast_nexthop))||(!(cache->unicast_nexthop->is_valid)))
 					goto normal;
 				cache->unicast_neighbor=
-					topological_neighbour_at(cache->unicast_nexthop->remote_neighbor_index);
+					find_common_neighbor(cache->unicast_nexthop->common_neighbor_index);
 				if((!(cache->unicast_neighbor))||(!(cache->unicast_neighbor->is_valid)))
 					goto normal;
 			}else{
 				cache->multicast_nexthops=
-					mnext_hops_at(cache->lentry->NHLFE);
+					find_mnext_hops(cache->lentry->NHLFE);
 				if((!(cache->multicast_nexthops))||(!(cache->multicast_nexthops->is_valid)))
 					goto normal;
 			}
@@ -110,7 +112,7 @@ inline uint64_t _process_pbp_input_packet(struct rte_mbuf * mbuf,
 		set_mpls_label(mpls_hdr,cache->lentry->swapped_label);
 		set_mpls_ttl(mpls_hdr,mpls_ttl(mpls_hdr)-1);
 		if(PREDICT_FALSE(!(psrc_iface=
-			find_e3interface_by_index(cache->unicast_nexthop->local_e3iface_index)))){
+			find_e3interface_by_index(cache->unicast_nexthop->local_e3iface)))){
 			fwd_id=MAKE_UINT64(PBP_PROCESS_INPUT_DROP,0);
 			goto ret;
 		}
@@ -121,7 +123,7 @@ inline uint64_t _process_pbp_input_packet(struct rte_mbuf * mbuf,
 				psrc_iface->mac_addrs,
 				6);
 		fwd_id=MAKE_UINT64(PBP_PROCESS_INPUT_UNICAST_FWD,
-			cache->unicast_nexthop->local_e3iface_index);
+			cache->unicast_nexthop->local_e3iface);
 	}else{
 		fwd_id=MAKE_UINT64(PBP_PROCESS_INPUT_MULTICAST_FWD,label);
 	}
@@ -136,13 +138,14 @@ inline int _pbp_multicast_fordward_slow_path(struct E3Interface *pif,
 						int label)
 {
 	struct pbp_private * priv=(struct pbp_private*)pif->private;
-	struct label_entry * lentry=label_entry_at(priv->label_base,label);
-	struct multicast_next_hops * pmnexthops=mnext_hops_at(lentry->NHLFE);
-	struct next_hop * pnext;
-	struct topological_neighbor *pneighbor;
+	struct spine_label_entry * lentry=spine_label_entry_at(priv->label_base,label);
+	struct multicast_next_hops * pmnexthops=find_mnext_hops(lentry->NHLFE);
+	struct common_nexthop * pnext;
+	struct common_neighbor *pneighbor;
 	struct E3Interface *psrc_if;
 	int idx_packet;
 	int idx_hop;
+	int iptr;
 	int consumed;
 	int mbuf_ready;
 	int nr_delivered;
@@ -156,39 +159,56 @@ inline int _pbp_multicast_fordward_slow_path(struct E3Interface *pif,
 
 	for(idx_packet=0;idx_packet<nr_mbufs;idx_packet++){
 		consumed=0;
-		for(idx_hop=0;idx_hop<pmnexthops->nr_hops;idx_hop++){
-			pnext=next_hop_at(pmnexthops->next_hops[idx_hop]);
+		/*
+		*idx_hop is the indicator which shows how many valid nexthops are proceeded
+		*while iptr is the actual index which shows the actual nexthop location
+		*/
+		for(idx_hop=0,iptr=0;
+			(idx_hop<pmnexthops->nr_hops)&&(iptr<MAX_HOPS_IN_MULTICAST_GROUP);
+			iptr++){
+			/*
+			*skip all the invalid nexthop
+			*/
+			if(!pmnexthops->nexthops[iptr].is_valid)
+				continue;
+			/*already found one, no matter what, preceed one step further
+			*this will accelerate the procedure of multicast forwarding
+			*/
+			idx_hop++;
+			pnext=find_common_nexthop(pmnexthops->nexthops[iptr].next_hop);
 			if((!pnext)||
-				(!(pneighbor=topological_neighbour_at(pnext->remote_neighbor_index)))||
-				(!(psrc_if=find_e3interface_by_index(pnext->local_e3iface_index))))
+				(!(pneighbor=find_common_neighbor(pnext->common_neighbor_index)))||
+				(!(psrc_if=find_e3interface_by_index(pnext->local_e3iface))))
 				continue;
 			/*
 			*perform Rrverse Path Check
 			*/
-			if(pmnexthops->next_hops_labels[idx_hop]==lentry->swapped_label)
+			if(pmnexthops->nexthops[iptr].label_to_push==lentry->swapped_label)
 				continue;
 			mbuf_ready=0;
-			if((idx_hop==(pmnexthops->nr_hops-1))||
-				(((idx_hop+1)==(pmnexthops->nr_hops-1))&&
-				(pmnexthops->next_hops_labels[idx_hop+1]==lentry->swapped_label))){
-				mbufs_invt[idx_hop][iptr_invt[idx_hop]]=mbufs[idx_packet];
+			/*
+			*it seldom happens that nexthop entry in
+			*mnexthops sets. 
+			*/
+			if(idx_hop==pmnexthops->nr_hops){
+				mbufs_invt[iptr][iptr_invt[iptr]]=mbufs[idx_packet];
 				consumed=1;
 				mbuf_ready=1;
 			}else{
-				mbufs_invt[idx_hop][iptr_invt[idx_hop]]=rte_pktmbuf_alloc(mempool);
-				if(mbufs_invt[idx_hop][iptr_invt[idx_hop]]){
-					rte_pktmbuf_append(mbufs_invt[idx_hop][iptr_invt[idx_hop]],
+				mbufs_invt[iptr][iptr_invt[iptr]]=rte_pktmbuf_alloc(mempool);
+				if(mbufs_invt[iptr][iptr_invt[iptr]]){
+					rte_pktmbuf_append(mbufs_invt[iptr][iptr_invt[iptr]],
 						mbufs[idx_packet]->pkt_len);
-					rte_memcpy(rte_pktmbuf_mtod(mbufs_invt[idx_hop][iptr_invt[idx_hop]],void*),
+					rte_memcpy(rte_pktmbuf_mtod(mbufs_invt[iptr][iptr_invt[iptr]],void*),
 						rte_pktmbuf_mtod(mbufs[idx_packet],void*),
 						mbufs[idx_packet]->pkt_len);
 					mbuf_ready=1;
 				}
 			}
 			if(PREDICT_TRUE(mbuf_ready)){
-				struct ether_hdr * eth_hdr=rte_pktmbuf_mtod(mbufs_invt[idx_hop][iptr_invt[idx_hop]],struct ether_hdr*);
+				struct ether_hdr * eth_hdr=rte_pktmbuf_mtod(mbufs_invt[iptr][iptr_invt[iptr]],struct ether_hdr*);
 				struct mpls_hdr  * mpls=(struct mpls_hdr *)(eth_hdr+1);
-				set_mpls_label(mpls,pmnexthops->next_hops_labels[idx_hop]);
+				set_mpls_label(mpls,pmnexthops->nexthops[iptr].label_to_push);
 				set_mpls_ttl(mpls,mpls_ttl(mpls)-1);
 				rte_memcpy(eth_hdr->d_addr.addr_bytes,
 					pneighbor->mac,
@@ -196,25 +216,26 @@ inline int _pbp_multicast_fordward_slow_path(struct E3Interface *pif,
 				rte_memcpy(eth_hdr->s_addr.addr_bytes,
 					psrc_if->mac_addrs,
 					6);
-				iptr_invt[idx_hop]++;
+				iptr_invt[iptr]++;
 			}
 		}
 		if(PREDICT_FALSE(!consumed))
 			rte_pktmbuf_free(mbufs[idx_packet]);
 	}
 	
-	for(idx_hop=0;idx_hop<pmnexthops->nr_hops;idx_hop++){
+	for(iptr=0;iptr<MAX_HOPS_IN_MULTICAST_GROUP;iptr++){
 		nr_delivered=0;
-		if(iptr_invt[idx_hop]){
-			pnext=next_hop_at(pmnexthops->next_hops[idx_hop]);
-			psrc_if=find_e3interface_by_index(pnext->local_e3iface_index);
-			nr_delivered=deliver_mbufs_to_e3iface(psrc_if,
-				0,
-				mbufs_invt[idx_hop],
-				iptr_invt[idx_hop]);
-		}
-		for(idx_packet=nr_delivered;idx_packet<iptr_invt[idx_hop];idx_packet++)
-			rte_pktmbuf_free(mbufs_invt[idx_hop][idx_packet]);
+		if(!iptr_invt[iptr])
+			continue;
+		pnext=find_common_nexthop(pmnexthops->nexthops[iptr].next_hop);
+		psrc_if=find_e3interface_by_index(pnext->local_e3iface);
+		nr_delivered=deliver_mbufs_to_e3iface(psrc_if,
+			0,
+			mbufs_invt[iptr],
+			iptr_invt[iptr]);
+		
+		for(idx_packet=nr_delivered;idx_packet<iptr_invt[iptr];idx_packet++)
+			rte_pktmbuf_free(mbufs_invt[iptr][idx_packet]);
 		
 	}
 	return nr_mbufs;
@@ -360,6 +381,7 @@ int provider_backbone_port_iface_post_setup(struct E3Interface * pif)
 	struct pbp_private * priv=(struct pbp_private*)pif->private;
 	pif->hwiface_role=E3IFACE_ROLE_PROVIDER_BACKBONE_PORT;
 	/*setup the label base for the e3interface*/
+	rte_rwlock_init(&priv->pbp_guard);
 	priv->label_base=allocate_label_entry_base(-1);
 	if(!priv->label_base)
 		return -1;

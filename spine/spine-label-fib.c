@@ -10,12 +10,12 @@
 *if numa_socket_id is negative, a random socket is selected,
 *once succeed, a Non-NULL array pointer is returned. 
 */
-struct label_entry * allocate_label_entry_base(int numa_socket_id)
+struct spine_label_entry * allocate_label_entry_base(int numa_socket_id)
 {
 	int idx=0;
-	struct label_entry * base=NULL;
+	struct spine_label_entry * base=NULL;
 	base=rte_zmalloc_socket(NULL,
-			sizeof(struct label_entry)*NR_LABEL_ENTRY,
+			sizeof(struct spine_label_entry)*NR_LABEL_ENTRY,
 			64,
 			numa_socket_id<0?SOCKET_ID_ANY:numa_socket_id);
 	if(base)
@@ -24,9 +24,9 @@ struct label_entry * allocate_label_entry_base(int numa_socket_id)
 	return base;
 }
 
-int invalidate_label_entry(struct label_entry * base,int index)
+int invalidate_label_entry(struct spine_label_entry * base,int index)
 {
-	struct label_entry * entry=label_entry_at(base, index);
+	struct spine_label_entry * entry=spine_label_entry_at(base, index);
 	if(!entry)
 		return -1;
 	entry->is_valid=0;
@@ -35,13 +35,13 @@ int invalidate_label_entry(struct label_entry * base,int index)
 	return 0;
 }
 
-int set_label_entry(struct label_entry * base,
+int set_label_entry(struct spine_label_entry * base,
 					int index,
 					int is_unicast,
 					int label_to_swap,
 					int NHLFE)
 {
-	struct label_entry * entry=label_entry_at(base, index);
+	struct spine_label_entry * entry=spine_label_entry_at(base, index);
 	if(!entry)
 		return -1;
 	entry->is_valid=1;
@@ -54,19 +54,19 @@ int set_label_entry(struct label_entry * base,
 void label_fib_module_test(void)
 {
 	//printf("size:%d\n",sizeof(struct label_entry));
-	struct label_entry * base=allocate_label_entry_base(-1);
-	label_entry_at(base, 1)->is_valid=1;
-	label_entry_at(base, 1023)->is_valid=1;
-	label_entry_at(base, 102223)->is_valid=1;
+	struct spine_label_entry * base=allocate_label_entry_base(-1);
+	spine_label_entry_at(base, 1)->is_valid=1;
+	spine_label_entry_at(base, 1023)->is_valid=1;
+	spine_label_entry_at(base, 102223)->is_valid=1;
 
 	set_label_entry(base,232,1,12,2);
 	
-	struct label_entry * entry;
+	struct spine_label_entry * entry;
 	
 	//invalidate_label_entry(base,102223);
 	
 	FOREACH_LABEL_ENTRY_INSIDE_BASE_START(base,0,entry){
-		printf("%d\n",label_entry_to_index(base, entry));
+		printf("%d\n",spine_label_entry_to_index(base, entry));
 	}
 	FOREACH_LABEL_ENTRY_INSIDE_BASE_END()
 	

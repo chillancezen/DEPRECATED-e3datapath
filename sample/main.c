@@ -23,6 +23,7 @@
 #include <e3infra/include/e3interface.h>
 #include <e3net/include/common-nhlfe.h>
 #include <leaf/include/leaf-e-service.h>
+#include <spine/include/spine-label-mnexthop.h>
 
 //#include <spine-label-fib.h>
 //#include <spine-label-nhlfe.h>
@@ -36,8 +37,9 @@ main(int argc, char **argv)
 	if (ret < 0)
 		rte_panic("Cannot init EAL\n");
 	init_registered_tasks();
-	printf("leaf e-lan size:%d\n",sizeof(struct rcu_head));
-	printf("leaf e-lan size:%d\n",sizeof(rte_spinlock_t));
+	printf("multicast nexthops:%d\n",sizeof(struct multicast_next_hops));
+	//printf("leaf e-lan size:%d\n",sizeof(struct rcu_head));
+	//printf("leaf e-lan size:%d\n",sizeof(rte_spinlock_t));
 	//printf("common neighbor size:%d\n",sizeof(struct common_neighbor));
 	//printf("common nexthop size:%d\n",sizeof(struct common_nexthop));
 	//e3iface_tmp_test();

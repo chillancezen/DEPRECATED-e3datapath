@@ -145,7 +145,7 @@ if __name__=='__main__':
     leaf_label_entry().dump_definition()    
     print(register_ether_line_service())
     print(register_ether_lan_service())
-    print(attach_e3iface('0000:00:08.0',E3IFACE_MODEL_GENERIC_SINGLY_QUEUE,E3IFACE_ROLE_CUSTOMER_BACKBONE_FACING_PORT,True))
+    print(attach_e3iface('0000:02:05.0',E3IFACE_MODEL_GENERIC_SINGLY_QUEUE,E3IFACE_ROLE_CUSTOMER_BACKBONE_FACING_PORT,True))
     attach_cbport_to_eline(0,100,0)
     attach_cbport_to_elan(0,101,0)
     attach_cbport_to_elan(0,102,0)

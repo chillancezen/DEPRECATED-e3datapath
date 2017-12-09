@@ -6,8 +6,11 @@
 #include <stdint.h>
 
 #define NR_LABEL_ENTRY (1<<20)
-
-struct label_entry{
+/*
+*as with leaf_label_entry, spine_label_entry
+*is guarded by per-pbp rwlock
+*/
+struct spine_label_entry{
 	union{
 		struct{
 			uint32_t is_valid:1;        /*indicate whether the corresponding ILE is valid*/
@@ -38,20 +41,20 @@ Python Definition:
 */
 
 
-struct label_entry * allocate_label_entry_base(int numa_socket_id);
+struct spine_label_entry * allocate_label_entry_base(int numa_socket_id);
 
 
 /*retrieve the entry at the given index,if successful,
 *the pointer will be returned.
 */
-#define label_entry_at(base,index)  ((((index)>=0)&&((index)<NR_LABEL_ENTRY))?(&((base)[(index)])):NULL)
+#define spine_label_entry_at(base,index)  ((((index)>=0)&&((index)<NR_LABEL_ENTRY))?(&((base)[(index)])):NULL)
 
 /*
 *transform entry into index within a base,
 *negative value returned if entry is not in the basis 
 */
-#define label_entry_to_index(base,entry) ({\
-	int _index=(struct label_entry*)(entry)-(struct label_entry*)(base); \
+#define spine_label_entry_to_index(base,entry) ({\
+	int _index=(struct spine_label_entry*)(entry)-(struct spine_label_entry*)(base); \
 	((_index<NR_LABEL_ENTRY)&&(_index>=0))?_index:-1; \
 })
 
@@ -63,16 +66,16 @@ struct label_entry * allocate_label_entry_base(int numa_socket_id);
 */
 #define FOREACH_LABEL_ENTRY_INSIDE_BASE_START(base,next_index_to_search,entry) {\
 	int _idx; \
-	struct label_entry * _entry; \
+	struct spine_label_entry * _entry; \
 	for(_idx=(next_index_to_search);_idx<NR_LABEL_ENTRY;_idx++){ \
-		_entry=label_entry_at((base), _idx); \
+		_entry=spine_label_entry_at((base), _idx); \
 		if(!_entry->is_valid) continue; \
 		(entry)=_entry; 
 
 #define FOREACH_LABEL_ENTRY_INSIDE_BASE_END() }}
 	
-int invalidate_label_entry(struct label_entry * base,int index);
-int set_label_entry(struct label_entry * base,
+int invalidate_label_entry(struct spine_label_entry * base,int index);
+int set_label_entry(struct spine_label_entry * base,
 					int index,
 					int is_unicast,
 					int label_to_swap,
