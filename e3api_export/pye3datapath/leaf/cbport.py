@@ -112,7 +112,7 @@ this function set the egress nhlfe index of a label entry of
 a customer backbone port, it can succeed if and only if <nhlfe,label_to_push>
 is already registered in E-LAN service to which such label entry has been attached.
 '''
-def set_cbport_set_label_entry_peer(iface,label,nhlfe,label_to_push):
+def set_cbport_label_entry_peer(iface,label,nhlfe,label_to_push):
     api_ret=c_int64(0)
     _iface=c_int16(iface)
     _label=c_int32(label)
@@ -153,7 +153,7 @@ if __name__=='__main__':
 
     #detach_cbport(0,101)
     #detach_cbport(0,102)
-    set_cbport_set_label_entry_peer(0,102,0,1023)
+    set_cbport_label_entry_peer(0,102,0,1023)
     clear_cbport_label_entry_peer(0,103)
     for eline in list_ether_line_services():
         print(get_ether_line_service(eline))

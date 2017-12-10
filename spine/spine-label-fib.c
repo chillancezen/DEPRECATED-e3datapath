@@ -26,15 +26,16 @@ struct spine_label_entry * allocate_label_entry_base(int numa_socket_id)
 	return base;
 }
 
-void update_spine_label_entry_relationship(struct spine_label_entry * base,
+int update_spine_label_entry_relationship(struct spine_label_entry * base,
 	int index,
 	int is_to_remove)
 {
+	int ret=E3_OK;
 	int idx=0;
 	int is_existing;
 	struct spine_label_entry * pentry=spine_label_entry_at(base, index);
 	if(!pentry||!pentry->is_valid)
-		return;
+		return -E3_ERR_NOT_FOUND;
 	is_existing=0;
 	for(idx=0;idx<NR_SPINE_LABEL_ENTRY;idx++){
 		if(!base[idx].is_valid)
@@ -54,10 +55,10 @@ void update_spine_label_entry_relationship(struct spine_label_entry * base,
 		*/
 		if(is_to_remove){
 			if(!is_existing)
-				dereference_common_nexthop(pentry->NHLFE);
+				ret=dereference_common_nexthop(pentry->NHLFE);
 		}else{
 			if(!is_existing)
-				reference_common_nexthop(pentry->NHLFE);
+				ret=reference_common_nexthop(pentry->NHLFE);
 		}
 	}else{
 		/*
@@ -65,12 +66,13 @@ void update_spine_label_entry_relationship(struct spine_label_entry * base,
 		*/
 		if(is_to_remove){
 			if(!is_existing)
-				dereference_mnexthop(pentry->NHLFE);
+				ret=dereference_mnexthop(pentry->NHLFE);
 		}else{
 			if(!is_existing)
-				reference_mnexthop(pentry->NHLFE);
+				ret=reference_mnexthop(pentry->NHLFE);
 		}
 	}
+	return ret;
 }
 int reset_spine_label_entry(struct spine_label_entry * base,int index)
 {
@@ -109,7 +111,9 @@ int set_spine_label_entry(struct spine_label_entry * base,
 	entry->swapped_label=label_to_swap;
 	__sync_synchronize();
 	entry->is_valid=1;
-	update_spine_label_entry_relationship(base,index,0);
+	if(update_spine_label_entry_relationship(base,index,0))
+		return -E3_ERR_ILLEGAL;
+	
 	return E3_OK;
 }
 
