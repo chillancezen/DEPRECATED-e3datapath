@@ -295,4 +295,39 @@ DECLARE_E3_API(e_lan_retrieval)={
 		{.type=e3_arg_type_none,},
 	},	
 };
-
+e3_type leaf_api_set_e_lan_multicast_fwd_entry(e3_type e3api_service,
+		e3_type elan_index,
+		e3_type multicast_nhlfe,
+		e3_type multicast_label)
+{
+	int16_t _elan_index=e3_type_to_uint16_t(elan_index);
+	int16_t _multicast_nhlfe=e3_type_to_uint16_t(multicast_nhlfe);
+	int32_t _multicast_label=e3_type_to_uint32_t(multicast_label);
+	return set_e_lan_multicast_fwd_entry(_elan_index,_multicast_nhlfe,_multicast_label);
+}
+DECLARE_E3_API(elan_multicast_entry_setup)={
+	.api_name="leaf_api_set_e_lan_multicast_fwd_entry",
+	.api_desc="setup the multicast fwd entry",
+	.api_callback_func=(api_callback_func)leaf_api_set_e_lan_multicast_fwd_entry,
+	.args_desc={
+		{.type=e3_arg_type_uint16_t,.behavior=e3_arg_behavior_input,},
+		{.type=e3_arg_type_uint16_t,.behavior=e3_arg_behavior_input,},
+		{.type=e3_arg_type_uint32_t,.behavior=e3_arg_behavior_input,},
+		{.type=e3_arg_type_none,},
+	},
+};
+e3_type leaf_api_reset_e_lan_multicast_fwd_entry(e3_type e3api_service,
+	e3_type elan_index)
+{
+	int16_t _elan_index=e3_type_to_uint16_t(elan_index);
+	return reset_e_lan_multicast_fwd_entry(_elan_index);
+}
+DECLARE_E3_API(elan_multicast_entry_reset)={
+	.api_name="leaf_api_reset_e_lan_multicast_fwd_entry",
+	.api_desc="reset the elan's multicast forwarding entry",
+	.api_callback_func=(api_callback_func)leaf_api_reset_e_lan_multicast_fwd_entry,
+	.args_desc={
+		{.type=e3_arg_type_uint16_t,.behavior=e3_arg_behavior_input,},
+		{.type=e3_arg_type_none,},
+	},
+};

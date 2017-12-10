@@ -128,7 +128,7 @@ if __name__=='__main__':
     print(register_neighbor('130.140.250.1','02:42:7e:5f:17:ee'))
     print(register_nexthop(0,0))
     print(register_mnexthop())
-    attach_e3iface('0000:02:05.0',E3IFACE_MODEL_GENERIC_SINGLY_QUEUE,E3IFACE_ROLE_PROVIDER_BACKBONE_PORT)
+    attach_e3iface('0000:00:08.0',E3IFACE_MODEL_GENERIC_SINGLY_QUEUE,E3IFACE_ROLE_PROVIDER_BACKBONE_PORT)
     register_spine_label_entry(0,1000,1,234,0)
     register_spine_label_entry(0,10000,0,234,0)
 

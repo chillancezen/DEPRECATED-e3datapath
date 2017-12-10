@@ -182,6 +182,8 @@ struct e_lan_fwd_entry{
 }
 int register_e_lan_fwd_entry(int elan_index,uint8_t * mac,struct e_lan_fwd_entry * fwd_entry);
 int delete_e_lan_fwd_entry(int elan_index,uint8_t *mac);
+int set_e_lan_multicast_fwd_entry(int16_t elan_idx,int16_t nhlfe_index,int32_t label_to_push);
+int reset_e_lan_multicast_fwd_entry(int16_t elan_idx);
 
 /*
 *the criticl section which is guarded by those read locks below

@@ -691,4 +691,49 @@ int delete_e_lan_fwd_entry(int elan_index,uint8_t *mac)
 	WUNLOCK_ELAN();
     return ret;
 }
-
+int set_e_lan_multicast_fwd_entry(int16_t elan_idx,int16_t nhlfe_index,int32_t label_to_push)
+{
+	int ret=-E3_ERR_GENERIC;
+	struct ether_e_lan * elan=NULL;
+	WLOCK_ELAN();
+	elan=find_e_lan_service(elan_idx);
+	if(!elan){
+		ret=-E3_ERR_NOT_FOUND;
+		goto out;
+	}
+	if(find_common_nexthop(elan->multicast_NHLFE))
+		dereference_common_nexthop(elan->multicast_NHLFE);
+	/*
+	*invalidate multicast_NHLFE temporarily
+	*/
+	elan->multicast_NHLFE=-1;
+	if(reference_common_nexthop(nhlfe_index)){
+		ret=-E3_ERR_ILLEGAL;
+		goto out;
+	}
+	elan->multicast_label=label_to_push;
+	elan->multicast_NHLFE=nhlfe_index;
+	ret=E3_OK;
+	out:
+	WUNLOCK_ELAN();
+	return ret;
+}
+int reset_e_lan_multicast_fwd_entry(int16_t elan_idx)
+{
+	int ret=-E3_ERR_GENERIC;
+	struct ether_e_lan * elan=NULL;
+	WLOCK_ELAN();
+	elan=find_e_lan_service(elan_idx);
+	if(!elan){
+		ret=-E3_ERR_NOT_FOUND;
+		goto out;
+	}
+	if(find_common_nexthop(elan->multicast_NHLFE))
+		dereference_common_nexthop(elan->multicast_NHLFE);
+	elan->multicast_NHLFE=-1;
+	elan->multicast_label=0;
+	ret=E3_OK;
+	out:
+	WUNLOCK_ELAN();
+	return ret;
+}

@@ -18,7 +18,7 @@ e3_type leaf_api_cbp_setup_label_entry(e3_type e3service,
 {
 	int ret=E3_OK;
 	int16_t _iface_id=e3_type_to_uint16_t(iface_id);
-	int32_t _label_id=e3_type_to_uint16_t(label_id);
+	int32_t _label_id=e3_type_to_uint32_t(label_id);
 	int8_t  _is_eline_service=e3_type_to_uint8_t(is_eline_service);
 	int16_t _service_id=e3_type_to_uint16_t(service_id);
 
@@ -27,7 +27,6 @@ e3_type leaf_api_cbp_setup_label_entry(e3_type e3service,
 	struct leaf_label_entry tmp_label_entry;
 	tmp_label_entry.e3_service=_is_eline_service?e_line_service:e_lan_service;
 	tmp_label_entry.service_index=_service_id;
-	
 	pif=find_e3interface_by_index(_iface_id);
 	if((!pif)||
 		(pif->hwiface_role!=E3IFACE_ROLE_CUSTOMER_BACKBONE_FACING_PORT)||
@@ -64,7 +63,7 @@ e3_type leaf_api_cbp_clear_label_entry(e3_type e3service,
 	e3_type label_id)
 {
 	int16_t _iface_id=e3_type_to_uint16_t(iface_id);
-	int32_t _label_id=e3_type_to_uint16_t(label_id);
+	int32_t _label_id=e3_type_to_uint32_t(label_id);
 
 	struct E3Interface * pif=NULL;
 	struct cbp_private * priv=NULL;

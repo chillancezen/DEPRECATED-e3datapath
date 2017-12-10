@@ -216,6 +216,24 @@ def delete_ether_lan_nhlfe(elan_index,inner_nhlfe_id):
         raise api_call_exception()
     if api_ret.value!=0:
         raise api_return_exception('failed to delete an inner nhlfe of e-lan with api_ret:%x'%(api_ret.value))
+def set_ether_lan_multicast_fwd_entry(elan_index,mnhlfe,label_to_push):
+    api_ret=c_int64(0)
+    _elan_index=c_int16(elan_index)
+    _mnhlfe=c_int16(mnhlfe)
+    _label_to_push=c_int32(label_to_push)
+    rc=clib.leaf_api_set_e_lan_multicast_fwd_entry(byref(api_ret),_elan_index,_mnhlfe,_label_to_push)
+    if rc!=0:
+        raise api_call_exception()
+    if api_ret.value!=0:
+        raise api_return_exception('api_ret:%x'%(api_ret.value))
+def reset_ether_lan_multicast_fwd_entry(elan_index):
+    api_ret=c_int64(0)
+    _elan_index=c_int16(elan_index)
+    rc=clib.leaf_api_reset_e_lan_multicast_fwd_entry(byref(api_ret),_elan_index)
+    if rc!=0:
+        raise api_call_exception()
+    if api_ret.value!=0:
+        raise api_return_exception('api_ret:%x'%(api_ret.value))
 
 if __name__=='__main__':
     ether_lan().dump_definition()
