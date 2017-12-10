@@ -69,12 +69,65 @@ def get_mnexthop(index):
     if api_ret.value!=0:
         raise api_return_exception('api_ret:%x'%(api_ret.value))
     return m
+def list_mnexthops():
+    api_ret=c_int64(0)
+    nr_entries=c_int16(0)
+    class A(Structure):
+        _pack_=1
+        _fields_=[('a',c_int16*MAX_MULTICAST_NEXT_HOPS)]
+    a=A()
+    lst=list()
+    rc=clib.spine_api_list_mnexthops(byref(api_ret),byref(nr_entries),byref(a))
+    if rc!=0:
+        raise api_call_exception()
+    for i in range(nr_entries.value):
+        lst.append(a.a[i])
+    return lst
+def delete_mnexthop(mindex):
+    api_ret=c_int64(0)
+    _mindex=c_int16(mindex)
+    rc=clib.spine_api_delete_mnexthop(byref(api_ret),_mindex)
+    if rc!=0:
+        raise api_call_exception()
+    if api_ret.value!=0:
+        raise api_return_exception('api_ret:%x'%(api_ret.value))
+def register_nexthop_in_mnexthops(mnexthop,nexthop,label_to_push):
+    api_ret=c_int64(0)
+    _mnexthop=c_int16(mnexthop)
+    _nexthop=c_int16(nexthop)
+    _label_to_push=c_int32(label_to_push)
+    rc=clib.spine_api_register_or_delete_nexthop_in_mnexthop(byref(api_ret),_mnexthop,1,_nexthop,_label_to_push)
+    if rc!=0:
+        raise api_call_exception()
+    if api_ret.value<0:
+        raise api_return_exception('api_ret:%x'%(api_ret.value))
+    return api_ret.value
+
+def delete_nexthop_in_mnexthops(mnexthop,nexthop,label_to_push):
+    api_ret=c_int64(0)
+    _mnexthop=c_int16(mnexthop)
+    _nexthop=c_int16(nexthop)
+    _label_to_push=c_int32(label_to_push)
+    rc=clib.spine_api_register_or_delete_nexthop_in_mnexthop(byref(api_ret),_mnexthop,0,_nexthop,_label_to_push)
+    if rc!=0:
+        raise api_call_exception()
+    if api_ret.value!=0:
+        raise api_return_exception('api_ret:%x'%(api_ret.value))
 
 if __name__=='__main__':
+    from pye3datapath.common.neighbor import *
+    from pye3datapath.common.nexthop import *
     register_service_endpoint('ipc:///var/run/e3datapath.sock')
+    register_neighbor('130.140.150.1','08:00:27:ab:24:62')
+    register_nexthop(0,0)
     #multicast_next_hops().dump_definition()
     print(register_mnexthop())
-    print(register_mnexthop())
-    print(get_mnexthop(0))
-    print(get_mnexthop(1))
-    print(get_mnexthop(2047))
+
+    print(register_nexthop_in_mnexthops(0,0,1234))
+    print(register_nexthop_in_mnexthops(0,0,234))
+    delete_nexthop_in_mnexthops(0,0,1234)
+    delete_nexthop_in_mnexthops(0,0,234)
+    for m in list_mnexthops():
+        print(get_mnexthop(m))
+    for n in list_nexthops():
+        print(n)

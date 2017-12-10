@@ -5,7 +5,7 @@
 #define _LABEL_FIB_H
 #include <stdint.h>
 
-#define NR_LABEL_ENTRY (1<<20)
+#define NR_SPINE_LABEL_ENTRY (1<<20)
 /*
 *as with leaf_label_entry, spine_label_entry
 *is guarded by per-pbp rwlock
@@ -29,6 +29,7 @@ struct spine_label_entry{
 		uint64_t dummy_dword;
 	};
 }__attribute__((packed));
+
 /*
 C definition:
 
@@ -47,7 +48,7 @@ struct spine_label_entry * allocate_label_entry_base(int numa_socket_id);
 /*retrieve the entry at the given index,if successful,
 *the pointer will be returned.
 */
-#define spine_label_entry_at(base,index)  ((((index)>=0)&&((index)<NR_LABEL_ENTRY))?(&((base)[(index)])):NULL)
+#define spine_label_entry_at(base,index)  ((((index)>=0)&&((index)<NR_SPINE_LABEL_ENTRY))?(&((base)[(index)])):NULL)
 
 /*
 *transform entry into index within a base,
@@ -55,7 +56,7 @@ struct spine_label_entry * allocate_label_entry_base(int numa_socket_id);
 */
 #define spine_label_entry_to_index(base,entry) ({\
 	int _index=(struct spine_label_entry*)(entry)-(struct spine_label_entry*)(base); \
-	((_index<NR_LABEL_ENTRY)&&(_index>=0))?_index:-1; \
+	((_index<NR_SPINE_LABEL_ENTRY)&&(_index>=0))?_index:-1; \
 })
 
 
@@ -67,18 +68,19 @@ struct spine_label_entry * allocate_label_entry_base(int numa_socket_id);
 #define FOREACH_LABEL_ENTRY_INSIDE_BASE_START(base,next_index_to_search,entry) {\
 	int _idx; \
 	struct spine_label_entry * _entry; \
-	for(_idx=(next_index_to_search);_idx<NR_LABEL_ENTRY;_idx++){ \
+	for(_idx=(next_index_to_search);_idx<NR_SPINE_LABEL_ENTRY;_idx++){ \
 		_entry=spine_label_entry_at((base), _idx); \
 		if(!_entry->is_valid) continue; \
 		(entry)=_entry; 
 
 #define FOREACH_LABEL_ENTRY_INSIDE_BASE_END() }}
 	
-int invalidate_label_entry(struct spine_label_entry * base,int index);
-int set_label_entry(struct spine_label_entry * base,
+int reset_spine_label_entry(struct spine_label_entry * base,int index);
+int set_spine_label_entry(struct spine_label_entry * base,
 					int index,
 					int is_unicast,
 					int label_to_swap,
 					int NHLFE);
+
 
 #endif

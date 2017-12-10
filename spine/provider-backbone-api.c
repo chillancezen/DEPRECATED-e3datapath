@@ -22,7 +22,7 @@ e3_type spine_api_pbp_setup_label_entry(e3_type service,
 	struct spine_label_entry * label;
 	if((!piface)||(piface->hwiface_role!=E3IFACE_ROLE_PROVIDER_BACKBONE_PORT))
 		return -1;
-	if((_index_to_set<0)||(_index_to_set>=NR_LABEL_ENTRY))
+	if((_index_to_set<0)||(_index_to_set>=NR_SPINE_LABEL_ENTRY))
 		return -2;
 	if(!(priv=(struct pbp_private*)piface->private))
 		return -3;
@@ -61,7 +61,7 @@ e3_type spine_api_pbp_get_label_entry(e3_type service,
 		(pif->hwiface_role!=E3IFACE_ROLE_PROVIDER_BACKBONE_PORT)||
 		(!(priv=(struct pbp_private*)pif->private)))
 		return -1;
-	if((_index<0)||(_index>=NR_LABEL_ENTRY))
+	if((_index<0)||(_index>=NR_SPINE_LABEL_ENTRY))
 		return -2;
 	
 	memcpy(_entry,
@@ -106,7 +106,7 @@ e3_type cbp_api_list_spine_label_entry_partial(e3_type service,
 		(pif->hwiface_role!=E3IFACE_ROLE_PROVIDER_BACKBONE_PORT)||
 		(!(priv=(struct pbp_private*)pif->private)))
 		return -1;
-	for(idx=*_index_to_start;idx<NR_LABEL_ENTRY;idx++){
+	for(idx=*_index_to_start;idx<NR_SPINE_LABEL_ENTRY;idx++){
 		if(!priv->label_base[idx].is_valid)
 			continue;
 		_index_entries[iptr]=idx;
@@ -145,7 +145,7 @@ e3_type spine_api_pbp_delete_label_entry(e3_type service,e3_type e3iface,e3_type
 		(pif->hwiface_role!=E3IFACE_ROLE_PROVIDER_BACKBONE_PORT)||
 		(!(priv=(struct pbp_private*)pif->private)))
 		return -1;
-	if((_label_index<0)||(_label_index>=NR_LABEL_ENTRY))
+	if((_label_index<0)||(_label_index>=NR_SPINE_LABEL_ENTRY))
 		return -2;
 	priv->label_base[_label_index].is_valid=0;
 	return 0;

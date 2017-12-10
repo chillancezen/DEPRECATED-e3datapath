@@ -45,7 +45,14 @@ extern struct multicast_next_hops  * mnext_hops_base;
 										&mnext_hops_base[(index)]: \
 										NULL)
 
-int register_multicast_nexthops();
+int register_multicast_nexthop();
+int delete_multicast_nexthop(int mindex);
+int register_nexthop_in_mnexthops(int16_t mnexhop,int16_t nexthop,uint32_t label_to_push);
+int delete_nexthop_in_mnexthops(int16_t mnexhop,int16_t nexthop,uint32_t label_to_push);
+
+int reference_mnexthop(int mnexthop);
+int dereference_mnexthop(int mnexthop);
+
 #define mnext_hops_is_valid(mnh)  (!!(mnh)->is_valid)
 void __read_lock_mnexthop(void);
 void __read_unlock_mnexthop(void);
