@@ -331,3 +331,45 @@ DECLARE_E3_API(elan_multicast_entry_reset)={
 		{.type=e3_arg_type_none,},
 	},
 };
+
+#define MAX_MAC_ENTRIES_PER_FETCH 512
+e3_type list_mac_entry_partial(e3_type e3api_service,
+		e3_type elan_index,
+		e3_type base_index,
+		e3_type entry_index,
+		e3_type entries,
+		e3_type finished)
+{
+	int ret=-E3_ERR_GENERIC;
+	int16_t _elan_index=e3_type_to_uint16_t(elan_index);
+	int32_t * _base_index=(int32_t*)e3_type_to_uint8_t_ptr(base_index);
+	int32_t * _entry_index=(int32_t*)e3_type_to_uint8_t_ptr(entry_index);
+	struct leaf_api_mac_entry * _entries=(struct leaf_api_mac_entry*)e3_type_to_uint8_t_ptr(entries);
+	int8_t *_finished=(int8_t*)e3_type_to_uint8_t_ptr(finished);
+	
+	struct findex_2_4_entry * pentry;
+	int base_idx=0;/*as base index*/
+	int entry_idx=0;/*as entry index*/
+	int iptr=0;
+	struct ether_e_lan * elan=NULL;
+	__read_lock_elan();
+	if(!(elan=find_e_lan_service(_elan_index))){
+		ret=-E3_ERR_NOT_FOUND;
+		goto out
+	}
+	if((*_base_index<0)||(*_base_index>=(1<<16))){
+		ret=-E3_ERR_ILLEGAL;
+		goto out;
+	}
+	for (base_idx=*_base_index;base_idx<(1<<16);base_idx++){
+		if(!elan->fib_base[base_index].next)
+			continue;
+		/*
+		*skip the fist _entry_index entries,
+		*/
+		
+	}
+	out:
+	__read_unlock_elan();
+	return E3_OK;
+}

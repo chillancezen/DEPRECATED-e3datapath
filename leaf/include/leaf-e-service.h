@@ -165,6 +165,14 @@ struct e_lan_fwd_entry{
 		uint64_t entry_as_u64;
 	};
 }__attribute__((packed));
+/*
+*this structure is used to exporting MAC table
+*/
+struct leaf_api_mac_entry{
+	uint8_t mac[6];
+	uint16_t reserved0;
+	struct e_lan_fwd_entry fwd_entry;
+}__attribute__((packed));
 
 #define mac_to_findex_2_4_key(mac,key) {\
 	(key)->key_index=MAKE_UINT16((mac)[3],(mac)[4]); \
