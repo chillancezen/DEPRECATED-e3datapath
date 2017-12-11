@@ -1,10 +1,12 @@
 #! /usr/bin/python3
 import tabulate
 from ctypes import *
+from pye3datapath.e3util import *
 from pye3datapath.e3client import clib
 from pye3datapath.e3client import api_call_exception
 from pye3datapath.e3client import api_return_exception
 from pye3datapath.e3client import register_service_endpoint
+
 MAX_E_LAN_SERVICES=4096
 MAX_PORTS_IN_E_LAN_SERVICE=64
 MAX_NHLFE_IN_E_LAN_SERVICE=64
@@ -234,7 +236,42 @@ def reset_ether_lan_multicast_fwd_entry(elan_index):
         raise api_call_exception()
     if api_ret.value!=0:
         raise api_return_exception('api_ret:%x'%(api_ret.value))
+def register_ether_lan_port_fwd_entry(elan,mac,iface,vlan):
+    api_ret=c_int64(0)
+    _elan=c_int16(elan)
+    _mac_string=create_string_buffer(E3API_MAC_STRING_LENGTH)
+    _mac_string.value=mac.encode()
+    _iface=c_int16(iface)
+    _vlan=c_int32(vlan)
+    rc=clib.leaf_api_set_elan_fwd_entry(byref(api_ret),_elan,_mac_string,1,_iface,_vlan)
+    if rc!=0:
+        raise api_call_exception()
+    if api_ret.value!=0:
+        raise api_return_exception('api_ret:%x'%(api_ret.value))
+def register_ether_lan_nhlfe_fwd_entry(elan,mac,nhlfe,label_to_push):
+    api_ret=c_int64(0)
+    _elan=c_int16(elan)
+    _mac_string=create_string_buffer(E3API_MAC_STRING_LENGTH)
+    _mac_string.value=mac.encode()
+    _nhlfe=c_int16(nhlfe)
+    _label_to_push=c_int16(label_to_push)
+    rc=clib.leaf_api_set_elan_fwd_entry(byref(api_ret),_elan,_mac_string,0,_nhlfe,_label_to_push)
+    if rc!=0:
+        raise api_call_exception()
+    if api_ret.value!=0:
+        raise api_return_exception('api_ret:%x'%(api_ret.value))
 
+def delete_ether_lan_fwd_entry(elan,mac):
+    api_ret=c_int64(0)
+    _elan=c_int16(elan)
+    _mac_string=create_string_buffer(E3API_MAC_STRING_LENGTH)
+    _mac_string.value=mac.encode()
+    rc=clib.leaf_api_delete_elan_fwd_entry(byref(api_ret),_elan,_mac_string)
+    if rc!=0:
+        raise api_call_exception()
+    if api_ret.value!=0:
+        raise api_return_exception('api_ret:%x'%(api_ret.value))
+ 
 if __name__=='__main__':
     ether_lan().dump_definition()
     from pye3datapath.common.neighbor import *

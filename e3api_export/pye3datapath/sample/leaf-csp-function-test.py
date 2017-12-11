@@ -26,6 +26,9 @@ if __name__=='__main__':
     reset_ether_lan_multicast_fwd_entry(0) 
     register_ether_lan_nhlfe(0,0,5555)
     register_ether_lan_nhlfe(0,0,6666)
+    register_ether_lan_port_fwd_entry(0,'08:00:27:53:9d:45',1,102)
+    register_ether_lan_nhlfe_fwd_entry(0,'08:00:27:53:9d:43',0,5555)
+    delete_ether_lan_fwd_entry(0,'08:00:27:53:9d:45') 
     attach_csport_to_elan(0,100,0) 
     for iface in get_e3iface_list():
         print(get_e3iface(iface))

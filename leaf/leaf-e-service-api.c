@@ -332,6 +332,65 @@ DECLARE_E3_API(elan_multicast_entry_reset)={
 	},
 };
 
+e3_type leaf_api_set_elan_fwd_entry(e3_type e3api_service,
+		e3_type elan_index,
+		e3_type mac_string,
+		e3_type is_port_entry,
+		e3_type field_16,
+		e3_type field_32)
+{
+	int16_t _elan_index=e3_type_to_uint16_t(elan_index);
+	char*	_mac_string=(char *)e3_type_to_uint8_t_ptr(mac_string);
+	uint8_t _is_port_entry=e3_type_to_uint8_t(is_port_entry);
+	int16_t _field_16=e3_type_to_uint16_t(field_16);
+	int32_t _field_32=e3_type_to_uint32_t(field_32);
+	struct e_lan_fwd_entry fwd_entry={
+		.is_port_entry=!!_is_port_entry,
+		.field_u16=_field_16,
+		.field_u32=_field_32,
+	};
+	uint8_t mac[6];
+	_mac_string_to_byte_array(_mac_string,mac);
+	return register_e_lan_fwd_entry(_elan_index,
+		mac,
+		&fwd_entry);
+}
+DECLARE_E3_API(elan_fwd_entry_registeration)={
+	.api_name="leaf_api_set_elan_fwd_entry",
+	.api_desc="register an e-lan forwarding entry",
+	.api_callback_func=(api_callback_func)leaf_api_set_elan_fwd_entry,
+	.args_desc={
+		{.type=e3_arg_type_uint16_t,.behavior=e3_arg_behavior_input,},
+		{.type=e3_arg_type_uint8_t_ptr,.behavior=e3_arg_behavior_input,.len=18},
+		{.type=e3_arg_type_uint8_t,.behavior=e3_arg_behavior_input,},
+		{.type=e3_arg_type_uint16_t,.behavior=e3_arg_behavior_input,},
+		{.type=e3_arg_type_uint32_t,.behavior=e3_arg_behavior_input,},
+		{.type=e3_arg_type_none,},
+	},
+};
+
+e3_type leaf_api_delete_elan_fwd_entry(e3_type e3api_service,
+		e3_type elan_index,
+		e3_type mac_string)
+{
+	int16_t _elan_index=e3_type_to_uint16_t(elan_index);
+	char*	_mac_string=(char *)e3_type_to_uint8_t_ptr(mac_string);
+	uint8_t mac[6];
+	_mac_string_to_byte_array(_mac_string,mac);
+	return delete_e_lan_fwd_entry(_elan_index,mac);
+	
+}
+DECLARE_E3_API(elan_fwd_entry_deletion)={
+	.api_name="leaf_api_delete_elan_fwd_entry",
+	.api_desc="delete a forwarding entry of an E-LAN service",
+	.api_callback_func=(api_callback_func)leaf_api_delete_elan_fwd_entry,
+	.args_desc={
+		{.type=e3_arg_type_uint16_t,.behavior=e3_arg_behavior_input,},
+		{.type=e3_arg_type_uint8_t_ptr,.behavior=e3_arg_behavior_input,.len=18},
+		{.type=e3_arg_type_none,},
+	},
+};
+#if 0
 #define MAX_MAC_ENTRIES_PER_FETCH 512
 e3_type list_mac_entry_partial(e3_type e3api_service,
 		e3_type elan_index,
@@ -373,3 +432,4 @@ e3_type list_mac_entry_partial(e3_type e3api_service,
 	__read_unlock_elan();
 	return E3_OK;
 }
+#endif

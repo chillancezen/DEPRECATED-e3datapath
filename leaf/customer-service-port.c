@@ -437,6 +437,7 @@ int customer_service_port_iface_post_setup(struct E3Interface * pif)
 	struct csp_private * priv=(struct csp_private*)pif->private;
 	pif->hwiface_role=E3IFACE_ROLE_CUSTOMER_USER_FACING_PORT;
 	memset(priv,0x0,sizeof(struct csp_private));
+	rte_eth_promiscuous_enable(pif->port_id);
 	rte_rwlock_init(&priv->csp_guard);
 	/*setup vlan stripping here*/
 	return rte_eth_dev_set_vlan_offload(pif->port_id,ETH_VLAN_STRIP_OFFLOAD);
