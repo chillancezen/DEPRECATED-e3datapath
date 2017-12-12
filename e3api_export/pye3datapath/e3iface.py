@@ -172,7 +172,60 @@ def get_e3iface_list():
     for i in range(nr_ifaces.value):
         list_iface.append(a.a[i])
     return list_iface
-    
+
+'''
+enum e3iface_model{
+    E3IFACE_MODEL_GENERIC_SINGLY_QUEUE=0,/*compatiable with lots of dpdk compatible (v)NICs*/
+    E3IFACE_MODEL_TAP_SINGLY_QUEUE, /*do not export this model,but it's still used to distinguish*/
+    E3IFACE_MODEL_INTEL_XL710_SINGLY_QUEUE,
+    E3IFACE_MODEL_INTEL_XL710_VF_SINGLY_QUEUE,
+    E3IFACE_MODEL_MAX_MODELS,
+};
+enum e3iface_role{
+    E3IFACE_ROLE_PROVIDER_BACKBONE_PORT=0,/*Provider backbone port*/
+    E3IFACE_ROLE_CUSTOMER_BACKBONE_FACING_PORT,/*customer backbone port*/
+    E3IFACE_ROLE_CUSTOMER_USER_FACING_PORT,/*customer service port*/
+    E3IFACE_ROLE_HOST_STACK_PORT,
+    E3IFACE_ROLE_MAX_ROLES,
+};
+#define E3INTERFACE_STATUS_UP 0x1
+#define E3INTERFACE_STATUS_DOWN 0x0
+'''
+e3iface_status={
+    0:'down',
+    1:'up'
+}
+e3iface_model={0:'generic-singly-queue',
+    1:'tap-singly-queue',
+    2:'xl710-singly-queue',
+    3:'xl710-vf-singly-queue'}
+e3iface_role={
+    0:'provider backbone port',
+    1:'customer backbone port',
+    2:'customer service port',
+    3:'host stack port'}
+
+def tabulate_e3ifaces():
+    if_lst=get_e3iface_list()
+    table=list()
+    for ifidx in if_lst:
+        iface=get_e3iface(ifidx)
+        peer_info=''
+        if iface.has_peer_device==1:
+            peer_info='%d'%(iface.peer_port_id)
+        table.append([iface.port_id,
+            iface.name,
+            '%02x:%02x:%02x:%02x:%02x:%02x'%(iface.mac_addrs[0],
+                iface.mac_addrs[1],
+                iface.mac_addrs[2],
+                iface.mac_addrs[3],
+                iface.mac_addrs[4],
+                iface.mac_addrs[5]),
+            e3iface_status[iface.iface_status],
+            peer_info,
+            e3iface_role[iface.hwiface_role],
+            e3iface_model[iface.hwiface_model]])
+    print(tabulate.tabulate(table,['index','name','mac','status','peer','port-role','port-model'],tablefmt='psql'))
 import time
 if __name__=='__main__':
     register_service_endpoint('ipc:///var/run/e3datapath.sock')
@@ -189,4 +242,5 @@ if __name__=='__main__':
     for ifidx in if_lst:
         get_e3iface(ifidx).tabulate()
     pass
+    tabulate_e3ifaces()
     #print(reclaim_e3iface(0))

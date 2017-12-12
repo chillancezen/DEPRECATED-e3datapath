@@ -99,12 +99,13 @@ def tabulate_nodes():
     table=list()
     for n in node_lst:
         node=get_node(n)
-        table.append([node.name,
+        table.append([node.node_index,
+            node.name,
             node_type[node.node_type],
             node.lcore_id,
             '0x%x'%(node.node_priv),
             '0x%x'%(node.node_ring)])
-    print(tabulate.tabulate(table,['node name','node type','lcore id','node private','node ring'],tablefmt='psql'))
+    print(tabulate.tabulate(table,['index','node name','node type','lcore id','node private','node ring'],tablefmt='psql'))
 if __name__=='__main__':
     register_service_endpoint('ipc:///var/run/e3datapath.sock')
     tabulate_nodes()
