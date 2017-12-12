@@ -16,7 +16,7 @@ class multicast_next_hop_entry(Structure):
                 ('label_to_push',c_uint32)]
     def __str__(self):
         ret=dict()
-        ret['is_valid']=self.is_valid
+        #ret['is_valid']=self.is_valid
         ret['next_hop']=self.next_hop
         ret['label_to_push']=self.label_to_push
         return str(ret)
@@ -113,6 +113,20 @@ def delete_nexthop_in_mnexthops(mnexthop,nexthop,label_to_push):
         raise api_call_exception()
     if api_ret.value!=0:
         raise api_return_exception('api_ret:%x'%(api_ret.value))
+def tabulate_multicast_nexthops():
+    table=list()
+    for m in list_mnexthops():
+        mn=get_mnexthop(m)
+        nexthops=''
+        for i in range(MAX_HOPS_IN_MULTICAST_GROUP):
+            if mn.nexthops[i].is_valid==0:
+                continue
+            nexthops=nexthops+str(mn.nexthops[i])+'\n'
+        table.append([mn.index,
+            mn.ref_cnt,
+            mn.nr_hops,
+            nexthops])
+    print(tabulate.tabulate(table,['index','ref_cnt','nr_hops','nexthops'],tablefmt='psql'))
 
 if __name__=='__main__':
     from pye3datapath.common.neighbor import *
@@ -122,12 +136,13 @@ if __name__=='__main__':
     register_nexthop(0,0)
     #multicast_next_hops().dump_definition()
     print(register_mnexthop())
-
+    print(register_mnexthop())
     print(register_nexthop_in_mnexthops(0,0,1234))
     print(register_nexthop_in_mnexthops(0,0,234))
-    delete_nexthop_in_mnexthops(0,0,1234)
-    delete_nexthop_in_mnexthops(0,0,234)
+    #delete_nexthop_in_mnexthops(0,0,1234)
+    #delete_nexthop_in_mnexthops(0,0,234)
     for m in list_mnexthops():
         print(get_mnexthop(m))
     for n in list_nexthops():
         print(n)
+    tabulate_multicast_nexthops()

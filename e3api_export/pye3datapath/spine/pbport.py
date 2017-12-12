@@ -1,4 +1,5 @@
 #! /usr/bin/python3
+import tabulate
 from ctypes import *
 from pye3datapath.e3client import clib
 from pye3datapath.e3client import api_call_exception
@@ -117,6 +118,17 @@ def delete_spine_label_entry(iface,label_index):
         raise api_call_exception()
     if api_ret.value!=0:
         raise api_return_exception('api_ret:%x'%(api_ret.value))
+def tabulate_pbport_label_entries(iface):
+    table=list()
+    for l in list_spine_label_entry(iface):
+        is_unicast='unicast'
+        if l.is_unicast==0:
+            is_unicast='multicast'
+        table.append([l.index,
+                is_unicast,
+                l.NHLFE,
+                l.swapped_label])
+    print(tabulate.tabulate(table,['index(label)','nexthop type','nexthop','swapped label'],tablefmt='psql'))
     
 if __name__=='__main__':
     spine_label_entry().dump_definition()
@@ -128,15 +140,16 @@ if __name__=='__main__':
     print(register_neighbor('130.140.250.1','02:42:7e:5f:17:ee'))
     print(register_nexthop(0,0))
     print(register_mnexthop())
-    attach_e3iface('0000:00:08.0',E3IFACE_MODEL_GENERIC_SINGLY_QUEUE,E3IFACE_ROLE_PROVIDER_BACKBONE_PORT)
+    attach_e3iface('0000:02:05.0',E3IFACE_MODEL_GENERIC_SINGLY_QUEUE,E3IFACE_ROLE_PROVIDER_BACKBONE_PORT)
     register_spine_label_entry(0,1000,1,234,0)
     register_spine_label_entry(0,10000,0,234,0)
 
-    delete_spine_label_entry(0,10000)   
+    #delete_spine_label_entry(0,10000)   
     #print(get_spine_label_entry(0,1000))
     for l in list_spine_label_entry(0):
         print(l)
-    delete_spine_label_entry(0,100000)
+    #delete_spine_label_entry(0,100000)
+    tabulate_pbport_label_entries(0)
     #for n in list_nexthops():
     #    print(n)
     #for iface in get_e3iface_list():

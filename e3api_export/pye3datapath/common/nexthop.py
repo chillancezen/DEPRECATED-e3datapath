@@ -1,5 +1,6 @@
 #! /usr/bin/python3
 from ctypes import *
+import tabulate
 from pye3datapath.e3util import *
 from pye3datapath.e3client import clib
 from pye3datapath.e3client import api_call_exception
@@ -97,6 +98,14 @@ def delete_nexthop(nexthop_index):
         raise api_call_exception()
     if api_ret.value!=0:
         raise api_return_exception('deleting next hop fails with api_ret:%x'%(api_ret.value)) 
+def tabulate_nexthops():
+    table=list()
+    for n in list_nexthops():
+        table.append([n.index,
+            n.ref_cnt,
+            n.local_e3iface,
+            n.common_neighbor_index])
+    print(tabulate.tabulate(table,['index','ref_cnt','e3iface','neighbor index'],tablefmt='psql'))
 
 if __name__=='__main__':
     register_service_endpoint('ipc:///var/run/e3datapath.sock')
@@ -105,10 +114,10 @@ if __name__=='__main__':
     print(register_neighbor('130.140.250.1','02:42:7e:5f:17:ee'))
     print(register_nexthop(0,0))
     print(register_nexthop(12,0))
-    delete_nexthop(0)
-    delete_neighbor(0)
+    #delete_nexthop(0)
+    #delete_neighbor(0)
     for n in list_nexthops():
         print(n)
     for m in list_neighbors():
         print(m)
-
+    tabulate_nexthops()

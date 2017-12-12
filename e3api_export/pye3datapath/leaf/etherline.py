@@ -1,4 +1,5 @@
 #! /usr/bin/python3
+import tabulate
 from ctypes import *
 from pye3datapath.e3client import clib
 from pye3datapath.e3client import api_call_exception
@@ -123,7 +124,6 @@ def delete_ether_line_port(eline_index):
         raise api_call_exception()
     if api_ret.value!=0:
         raise api_return_exception('make sure this eline port is deletable,api_ret:%x'%(api_ret.value))
-#not tested
 def register_ether_line_nhlfe(eline_index,nhlfe,label_to_push):
     api_ret=c_int64(0)
     _eline_index=c_int16(eline_index)
@@ -134,7 +134,6 @@ def register_ether_line_nhlfe(eline_index,nhlfe,label_to_push):
         raise api_call_exception()
     if api_ret.value!=0:
         raise api_return_exception('something is wrong with the arguments,api_ret:%x'%(api_ret.value))
-#not tested
 def delete_ether_line_nhlfe(eline_index):
     api_ret=c_int64(0)
     _eline_index=c_int16(eline_index)
@@ -143,6 +142,22 @@ def delete_ether_line_nhlfe(eline_index):
         raise api_call_exception()
     if api_ret.value!=0:
         raise api_return_exception('deleting eline nhlfe fails,api_ret:%x'%(api_ret.value))
+def tabulate_ether_line_services():
+    eline_lst=list_ether_line_services()
+    table=list()
+    for eline_idx in eline_lst:
+        eline=get_ether_line_service(eline_idx)
+        csp_info=''
+        if eline.is_csp_ready!=0:
+            csp_info='{iface:%d,vlan:%d}'%(eline.e3iface,eline.vlan_tci)
+        cbp_info=''
+        if eline.is_cbp_ready!=0:
+            cbp_info='{nhlfe:%d,label:%d}'%(eline.NHLFE,eline.label_to_push)
+        table.append([eline.index,
+                eline.ref_cnt,
+                csp_info,
+                cbp_info])
+    print(tabulate.tabulate(table,['index','ref count','csp info','cbp info'],tablefmt='psql'))
 
 if __name__=='__main__':
     from pye3datapath.common.neighbor import *
@@ -156,7 +171,9 @@ if __name__=='__main__':
     #print(get_ether_line_service(0))
     #print(get_ether_line_service(1))
     print(register_ether_line_port(0,1,4095))
+    tabulate_ether_line_services()
     print(register_ether_line_nhlfe(0,0,0x123))
+    tabulate_ether_line_services()
     #print(delete_ether_line_port(0))
     #print(delete_ether_line_nhlfe(0))
     lst=list_ether_line_services()
