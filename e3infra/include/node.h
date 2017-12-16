@@ -70,9 +70,41 @@ struct node{
 	node_rcu_callback node_reclaim_func;
 	enum node_type node_type;
 	
-}__attribute__((aligned(64)));
+}__attribute__((packed));
 
+/*
+C definition dump:
+node size:704
+dump definition: struct node
+                name (offset:  0 size: 64 prev_gap:0)
+       nr_rx_packets (offset: 64 size:  8 prev_gap:0)
+       nr_tx_packets (offset: 72 size:  8 prev_gap:0)
+     nr_drop_packets (offset: 80 size:  8 prev_gap:0)
+          node_index (offset: 88 size:  2 prev_gap:0)
+            lcore_id (offset: 90 size:  1 prev_gap:0)
+          burst_size (offset: 91 size:  1 prev_gap:0)
+           node_ring (offset: 96 size:  8 prev_gap:4)
+                next (offset:104 size:  8 prev_gap:0)
+           node_priv (offset:112 size:  8 prev_gap:0)
+           node_type (offset:672 size:  4 prev_gap:552)
 
+Python definition dump:
+size of node is: 704
+<Field type=c_char_Array_64, ofs=0, size=64> name
+<Field type=c_long, ofs=64, size=8> nr_rx_packets
+<Field type=c_long, ofs=72, size=8> nr_tx_packets
+<Field type=c_long, ofs=80, size=8> nr_drop_packets
+<Field type=c_short, ofs=88, size=2> node_index
+<Field type=c_byte, ofs=90, size=1> lcore_id
+<Field type=c_byte, ofs=91, size=1> burst_size
+<Field type=c_ubyte_Array_4, ofs=92, size=4> reserved0
+<Field type=c_ulong, ofs=96, size=8> node_ring
+<Field type=c_ulong, ofs=104, size=8> next
+<Field type=c_ulong, ofs=112, size=8> node_priv
+<Field type=c_ubyte_Array_552, ofs=120, size=552> reserved1
+<Field type=c_uint, ofs=672, size=4> node_type
+<Field type=c_ubyte_Array_28, ofs=676, size=28> reserved3
+*/
 
 extern struct node *gnode_array[MAX_NR_NODES];
 

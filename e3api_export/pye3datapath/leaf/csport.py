@@ -5,7 +5,7 @@ from pye3datapath.e3client import clib
 from pye3datapath.e3client import api_call_exception
 from pye3datapath.e3client import api_return_exception
 from pye3datapath.e3client import register_service_endpoint
-
+from pye3datapath.e3util import e_service
 
 class csport_dist_entry(Structure):
     _pack_=1
@@ -88,7 +88,15 @@ def list_cspirt_dist_table(iface):
             c.vlan=entry_index+i*CSP_TABLE_NR_ENTRIES_PER_FETCH
             lst.append(c)
     return lst
-
+def tabulate_csport_distribution_table(iface):
+    table=list()
+    for entry in list_cspirt_dist_table(iface):
+        table.append([
+            entry.vlan,
+            e_service[entry.e_service],
+            entry.service_index])
+    print(tabulate.tabulate(table,['index(vlan)','service type','service index'],tablefmt='psql'))
+ 
 if __name__=='__main__':
     from pye3datapath.e3iface import *
     from pye3datapath.common.neighbor import *
@@ -102,20 +110,20 @@ if __name__=='__main__':
 
     print(register_ether_line_service())
     print(register_ether_lan_service())
-    print(attach_e3iface('0000:00:08.0',E3IFACE_MODEL_GENERIC_SINGLY_QUEUE,E3IFACE_ROLE_CUSTOMER_USER_FACING_PORT,True))
+    print(attach_e3iface('0000:02:05.0',E3IFACE_MODEL_GENERIC_SINGLY_QUEUE,E3IFACE_ROLE_CUSTOMER_USER_FACING_PORT,True))
      
     attach_csport_to_eline(0,100,0)
     attach_csport_to_elan(0,100,0)
     attach_csport_to_eline(0,100,0)
     attach_csport_to_elan(0,3249,0)
-    detach_csport(0,3249)
-    detach_csport(0,100)
+    #detach_csport(0,3249)
+    #detach_csport(0,100)
     #delete_ether_lan_service(0)
     #delete_ether_line_service(0)
     print(get_ether_line_service(0))
     get_ether_lan_service(0).tabulate()
     for entry in list_cspirt_dist_table(0):
-        print(entry)
-
+        print(entry) 
     #for iface in get_e3iface_list():
         #get_e3iface(iface).tabulate()
+    tabulate_csport_distribution_table(0)

@@ -18,17 +18,18 @@ class port_entry(Structure):
                 ('reserved0',c_uint16)]
     def __str__(self):
         ret=dict()
-        ret['is_valid']=self.is_valid
+        #ret['is_valid']=self.is_valid
         ret['iface']=self.iface
-        ret['vlan_tci']=self.vlan_tci
-        ret['reserved0']=self.reserved0
+        ret['vlan']=self.vlan_tci
+        #ret['reserved0']=self.reserved0
         return str(ret)
     def tabulate(self):
         lst=list()
-        lst.append(['is_valid',self.is_valid])
+        #lst.append(['is_valid',self.is_valid])
         lst.append(['iface',self.iface])
-        lst.append(['vlan_tci',self.vlan_tci])
-        lst.append(['reserved0',self.reserved0])
+        lst.append(['vlan',self.vlan_tci])
+        #lst.append(['vlan_tci',self.vlan_tci])
+        #lst.append(['reserved0',self.reserved0])
         return lst
     def dump_definition(self):
         print('size of port entry:',sizeof(port_entry))
@@ -43,9 +44,11 @@ class nhlfe_entry(Structure):
                 ('label_to_push',c_uint32)]
     def __str__(self):
         ret=dict()
-        ret['is_valid']=self.is_valid
-        ret['NHLFE']=self.NHLFE
-        ret['label_to_push']=self.label_to_push
+        #ret['is_valid']=self.is_valid
+        #ret['NHLFE']=self.NHLFE
+        ret['nexthop']=self.NHLFE
+        #ret['label_to_push']=self.label_to_push
+        ret['label']=self.label_to_push
         return str(ret)
     def dump_definition(self):
         print('size of nhlfe entry:',sizeof(nhlfe_entry))
@@ -271,7 +274,31 @@ def delete_ether_lan_fwd_entry(elan,mac):
         raise api_call_exception()
     if api_ret.value!=0:
         raise api_return_exception('api_ret:%x'%(api_ret.value))
- 
+def tabulate_ether_lan_services():
+    elan_lst=list_ether_lan_services()
+    table=list()
+    for elan_idx in elan_lst:
+        elan=get_ether_lan_service(elan_idx)
+        multicast_info='(%d,%d)'%(elan.multicast_NHLFE,elan.multicast_label)
+        ports_str=''
+        for i in range(MAX_PORTS_IN_E_LAN_SERVICE):
+            if elan.ports[i].is_valid==0:
+                continue
+            ports_str=ports_str+str(elan.ports[i])+'\n'
+        nhlfes_str=''
+        for i in range(MAX_NHLFE_IN_E_LAN_SERVICE):
+            if elan.nhlfes[i].is_valid==0:
+                continue
+            nhlfes_str=nhlfes_str+str(elan.nhlfes[i])+'\n'
+
+        table.append([elan.index,
+            elan.ref_cnt,
+            elan.nr_ports,
+            elan.nr_nhlfes,
+            multicast_info,
+            ports_str,
+            nhlfes_str])
+    print(tabulate.tabulate(table,['index','ref_count','nr_ports','nr_nhlfes','multicast','ports','nhlfes'],tablefmt='psql')) 
 if __name__=='__main__':
     ether_lan().dump_definition()
     from pye3datapath.common.neighbor import *
@@ -297,3 +324,4 @@ if __name__=='__main__':
     print(register_ether_lan_service())
     for elan in list_ether_lan_services():
         get_ether_lan_service(elan).tabulate()
+    tabulate_ether_lan_services()

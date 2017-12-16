@@ -5,6 +5,7 @@ from pye3datapath.e3client import clib
 from pye3datapath.e3client import api_call_exception
 from pye3datapath.e3client import api_return_exception
 from pye3datapath.e3client import register_service_endpoint
+from pye3datapath.e3util import *
 
 
 class leaf_label_entry(Structure):
@@ -133,6 +134,18 @@ def clear_cbport_label_entry_peer(iface,label):
     if api_ret.value!=0:
         api_return_exception('failed to clean the egress nhlfe index of the label entry with api_ret:%x'%(api_ret.value))
 
+def tabulate_cbport_label_entries(iface):
+    table=list()
+    for l in list_cbport_label_entries(iface):
+        egress_index=''
+        if l.e3_service==1:
+            egress_index='0x%x'%(l.egress_nhlfe_index)
+        table.append([l.index,
+            e_service[l.e3_service],
+            l.service_index,
+            egress_index])
+    print(tabulate.tabulate(table,['index(label)','service type','service index','egress nhlfe index'],tablefmt='psql'))
+
 if __name__=='__main__':
     from pye3datapath.e3iface import *
     from pye3datapath.common.neighbor import *
@@ -165,3 +178,4 @@ if __name__=='__main__':
     print(get_cbport_label_entry(0,100))
     print(get_cbport_label_entry(0,101))
     print(get_cbport_label_entry(0,102))
+    tabulate_cbport_label_entries(0)

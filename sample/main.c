@@ -37,7 +37,9 @@ main(int argc, char **argv)
 	if (ret < 0)
 		rte_panic("Cannot init EAL\n");
 	init_registered_tasks();
-	printf("mac entry size:%d\n",sizeof(struct leaf_api_mac_entry));
+	printf("node size:%d\n",sizeof(struct node));
+	dump_node_structure();
+	//printf("mac entry size:%d\n",sizeof(struct leaf_api_mac_entry));
 	//printf("multicast nexthops:%d\n",sizeof(struct multicast_next_hops));
 	//printf("leaf e-lan size:%d\n",sizeof(struct rcu_head));
 	//printf("leaf e-lan size:%d\n",sizeof(rte_spinlock_t));

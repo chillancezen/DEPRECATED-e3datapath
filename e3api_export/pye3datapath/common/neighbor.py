@@ -1,4 +1,5 @@
 #! /usr/bin/python3
+import tabulate
 from ctypes import *
 from pye3datapath.e3util import *
 from pye3datapath.e3client import clib
@@ -122,6 +123,14 @@ def delete_neighbor(neighbor_index):
         raise api_call_exception()
     if api_ret.value!=0:
         raise api_return_exception('neighbor deletion fails due to api_ret:%d'%(api_ret.value))
+def tabulate_neighbors():
+    table=list()
+    for n in list_neighbors():
+        table.append([n.index,
+                n.ref_cnt,
+                n._neighbor_ip_to_string(),
+                n._mac_to_string()])
+    print(tabulate.tabulate(table,['index','ref_cnt','nexthop:ip','nexthop:mac'],tablefmt='psql'))
 
      
 if __name__=='__main__':
@@ -145,3 +154,4 @@ if __name__=='__main__':
     #m=n.clone()
     #n.neighbour_ip_as_le[3]=0x1
     #print(n,m)
+    tabulate_neighbors()
