@@ -51,9 +51,12 @@ START_TEST(leaf_fib_general){
 	ck_assert(register_e_line_service()==1);
 	ck_assert(!register_e_line_port(1,eline.e3iface,eline.vlan_tci));
 	ck_assert(!register_e_line_nhlfe(1,eline.NHLFE,eline.label_to_push));
-	
-	ck_assert(find_e_line_service(0)->ref_cnt==0);
-	ck_assert(find_e_line_service(1)->ref_cnt==0);
+	/*
+	*due to register_e_line_nhlfe() api modification,
+	* change test cases as well
+	*/
+	ck_assert(find_e_line_service(0)->ref_cnt==1);
+	ck_assert(find_e_line_service(1)->ref_cnt==1);
 	
 	struct leaf_label_entry entry;
 	entry.e3_service=e_line_service+3;
@@ -66,39 +69,39 @@ START_TEST(leaf_fib_general){
 	entry.e3_service=e_line_service;
 	entry.service_index=0;
 	ck_assert(!set_leaf_label_entry(base,0,&entry));
-	ck_assert(find_e_line_service(0)->ref_cnt==1);
-	ck_assert(find_e_line_service(1)->ref_cnt==0);
+	ck_assert(find_e_line_service(0)->ref_cnt==2);
+	ck_assert(find_e_line_service(1)->ref_cnt==1);
 	ck_assert(!set_leaf_label_entry(base,NR_LEAF_LABEL_ENTRY-1,&entry));
 	ck_assert(set_leaf_label_entry(base,NR_LEAF_LABEL_ENTRY,&entry)<0);
-	ck_assert(find_e_line_service(0)->ref_cnt==1);
-	ck_assert(find_e_line_service(1)->ref_cnt==0);
+	ck_assert(find_e_line_service(0)->ref_cnt==2);
+	ck_assert(find_e_line_service(1)->ref_cnt==1);
 	entry.e3_service=e_line_service;
 	entry.service_index=1;
 	ck_assert(!set_leaf_label_entry(base,NR_LEAF_LABEL_ENTRY-1,&entry));
-	ck_assert(find_e_line_service(0)->ref_cnt==1);
-	ck_assert(find_e_line_service(1)->ref_cnt==1);
+	ck_assert(find_e_line_service(0)->ref_cnt==2);
+	ck_assert(find_e_line_service(1)->ref_cnt==2);
 	entry.e3_service=e_line_service;
 	entry.service_index=1;
 	ck_assert(!set_leaf_label_entry(base,0,&entry));
-	ck_assert(find_e_line_service(0)->ref_cnt==0);
-	ck_assert(find_e_line_service(1)->ref_cnt==1);
+	ck_assert(find_e_line_service(0)->ref_cnt==1);
+	ck_assert(find_e_line_service(1)->ref_cnt==2);
 	reset_leaf_label_entry(base,0);
-	ck_assert(find_e_line_service(0)->ref_cnt==0);
-	ck_assert(find_e_line_service(1)->ref_cnt==1);
+	ck_assert(find_e_line_service(0)->ref_cnt==1);
+	ck_assert(find_e_line_service(1)->ref_cnt==2);
 	reset_leaf_label_entry(base,NR_LEAF_LABEL_ENTRY-1);
-	ck_assert(find_e_line_service(0)->ref_cnt==0);
-	ck_assert(find_e_line_service(1)->ref_cnt==0);
+	ck_assert(find_e_line_service(0)->ref_cnt==1);
+	ck_assert(find_e_line_service(1)->ref_cnt==1);
 
 	entry.e3_service=e_line_service;
 	entry.service_index=0;
 
 	ck_assert(!set_leaf_label_entry(base,0,&entry));
 	ck_assert(!set_leaf_label_entry(base1,NR_LEAF_LABEL_ENTRY-1,&entry));
-	ck_assert(find_e_line_service(0)->ref_cnt==2);
+	ck_assert(find_e_line_service(0)->ref_cnt==3);
 	reset_leaf_label_entry(base,0);
-	ck_assert(find_e_line_service(0)->ref_cnt==1);
+	ck_assert(find_e_line_service(0)->ref_cnt==2);
 	reset_leaf_label_entry(base1,NR_LEAF_LABEL_ENTRY-1);
-	ck_assert(find_e_line_service(0)->ref_cnt==0);
+	ck_assert(find_e_line_service(0)->ref_cnt==1);
 	/*
 	*e-lan-service test
 	*/
