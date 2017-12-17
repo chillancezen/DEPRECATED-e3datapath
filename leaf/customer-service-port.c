@@ -114,7 +114,7 @@ inline uint64_t _csp_process_input_packet(struct rte_mbuf*mbuf,
 		set_mpls_exp(outer_mpls_hdr,0);
 		set_mpls_ttl(outer_mpls_hdr,0x40);
 		set_mpls_label(outer_mpls_hdr,vcache->eline->label_to_push);
-		fwd_id=MAKE_UINT64(CSP_PROCESS_INPUT_ELAN_UNICAST_FWD,vcache->eline_nexthop->local_e3iface);
+		fwd_id=MAKE_UINT64(CSP_PROCESS_INPUT_ELINE_FWD,vcache->eline_nexthop->local_e3iface);
 	}else{
 		/*
 		*enter E-LAN logics,do mac based forwarding,
