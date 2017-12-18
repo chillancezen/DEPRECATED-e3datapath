@@ -285,7 +285,13 @@ START_TEST(csp_generic){
 
 	ck_assert(!leaf_api_csp_withdraw_port(elan_idx,0,100));
 	ck_assert(!delete_e_lan_service(elan_idx));
-	
+	/*
+	*to-do:reclaim nexthop &neighbors
+	*/
+	find_common_nexthop(0)->ref_cnt=0;
+	find_common_neighbor(0)->ref_cnt=0;
+	ck_assert(!delete_common_nexthop(0));
+	ck_assert(!delete_common_neighbor(0));
 }
 END_TEST
 ADD_TEST(csp_generic);

@@ -24,6 +24,7 @@ E3_init(init_suite,E3_TASK_PRI_TEST_SUITE);
 void global_test_setup(void)
 {
 	int  pport;
+	char * pbp_pci_addr;
 	char * csp_pci_addr;
 	char * cbp_pci_addr=get_ini_option_string("test","cbp_pci_addr");
 	if(cbp_pci_addr)
@@ -38,6 +39,13 @@ void global_test_setup(void)
 			csp_pci_addr,
 			E3IFACE_MODEL_GENERIC_SINGLY_QUEUE,
 			E3IFACE_ROLE_CUSTOMER_USER_FACING_PORT,
+			&pport);
+	pbp_pci_addr=get_ini_option_string("test","pbp_pci_addr");
+	if(pbp_pci_addr)
+		create_e3iface(0,
+			pbp_pci_addr,
+			E3IFACE_MODEL_GENERIC_SINGLY_QUEUE,
+			E3IFACE_ROLE_PROVIDER_BACKBONE_PORT,
 			&pport);
 }
 int main(int argc, char **argv)
