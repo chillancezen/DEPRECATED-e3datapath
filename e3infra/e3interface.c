@@ -20,6 +20,7 @@ struct E3Interface * global_e3iface_array[MAX_NUMBER_OF_E3INTERFACE];
 static void input_and_output_reclaim_func(struct rcu_head * rcu)
 {
 	struct node *pnode=container_of(rcu,struct node,rcu);
+	E3_LOG("delete E3Interface's node %p with name %s\n",pnode,(char*)pnode->name);
 	rte_free(pnode);
 }
 
@@ -29,13 +30,15 @@ struct E3Interface * alloc_e3interface(int priv_size,int socket_id)
 	if(alloc_size&0x3f)
 		alloc_size=(alloc_size&(~0x3f))+0x40;
 	struct E3Interface * e3iface=rte_zmalloc(NULL,alloc_size,socket_id);
-	
+	E3_LOG("allocate E3Interface :%p\n",e3iface);
 	return e3iface;
 }
 void dealloc_e3interface(struct E3Interface * pif)
 {
-	if(pif)
+	if(pif){
+		E3_LOG("deallocate E3Interface:%p with name %s\n",pif,(char*)pif->name)
 		rte_free(pif);
+	}
 }
 char * link_speed_to_string(uint32_t speed)
 {
@@ -545,6 +548,7 @@ int start_e3interface(struct E3Interface * pif)
 	rc=rte_eth_dev_start(pif->port_id);
 	if(!rc)
 		set_status_up_e3iface(pif);
+	E3_LOG("set E3interface %s status:up\n",(char*)pif->name);
 	return rc;
 }
 
@@ -579,6 +583,7 @@ int stop_e3interface(struct E3Interface * pif)
 		return -1;
 	rte_eth_dev_stop(pif->port_id);
 	set_status_down_e3iface(pif);
+	E3_LOG("set E3interface %s status:down\n",(char*)pif->name);
 	return 0;
 }
 

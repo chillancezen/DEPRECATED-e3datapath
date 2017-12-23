@@ -7,7 +7,7 @@
 #define BUILD_TYPE_DEBUG 0 
 #define BUILD_TYPE_RELEASE 1
 
-#define BUILD_TYPE BUILD_TYPE_RELEASE
+#define BUILD_TYPE BUILD_TYPE_DEBUG
 
 /*the common options will be put here as DPDK's rte_config.h does*/
 #define MAX_NUMBER_OF_E3INTERFACE 256 /*the maximum number of the registerd e3_interfaces,

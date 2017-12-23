@@ -69,7 +69,7 @@ int register_node(struct node *node)
 	
 	node->node_index=idx;
 	rcu_assign_pointer(gnode_array[idx],node);
-	
+	E3_LOG("successfully register node %p with name:%s\n",node,(char*)node->name);
 	return 0;
 }
 
@@ -150,6 +150,7 @@ __attribute__((constructor)) void node_module_init(void)
 void default_rte_reclaim_func(struct rcu_head * rcu)
 {
 	struct node * pnode=container_of(rcu,struct node,rcu);
+	E3_LOG("default node deletion %p with name:%s\n",pnode,(char*)pnode->name);
 	rte_free(pnode);
 }
 void reclaim_non_input_node_bottom_half(struct rcu_head * rcu)

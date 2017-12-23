@@ -368,8 +368,11 @@ int provider_backbone_port_iface_post_setup(struct E3Interface * pif)
 	/*setup the label base for the e3interface*/
 	rte_rwlock_init(&priv->pbp_guard);
 	priv->label_base=allocate_label_entry_base(-1);
-	if(!priv->label_base)
+	if(!priv->label_base){
+		E3_ERROR("can not allocate label entry base for provider backbone port\n");
 		return -1;
+	}
+	E3_LOG("back E3Interface %d as provider backbone port\n",pif->port_id);
 	return 0;
 }
 int provider_backbone_port_iface_delete(struct E3Interface * pif)
@@ -381,6 +384,7 @@ int provider_backbone_port_iface_delete(struct E3Interface * pif)
 	E3_ASSERT(pif->hwiface_role==E3IFACE_ROLE_PROVIDER_BACKBONE_PORT);
 	rte_free(priv->label_base);
 	priv->label_base=NULL;
+	E3_LOG("successfully reclaim provider backbone port %d's label entry base\n",pif->port_id);
 	return 0;
 }
 
