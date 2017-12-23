@@ -6,6 +6,8 @@ from pye3datapath.e3client import clib
 from pye3datapath.e3client import api_call_exception
 from pye3datapath.e3client import api_return_exception
 from pye3datapath.e3client import register_service_endpoint
+MAX_COMMON_NEIGHBORS=2048
+
 
 class neighbor(Structure):
     _pack_=1

@@ -5,12 +5,13 @@
 #include <e3api/include/e3-api-wrapper.h>
 #include <e3infra/include/util.h>
 #include <rte_memcpy.h>
-
+#include <e3infra/include/e3-log.h>
 e3_type e3net_api_register_or_update_common_neighbor(e3_type e3service,
 	e3_type is_to_register,
 	e3_type ip_string,
 	e3_type mac_string)
 {
+	uint64_t ret;
 	uint8_t _is_to_register	=e3_type_to_uint8_t(is_to_register);
 	char * _ip_string		=(char *)e3_type_to_uint8_t_ptr(ip_string);
 	char * _mac_string		=(char *)e3_type_to_uint8_t_ptr(mac_string);
@@ -18,9 +19,20 @@ e3_type e3net_api_register_or_update_common_neighbor(e3_type e3service,
 	struct common_neighbor  neighbor;
 	neighbor.neighbour_ip_as_le=_ip_string_to_u32_le(_ip_string);
 	_mac_string_to_byte_array(_mac_string,neighbor.mac);
-	if(_is_to_register)
-		return register_common_neighbor(&neighbor);
-	return refresh_common_neighbor_mac(&neighbor);
+	if(_is_to_register){
+		ret=register_common_neighbor(&neighbor);
+		E3_LOG("register common neighbor <%s,%s> with result:%d\n",
+			_mac_string,
+			_ip_string,
+			ret);
+		return ret;
+	}
+	ret=refresh_common_neighbor_mac(&neighbor);
+	E3_LOG("update common neighbor <%s,%s> with result:%d\n",
+			_mac_string,
+			_ip_string,
+			ret);
+	return ret;
 }
 DECLARE_E3_API(common_neighbor_registeration)={
 	.api_name="e3net_api_register_or_update_common_neighbor",
@@ -102,8 +114,13 @@ DECLARE_E3_API(common_neighbors_enumeration)={
 
 e3_type e3net_api_delete_common_neighbor(e3_type e3service,e3_type neighbor_index)
 {
+	uint64_t ret;
 	int16_t _neighbor_index=e3_type_to_uint16_t(neighbor_index);
-	return delete_common_neighbor(_neighbor_index);
+	ret=delete_common_neighbor(_neighbor_index);
+	E3_LOG("delete the %dth common neighbor with result as %d\n",
+		_neighbor_index,
+		ret);
+	return ret;
 }
 DECLARE_E3_API(common_neighbor_deletion)={
 	.api_name="e3net_api_delete_common_neighbor",
@@ -188,7 +205,7 @@ DECLARE_E3_API(common_nexthop_enumeration)={
 	.api_name="e3net_api_list_common_nexthop_partial",
 	.api_desc="enumerate next hops list partially",
 	.api_callback_func=(api_callback_func)e3net_api_list_common_nexthop_partial,
-	.args_desc={
+	.args_desc={
 		{.type=e3_arg_type_uint8_t_ptr,.behavior=e3_arg_behavior_input_and_output,.len=2},
 		{.type=e3_arg_type_uint8_t_ptr,.behavior=e3_arg_behavior_output,.len=2},
 		{.type=e3_arg_type_uint8_t_ptr,.behavior=e3_arg_behavior_output,.len=sizeof(struct common_nexthop)*MAX_NR_NEXTHOPS_PER_FETCH},
@@ -198,8 +215,13 @@ DECLARE_E3_API(common_nexthop_enumeration)={
 
 e3_type e3net_api_delete_common_nexthop(e3_type e3service,e3_type nexthop_index)
 {
+	uint64_t ret;
 	int16_t _nexthop_index=e3_type_to_uint16_t(nexthop_index);
-	return delete_common_nexthop(_nexthop_index);
+	ret=delete_common_nexthop(_nexthop_index);
+	E3_LOG("delete the %dth common nexthop with result %d\n",
+		_nexthop_index,
+		ret);
+	return ret;
 }
 DECLARE_E3_API(common_nexthop_deletion)={
 	.api_name="e3net_api_delete_common_nexthop",

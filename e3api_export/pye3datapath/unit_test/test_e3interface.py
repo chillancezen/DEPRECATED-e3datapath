@@ -1,3 +1,6 @@
+#
+#Copyright (c) 2017 Jie Zheng
+#
 import unittest
 from pye3datapath.e3iface import *
 from e3net.common.e3log import get_e3loger
@@ -52,7 +55,7 @@ class E3InterfaceTest(unittest.TestCase):
                 get_e3iface(iface_idx)
                 self.assertTrue(False)
             except:
-                self.assertTrue(True)
+                pass
             #wait for 3 seconds until the pci resource is already released
             #the interface resource must be released in RCU context asynchronously
             #and this is supposed to be kind of deficiency
