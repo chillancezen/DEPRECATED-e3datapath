@@ -6,7 +6,7 @@ from pye3datapath.e3client import clib
 from pye3datapath.e3client import api_call_exception
 from pye3datapath.e3client import api_return_exception
 from pye3datapath.e3client import register_service_endpoint
-
+MAX_COMMON_NEXTHOPS=2048
 class nexthop(Structure):
     _pack_=1
     _fields_=[('local_e3iface',c_int16),

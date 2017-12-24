@@ -26,6 +26,11 @@ class E3NeighborTest(unittest.TestCase):
         self.assertTrue(n.is_valid==1)
         self.assertTrue(n._neighbor_ip_to_string()=='130.140.0.0')
         self.assertTrue(n._mac_to_string()=='00:01:02:03:04:05')
+        try:
+            register_neighbor('130.140.0.0','00:01:02:03:04:05')
+            self.assertTrue(False)
+        except:
+            pass
         update_neighbor_mac('130.140.0.0','00:01:02:03:04:06')
         n=get_neighbor(nidx)
         self.assertTrue(n._mac_to_string()=='00:01:02:03:04:06')

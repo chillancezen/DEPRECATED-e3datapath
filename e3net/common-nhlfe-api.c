@@ -135,13 +135,19 @@ DECLARE_E3_API(common_neighbor_deletion)={
 
 e3_type e3net_api_register_common_nexthop(e3_type e3service,e3_type e3iface,e3_type neighbor_index)
 {
+	uint64_t ret;
 	int16_t _e3iface=e3_type_to_uint16_t(e3iface);
 	int16_t _neighbor_index=e3_type_to_uint16_t(neighbor_index);
 	struct common_nexthop nexthop={
 		.local_e3iface=_e3iface,
 		.common_neighbor_index=_neighbor_index,
 	};
-	return register_common_nexthop(&nexthop);
+	ret=register_common_nexthop(&nexthop);
+	E3_LOG("register common nexthop <local-e3iface:%d,neighbor:%d> with result as %x\n",
+		_e3iface,
+		_neighbor_index,
+		ret);
+	return ret;
 }
 DECLARE_E3_API(common_nexthop_registration)={
 	.api_name="e3net_api_register_common_nexthop",
