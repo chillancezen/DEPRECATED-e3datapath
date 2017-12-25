@@ -89,6 +89,7 @@ int register_e_line_service(void)
 		e_line_base[idx].is_valid=1;
 	}
 	WUNLOCK_ELINE();
+	E3_LOG("register e-line service with result :%d\n",target);
 	return target;
 }
 
@@ -116,6 +117,10 @@ int register_e_line_port(int eline_index,int e3iface,int vlan_tci)
 	ret=E3_OK;
 	out:
 	WUNLOCK_ELINE();
+	E3_LOG("register e-line port entry:%d <e3iface:%d,vlan:%d>\n",
+		eline_index,
+		e3iface,
+		vlan_tci);
 	return ret;
 }
 int delete_e_line_port(int eline_index)
@@ -134,6 +139,7 @@ int delete_e_line_port(int eline_index)
 	ret=E3_OK;
 	out:
 	WUNLOCK_ELINE();
+	E3_LOG("delete port entry of e-line service:%d\n",eline_index);
 	return ret;
 }
 int register_e_line_nhlfe(int eline_index,int NHLFE,int label_to_push)
@@ -168,6 +174,10 @@ int register_e_line_nhlfe(int eline_index,int NHLFE,int label_to_push)
 	ret=E3_OK;
 	out:
 	WUNLOCK_ELINE();
+	E3_LOG("register e-line service nhlfe entry:%d <nhlfe:%d,label:%d>\n",
+		eline_index,
+		NHLFE,
+		label_to_push);
 	return ret;
 }
 int delete_e_line_nhlfe(int eline_index)
@@ -187,6 +197,7 @@ int delete_e_line_nhlfe(int eline_index)
 	ret=E3_OK;
 	out:
 	WUNLOCK_ELINE();
+	E3_LOG("delete nhlfe entry of e-line service %d\n",eline_index);
 	return ret;
 }
 
@@ -265,6 +276,7 @@ int delete_e_line_service(int index)
 	ret=E3_OK;
 	out:
 	WUNLOCK_ELINE();
+	E3_LOG("delete e-line service:%d with result:%d\n",index,ret);
 	return ret;
 }
 
