@@ -117,10 +117,11 @@ int register_e_line_port(int eline_index,int e3iface,int vlan_tci)
 	ret=E3_OK;
 	out:
 	WUNLOCK_ELINE();
-	E3_LOG("register e-line port entry:%d <e3iface:%d,vlan:%d>\n",
+	E3_LOG("register e-line port entry:%d <e3iface:%d,vlan:%d> with result as %d\n",
 		eline_index,
 		e3iface,
-		vlan_tci);
+		vlan_tci,
+		ret);
 	return ret;
 }
 int delete_e_line_port(int eline_index)
@@ -139,7 +140,7 @@ int delete_e_line_port(int eline_index)
 	ret=E3_OK;
 	out:
 	WUNLOCK_ELINE();
-	E3_LOG("delete port entry of e-line service:%d\n",eline_index);
+	E3_LOG("delete port entry of e-line service:%d with result as:%d\n",eline_index,ret);
 	return ret;
 }
 int register_e_line_nhlfe(int eline_index,int NHLFE,int label_to_push)
@@ -174,10 +175,11 @@ int register_e_line_nhlfe(int eline_index,int NHLFE,int label_to_push)
 	ret=E3_OK;
 	out:
 	WUNLOCK_ELINE();
-	E3_LOG("register e-line service nhlfe entry:%d <nhlfe:%d,label:%d>\n",
+	E3_LOG("register e-line service nhlfe entry:%d <nhlfe:%d,label:%d> with result as %d\n",
 		eline_index,
 		NHLFE,
-		label_to_push);
+		label_to_push,
+		ret);
 	return ret;
 }
 int delete_e_line_nhlfe(int eline_index)
@@ -197,7 +199,7 @@ int delete_e_line_nhlfe(int eline_index)
 	ret=E3_OK;
 	out:
 	WUNLOCK_ELINE();
-	E3_LOG("delete nhlfe entry of e-line service %d\n",eline_index);
+	E3_LOG("delete nhlfe entry of e-line service %d with result as :%d\n",eline_index,ret);
 	return ret;
 }
 
@@ -304,14 +306,17 @@ int register_e_lan_service(void)
 	e_lan_base[idx].nr_ports=0;
 	e_lan_base[idx].nr_nhlfes=0;
 	e_lan_base[idx].ref_cnt=0;
-	if(!(e_lan_base[idx].fib_base=allocate_findex_2_4_base()))
+	if(!(e_lan_base[idx].fib_base=allocate_findex_2_4_base())){
+		ret=-E3_ERR_OUT_OF_MEM;
 		goto out;
+	}
 	e_lan_base[idx].is_releasing=0;
 	e_lan_base[idx].is_valid=1;
 	rte_spinlock_init(&e_lan_base[idx].per_e_lan_guard);
 	ret=idx;
 	out:
 	WUNLOCK_ELAN();
+	E3_LOG("register E-LAN service with result as %d\n",ret);
 	return ret;
 }
 
@@ -395,6 +400,7 @@ int delete_e_lan_service(int index)
 	ret=E3_OK;
 	out:
 	WUNLOCK_ELAN();
+	E3_LOG("delete E-LAN service %d with result as :%d\n",index,ret);
 	return ret;
 }
 
@@ -433,6 +439,11 @@ int register_e_lan_port(int elan_index,uint16_t e3iface,uint16_t vlan_tci)
 	ret=idx;
 	out:
 	WUNLOCK_ELAN();
+	E3_LOG("register E-LAN service %d port entry <iface:%d,vlan:%d> as result as %d\n",
+		elan_index,
+		e3iface,
+		vlan_tci,
+		ret);
 	return ret;
 }
 
@@ -528,6 +539,10 @@ int delete_e_lan_port(int elan_index,int port_index)
 	ret=E3_OK;
 	out:
 	WUNLOCK_ELAN();
+	E3_LOG("delete E-LAN service %d port entry %d with result as:%d\n",
+		elan_index,
+		port_index,
+		ret);
 	return ret;
 }
 int register_e_lan_nhlfe(int elan_index,uint16_t nhlfe,uint32_t label_to_push)
@@ -561,6 +576,11 @@ int register_e_lan_nhlfe(int elan_index,uint16_t nhlfe,uint32_t label_to_push)
 	ret=idx;
 	out:
 	WUNLOCK_ELAN();
+	E3_LOG("register E-LAN service %d nhlfe entry<nexthop:%d,label:%d> with result as %d\n",
+		elan_index,
+		nhlfe,
+		label_to_push,
+		ret);
 	return ret;
 }
 int find_e_lan_nhlfe_locked(int elan_index,uint16_t nhlfe,uint32_t label_to_push)
@@ -653,6 +673,10 @@ int delete_e_lan_nhlfe(int elan_index,int nhlfe_index)
 	ret=E3_OK;
 	out:
 	WUNLOCK_ELAN();
+	E3_LOG("delete E-LAN service:%d nhlfe entry %d with result as %d\n",
+		elan_index,
+		nhlfe_index,
+		ret);
 	return ret;
 }
 int register_e_lan_fwd_entry(int elan_index,uint8_t * mac,struct e_lan_fwd_entry * fwd_entry)
@@ -728,6 +752,11 @@ int set_e_lan_multicast_fwd_entry(int16_t elan_idx,int16_t nhlfe_index,int32_t l
 	ret=E3_OK;
 	out:
 	WUNLOCK_ELAN();
+	E3_LOG("set E-LAN service %d multicast NHLFE <nexthop:%d,label:%d> with result %d\n",
+		elan_idx,
+		nhlfe_index,
+		label_to_push,
+		ret);
 	return ret;
 }
 int reset_e_lan_multicast_fwd_entry(int16_t elan_idx)
@@ -747,5 +776,8 @@ int reset_e_lan_multicast_fwd_entry(int16_t elan_idx)
 	ret=E3_OK;
 	out:
 	WUNLOCK_ELAN();
+	E3_LOG("reset E-LAN service %d multicast NHLFE with result as %d\n",
+		elan_idx,
+		ret);
 	return ret;
 }
