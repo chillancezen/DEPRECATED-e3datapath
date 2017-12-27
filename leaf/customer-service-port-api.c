@@ -8,6 +8,7 @@
 #include <leaf/include/customer-service-port.h>
 #include <e3net/include/e3iface-inventory.h>
 #include <leaf/include/leaf-label-fib.h>
+#include <e3infra/include/e3-log.h>
 
 
 e3_type leaf_api_csp_setup_port(e3_type e3service,
@@ -32,6 +33,16 @@ e3_type leaf_api_csp_setup_port(e3_type e3service,
 	priv=(struct csp_private*)pif->private;
 	
 	rte_rwlock_write_lock(&priv->csp_guard);
+	/*
+	*if the e-line service is already used, user should mannually release it
+	*/
+	if(_is_eline_service){
+		struct ether_e_line *_eline=find_e_line_service(_service_id);
+		if(_eline&&_eline->is_csp_ready){
+			ret=-E3_ERR_IN_USE;
+			goto out;
+		}
+	}
 	/*
 	*release previous binding first
 	*/
@@ -81,6 +92,12 @@ e3_type leaf_api_csp_setup_port(e3_type e3service,
 	ret=E3_OK;
 	out:
 	rte_rwlock_write_unlock(&priv->csp_guard);
+	E3_LOG("register port %d's vlan entry %d to %s service %d with result as:%d\n",
+			_iface_id,
+			_vlan_tci,
+			_is_eline_service?"E-LINE":"E-LAN",
+			_service_id,
+			ret);
 	return ret;
 }
 DECLARE_E3_API(csp_port_setup)={
@@ -139,6 +156,10 @@ e3_type leaf_api_csp_withdraw_port(e3_type e3service,
 	}
 	priv->vlans[_vlan_tci].is_valid=0;
 	rte_rwlock_write_unlock(&priv->csp_guard);
+	E3_LOG("withdraw port %d's vlan %d's entry\n",
+		_iface_id,
+		_vlan_tci);
+	
 	return E3_OK;
 }
 DECLARE_E3_API(csp_port_withdrawal)={
