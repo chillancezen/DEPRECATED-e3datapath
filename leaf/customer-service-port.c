@@ -460,6 +460,10 @@ int customer_service_port_iface_delete(struct E3Interface * pif)
 					E3_ERROR("error occurs during detach port %d\n from E-LINE service %d\n",
 						pif->port_id,
 						priv->vlans[idx].service_index);
+				}else{
+					E3_LOG("clean customer service port %d's vlan entry %d\n",
+						pif->port_id,
+						idx);
 				}
 				break;
 			case e_lan_service:
@@ -473,6 +477,10 @@ int customer_service_port_iface_delete(struct E3Interface * pif)
 						E3_ERROR("error occurs during detach port %d\n from E-LAN service %d\n",
 							pif->port_id,
 							priv->vlans[idx].service_index);
+					}else{
+						E3_LOG("clean customer service port %d's vlan entry %d\n",
+							pif->port_id,
+							idx);
 					}
 				}
 				break;
@@ -481,6 +489,8 @@ int customer_service_port_iface_delete(struct E3Interface * pif)
 				break;
 		}
 	}
+	E3_LOG("release customer service port %d's private data\n",
+		pif->port_id);
 	return 0;
 }
 

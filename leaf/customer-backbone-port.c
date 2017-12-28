@@ -439,6 +439,7 @@ int customer_backbone_port_iface_delete(struct E3Interface *pif)
 	}
 	rte_free(priv->label_base);
 	priv->label_base=NULL;
+	E3_LOG("release customer service backbone port %d's private data\n",pif->port_id);
 	return 0;
 }
 

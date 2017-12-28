@@ -385,6 +385,7 @@ int provider_backbone_port_iface_delete(struct E3Interface * pif)
 	rte_free(priv->label_base);
 	priv->label_base=NULL;
 	E3_LOG("successfully reclaim provider backbone port %d's label entry base\n",pif->port_id);
+	E3_LOG("release provider backbone port %d's private data\n",pif->port_id);
 	return 0;
 }
 
