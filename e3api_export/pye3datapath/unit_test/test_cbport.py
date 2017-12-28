@@ -73,5 +73,17 @@ class E3CbportTest(unittest.TestCase):
         detach_cbport(0,(1<<20)-1)
         elan=get_ether_lan_service(0)
         self.assertTrue(elan.ref_cnt==0)
+
+        for i in range(100):
+            attach_cbport_to_eline(0,i+1,0)
+        eline=get_ether_line_service(0)
+        self.assertTrue(eline.ref_cnt==1)
+
+        cnt=0
+        for l in list_cbport_label_entries(0):
+            cnt=cnt+1
+            self.assertTrue(l.index==cnt)
+            self.assertTrue(l.service_index==0)
+            detach_cbport(0,l.index)
+        self.assertTrue(len(list_cbport_label_entries(0))==0)
         
-         

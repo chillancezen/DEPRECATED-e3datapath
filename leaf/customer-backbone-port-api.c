@@ -8,7 +8,7 @@
 #include <leaf/include/customer-backbone-port.h>
 #include <e3net/include/e3iface-inventory.h>
 #include <leaf/include/leaf-label-fib.h>
-
+#include <e3infra/include/e3-log.h>
 
 e3_type leaf_api_cbp_setup_label_entry(e3_type e3service,
 	e3_type iface_id,
@@ -43,6 +43,11 @@ e3_type leaf_api_cbp_setup_label_entry(e3_type e3service,
 	}
 	ret=set_leaf_label_entry(priv->label_base,_label_id,&tmp_label_entry);
 	rte_rwlock_write_unlock(&priv->cbp_guard);
+	E3_LOG("map customer backbone port %d's label %d to %s %d\n",
+		_iface_id,
+		_label_id,
+		_is_eline_service?"E-LINE":"E-LAN",
+		_service_id);
 	return ret; 
 }
 DECLARE_E3_API(cbp_nhlfe_setup)={
@@ -77,6 +82,9 @@ e3_type leaf_api_cbp_clear_label_entry(e3_type e3service,
 	rte_rwlock_write_lock(&priv->cbp_guard);
 	reset_leaf_label_entry(priv->label_base,_label_id);
 	rte_rwlock_write_unlock(&priv->cbp_guard);
+	E3_LOG("unmap customer backbone port %d's label entry %d\n",
+		_iface_id,
+		_label_id);
 	return E3_OK;
 }
 DECLARE_E3_API(cbp_label_entry_reset)={
