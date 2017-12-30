@@ -63,6 +63,7 @@ int register_multicast_nexthop()
 	ret=idx;
 	out:
 	WUNLOCK_MNEXTHOP();
+	E3_LOG("register multicast nexthops with result as %d\n",ret);
 	return ret;
 }
 
@@ -95,6 +96,9 @@ int delete_multicast_nexthop(int mindex)
 	ret=E3_OK;
 	out:
 	WUNLOCK_MNEXTHOP();
+	E3_LOG("delete multicast nexthop entry %d with result as %d\n",
+		mindex,
+		ret);
 	return ret;
 }
 
@@ -149,6 +153,11 @@ int register_nexthop_in_mnexthops(int16_t mnexhop,int16_t nexthop,uint32_t label
 	ret=idx;
 	out:
 	WUNLOCK_MNEXTHOP();
+	E3_LOG("register <nexthop:%d,label:%d> in multicast nexthops entry %d with result as %d\n",
+		nexthop,
+		label_to_push,
+		mnexhop,
+		ret);
 	return ret;
 }
 
@@ -190,6 +199,11 @@ int delete_nexthop_in_mnexthops(int16_t mnexhop,int16_t nexthop,uint32_t label_t
 	ret=E3_OK;
 	out:
 	WUNLOCK_MNEXTHOP();
+	E3_LOG("delete <nexthop:%d,label:%d> in multicast nexthops entry %d with result as %d\n",
+		nexthop,
+		label_to_push,
+		mnexhop,
+		ret);
 	return ret;
 }
 
