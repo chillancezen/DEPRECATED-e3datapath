@@ -380,8 +380,14 @@ int provider_backbone_port_iface_delete(struct E3Interface * pif)
 	/*
 	*withdraw all the label of the ports
 	*/
+	int idx=0;
 	struct pbp_private * priv=(struct pbp_private*)pif->private;
 	E3_ASSERT(pif->hwiface_role==E3IFACE_ROLE_PROVIDER_BACKBONE_PORT);
+	for(idx=0;idx<NR_SPINE_LABEL_ENTRY;idx++){
+		if(priv->label_base[idx].is_valid){
+			reset_spine_label_entry(priv->label_base,idx);
+		}
+	}
 	rte_free(priv->label_base);
 	priv->label_base=NULL;
 	E3_LOG("successfully reclaim provider backbone port %d's label entry base\n",pif->port_id);

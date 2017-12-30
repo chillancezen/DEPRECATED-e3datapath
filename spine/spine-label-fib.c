@@ -111,8 +111,10 @@ int set_spine_label_entry(struct spine_label_entry * base,
 	entry->swapped_label=label_to_swap;
 	__sync_synchronize();
 	entry->is_valid=1;
-	if(update_spine_label_entry_relationship(base,index,0))
+	if(update_spine_label_entry_relationship(base,index,0)){
+		entry->is_valid=0;
 		return -E3_ERR_ILLEGAL;
+	}
 	
 	return E3_OK;
 }

@@ -7,9 +7,10 @@
 #include <spine/include/provider-backbone-port.h>
 #include <e3infra/include/util.h>
 #include <rte_memcpy.h>
+#include <e3infra/include/e3-log.h>
 
 /*
-*once ZERO will be returned if successful,
+*ZERO will be returned if successful,
 *a negative is returned upon failue
 */
 e3_type spine_api_pbp_setup_label_entry(e3_type service,
@@ -38,6 +39,13 @@ e3_type spine_api_pbp_setup_label_entry(e3_type service,
 		_entry->swapped_label,
 		_entry->NHLFE);
 	rte_rwlock_write_unlock(&priv->pbp_guard);
+	E3_LOG("map pbport %d's label entry %d as %s with <nhlfe:%d,label:%d> and result as %d\n",
+		_iface,
+		_index_to_set,
+		_entry->is_unicast?"unicast":"multicast",
+		_entry->NHLFE,
+		_entry->swapped_label,
+		ret);
 	return ret;
 }
 DECLARE_E3_API(spine_label_entry_registration)={
@@ -162,6 +170,10 @@ e3_type spine_api_pbp_delete_label_entry(e3_type service,e3_type e3iface,e3_type
 	rte_rwlock_write_lock(&priv->pbp_guard);
 	ret=reset_spine_label_entry(priv->label_base, _label_index);
 	rte_rwlock_write_unlock(&priv->pbp_guard);
+	E3_LOG("unmap pbport %d's label entry %d with result as %d\n",
+		_e3iface,
+		_label_index,
+		ret);
 	return ret;
 }
 DECLARE_E3_API(spine_label_entry_deletion)={

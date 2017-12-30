@@ -9,7 +9,9 @@ from pye3datapath.e3client import *
 #from test_elan_service import E3ELanTest
 #from test_csport import E3CsportTest
 #from test_cbport import E3CbportTest
-from test_multicast_nexthops import E3MulticastNexthopsTest
+#from test_multicast_nexthops import E3MulticastNexthopsTest
+from test_pbport import E3PbportTest
+
 if __name__=='__main__':
     register_service_endpoint('ipc:///var/run/e3datapath.sock')
     unittest.main()
