@@ -6,6 +6,7 @@
 #include <e3net/include/common-nhlfe.h>
 #include <spine/include/spine-label-mnexthop.h>
 #include <e3infra/include/util.h>
+#include <e3infra/include/malloc-wrapper.h>
 
 /*
 *allocate an array from DPDK memory allocator which is numa aware
@@ -16,7 +17,7 @@ struct spine_label_entry * allocate_label_entry_base(int numa_socket_id)
 {
 	int idx=0;
 	struct spine_label_entry * base=NULL;
-	base=rte_zmalloc_socket(NULL,
+	base=RTE_ZMALLOC_SOCKET(NULL,
 			sizeof(struct spine_label_entry)*NR_SPINE_LABEL_ENTRY,
 			64,
 			numa_socket_id<0?SOCKET_ID_ANY:numa_socket_id);

@@ -7,6 +7,8 @@
 #include <e3infra/include/lcore-extension.h>
 #include <rte_malloc.h>
 #include <e3infra/include/util.h>
+#include <e3infra/include/malloc-wrapper.h>
+
 struct node *gnode_array[MAX_NR_NODES];
 
 
@@ -151,7 +153,7 @@ void default_rte_reclaim_func(struct rcu_head * rcu)
 {
 	struct node * pnode=container_of(rcu,struct node,rcu);
 	E3_LOG("default node deletion %p with name:%s\n",pnode,(char*)pnode->name);
-	rte_free(pnode);
+	RTE_FREE(pnode);
 }
 void reclaim_non_input_node_bottom_half(struct rcu_head * rcu)
 {

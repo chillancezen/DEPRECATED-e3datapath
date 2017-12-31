@@ -6,6 +6,8 @@
 #include <e3infra/include/e3-init.h>
 #include <e3infra/include/e3-log.h>
 #include <e3infra/include/util.h>
+#include <e3infra/include/malloc-wrapper.h>
+
 struct ether_e_line * e_line_base;
 struct ether_e_lan  * e_lan_base;
 
@@ -47,11 +49,11 @@ void __read_unlock_elan()
 void init_e_service(void)
 {
 	
-	e_line_base=rte_zmalloc(NULL,
+	e_line_base=RTE_ZMALLOC(NULL,
 			sizeof(struct ether_e_line)*MAX_E_LINE_SERVICES,
 			64);
 	E3_ASSERT(e_line_base);
-	e_lan_base=rte_zmalloc(NULL,
+	e_lan_base=RTE_ZMALLOC(NULL,
 			sizeof(struct ether_e_lan)*MAX_E_LAN_SERVICES,
 			64);
 	E3_ASSERT(e_lan_base);
@@ -368,7 +370,7 @@ static void post_delete_e_lan_service(struct rcu_head * rcu)
 	int idx=0;
 	struct ether_e_lan * elan=container_of(rcu,struct ether_e_lan,rcu);
 	cleanup_findex_2_4_entries(elan->fib_base);
-	rte_free(elan->fib_base);
+	RTE_FREE(elan->fib_base);
 	elan->fib_base=NULL;
 	/*
 	*process any relationship of resource
@@ -381,6 +383,7 @@ static void post_delete_e_lan_service(struct rcu_head * rcu)
 	}
 	/*mark it reuseable*/
 	elan->is_releasing=0;
+	E3_LOG("E-LAN service:%d is released\n",elan->index);
 }
 int delete_e_lan_service(int index)
 {

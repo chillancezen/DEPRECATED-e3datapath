@@ -8,7 +8,7 @@
 #include <e3infra/include/e3-log.h>
 #include <e3api/include/e3-api-wrapper.h>
 #include <e3infra/include/util.h>
-
+#include <e3infra/include/malloc-wrapper.h>
 
 
 
@@ -29,7 +29,7 @@ static int register_api_server_endpoint(char * bind_addr,int schedule_on_master)
 {
 	static int api_node_cnt=1;
 	struct e3_api_service *service=NULL;
-	struct node * pnode=rte_zmalloc(NULL,sizeof(struct node),64);
+	struct node * pnode=RTE_ZMALLOC(NULL,sizeof(struct node),64);
 	E3_ASSERT(pnode);
 	sprintf((char*)pnode->name,"api-node-%d",api_node_cnt++);
 	pnode->lcore_id=schedule_on_master?

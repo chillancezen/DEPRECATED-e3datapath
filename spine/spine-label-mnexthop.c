@@ -11,6 +11,7 @@
 #include <e3infra/include/util.h>
 #include <rte_rwlock.h>
 #include <e3net/include/common-nhlfe.h>
+#include <e3infra/include/malloc-wrapper.h>
 
 static rte_rwlock_t mnexthop_guard;
 
@@ -33,7 +34,7 @@ void __read_unlock_mnexthop(void)
 
 void spine_label_mnexthop_init(void)
 {
-	mnext_hops_base=rte_zmalloc(NULL,
+	mnext_hops_base=RTE_ZMALLOC(NULL,
 			sizeof(struct multicast_next_hops)*MAX_MULTICAST_NEXT_HOPS,
 			64);
 	E3_ASSERT(mnext_hops_base);

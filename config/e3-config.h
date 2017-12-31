@@ -31,7 +31,7 @@
 #else
 	#define LOG_FILE_PATH "/var/log/e3net/e3datapath.log"
 #endif
-
+#define DEBUG_FILE_PATH "/var/log/e3net/e3datapath.debug"
 
 
 

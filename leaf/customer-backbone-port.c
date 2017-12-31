@@ -14,6 +14,7 @@
 #include <rte_malloc.h>
 #include <e3net/include/common-cache.h>
 #include <rte_cycles.h>
+#include <e3infra/include/malloc-wrapper.h>
 
 extern struct e3iface_role_def  role_defs[E3IFACE_ROLE_MAX_ROLES];
 
@@ -437,7 +438,7 @@ int customer_backbone_port_iface_delete(struct E3Interface *pif)
 		if(priv->label_base[idx].is_valid)
 			reset_leaf_label_entry(priv->label_base,idx);
 	}
-	rte_free(priv->label_base);
+	RTE_FREE(priv->label_base);
 	priv->label_base=NULL;
 	E3_LOG("release customer service backbone port %d's private data\n",pif->port_id);
 	return 0;

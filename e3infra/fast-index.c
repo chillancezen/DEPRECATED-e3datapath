@@ -5,23 +5,24 @@
 #include <rte_malloc.h>
 #include <e3infra/include/e3-log.h>
 #include <e3infra/include/util.h>
+#include <e3infra/include/malloc-wrapper.h>
 
 struct findex_2_2_base * allocate_findex_2_2_base(void)
 {
     struct findex_2_2_base * base=NULL;
-    base=rte_zmalloc(NULL,sizeof(struct findex_2_2_base)*(1<<16),64);
+    base=RTE_ZMALLOC(NULL,sizeof(struct findex_2_2_base)*(1<<16),64);
     return base;
 }
 void _deallocate_findex_2_2_base(struct findex_2_2_base * base)
 {
     if(base)
-        rte_free(base);
+        RTE_FREE(base);
     
 }
 struct findex_2_2_entry * allocate_findex_2_2_entry(void)
 {
     struct findex_2_2_entry  * entry=NULL;
-    entry=rte_zmalloc(NULL,sizeof(struct findex_2_2_entry),64);
+    entry=RTE_ZMALLOC(NULL,sizeof(struct findex_2_2_entry),64);
     if(entry)
         {e3_bitmap_init(entry->tags_avail);}
     else 
@@ -32,7 +33,7 @@ struct findex_2_2_entry * allocate_findex_2_2_entry(void)
 void _deallocate_findex_2_2_entry(struct findex_2_2_entry * entry)
 {
     if(entry)
-        rte_free(entry);
+        RTE_FREE(entry);
 }
 
 void findex_2_2_entry_rcu_callback(struct rcu_head * rcu)
@@ -145,13 +146,13 @@ void delete_index_2_2_item_unsafe(struct findex_2_2_base* base,struct findex_2_2
 struct findex_2_1_6_base *allocate_findex_2_1_6_base(void)
 {
     struct findex_2_1_6_base* base=
-        rte_zmalloc(NULL,sizeof(struct findex_2_1_6_base)*(1<<16),64);
+        RTE_ZMALLOC(NULL,sizeof(struct findex_2_1_6_base)*(1<<16),64);
     return base;
 }
 struct findex_2_1_6_entry * allocate_findex_2_1_6_entry(void)
 {
     struct findex_2_1_6_entry * entry=
-        rte_zmalloc(NULL,sizeof(struct findex_2_1_6_entry),64);
+        RTE_ZMALLOC(NULL,sizeof(struct findex_2_1_6_entry),64);
     if(entry)
         {e3_bitmap_init(entry->tag_avail);}
     else
@@ -270,7 +271,7 @@ void dump_findex_2_1_6_base(struct findex_2_1_6_base * base)
 void findex_2_1_6_entry_rcu_callback(struct rcu_head * rcu)
 {
     struct findex_2_1_6_entry * entry=container_of(rcu,struct findex_2_1_6_entry,rcu);
-    rte_free(entry);
+    RTE_FREE(entry);
 }
 void delete_index_2_1_6_item_unsafe(struct findex_2_1_6_base * base,struct findex_2_1_6_key * key)
 {
@@ -319,14 +320,14 @@ void delete_index_2_1_6_item_unsafe(struct findex_2_1_6_base * base,struct finde
 struct findex_2_4_base *allocate_findex_2_4_base(void)
 {
     struct findex_2_4_base* base=
-        rte_zmalloc(NULL,sizeof(struct findex_2_4_base)*(1<<16),64);
+        RTE_ZMALLOC(NULL,sizeof(struct findex_2_4_base)*(1<<16),64);
     return base;
 }
 
 struct findex_2_4_entry * allocate_findex_2_4_entry(void)
 {
     struct findex_2_4_entry * entry=
-        rte_zmalloc(NULL,sizeof(struct findex_2_4_entry),64);
+        RTE_ZMALLOC(NULL,sizeof(struct findex_2_4_entry),64);
     if(entry)
         {e3_bitmap_init(entry->tag_avail);}
     else
@@ -401,7 +402,7 @@ int add_index_2_4_item_unsafe(struct findex_2_4_base * base,struct findex_2_4_ke
 static void findex_2_4_entry_rcu_callback(struct rcu_head * rcu)
 {
     struct findex_2_4_entry * entry=container_of(rcu,struct findex_2_4_entry,rcu);
-    rte_free(entry);
+    RTE_FREE(entry);
 }
 
 void delete_index_2_4_item_unsafe(struct findex_2_4_base * base,struct findex_2_4_key * key)
@@ -485,7 +486,7 @@ void cleanup_findex_2_4_entries(struct findex_2_4_base * base)
         while(base[idx].next){
             pentry=base[idx].next;
             base[idx].next=pentry->next_entry;
-            rte_free(pentry);
+            RTE_FREE(pentry);
         }
     }
 }

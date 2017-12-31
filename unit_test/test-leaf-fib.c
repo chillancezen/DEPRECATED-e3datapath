@@ -162,8 +162,8 @@ START_TEST(leaf_fib_general){
 		neighbor_base[idx].is_valid=0;
 	for(idx=0;idx<MAX_COMMON_NEXTHOPS;idx++)
 		nexthop_base[idx].is_valid=0;
-	rte_free(base);
-	rte_free(base1);
+	RTE_FREE(base);
+	RTE_FREE(base1);
 }
 END_TEST
 ADD_TEST(leaf_fib_general);

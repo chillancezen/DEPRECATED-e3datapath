@@ -9,6 +9,8 @@ from e3net.common.e3config import load_configs
 from e3net.common.e3config import get_config
 from pye3datapath.common.nexthop import *
 from pye3datapath.common.neighbor import *
+from pye3datapath.e3livedebug import generate_memory_dump
+
 class E3NexthopTest(unittest.TestCase):
     def setUp(self):
         lst=list_neighbors()
@@ -19,7 +21,7 @@ class E3NexthopTest(unittest.TestCase):
     def tearDown(self):
         self.assertTrue(len(list_neighbors())==0)
         self.assertTrue(len(list_nexthops())==0)
-    
+   
     def test_nexthops_pool(self):
         nidx=register_neighbor('130.140.0.0','00:01:02:03:04:05')
         self.assertTrue(nidx==0)

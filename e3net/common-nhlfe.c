@@ -8,6 +8,7 @@
 #include <rte_memcpy.h>
 #include <rte_rwlock.h>
 #include <e3infra/include/util.h>
+#include <e3infra/include/malloc-wrapper.h>
 
 struct common_neighbor * neighbor_base=NULL;
 struct common_nexthop  * nexthop_base=NULL;
@@ -41,11 +42,11 @@ void __read_unlock_nexthop(void)
 }
 void init_common_nhlfe(void)
 {
-	neighbor_base=rte_zmalloc(NULL,
+	neighbor_base=RTE_ZMALLOC(NULL,
 			sizeof(struct common_neighbor)*MAX_COMMON_NEIGHBORS,
 			64);
 	E3_ASSERT(neighbor_base);
-	nexthop_base=rte_zmalloc(NULL,
+	nexthop_base=RTE_ZMALLOC(NULL,
 			sizeof(struct common_nexthop)*MAX_COMMON_NEXTHOPS,
 			64);
 	E3_ASSERT(nexthop_base);

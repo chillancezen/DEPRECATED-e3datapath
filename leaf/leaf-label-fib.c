@@ -6,11 +6,12 @@
 #include <rte_malloc.h>
 #include <e3infra/include/e3-log.h>
 #include <e3infra/include/util.h>
+#include <e3infra/include/malloc-wrapper.h>
 struct leaf_label_entry * allocate_leaf_label_base(int numa_socket_id)
 {
 	struct leaf_label_entry * base;
 	int idx=0;
-	base=rte_zmalloc_socket(NULL,
+	base=RTE_ZMALLOC_SOCKET(NULL,
 			sizeof(struct leaf_label_entry)*NR_LEAF_LABEL_ENTRY,
 			64,
 			numa_socket_id<0?SOCKET_ID_ANY:numa_socket_id);

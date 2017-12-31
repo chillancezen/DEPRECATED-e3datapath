@@ -9,6 +9,7 @@
 #include <e3infra/include/node-adjacency.h>
 #include <e3api/include/e3-api-wrapper.h>
 #include <e3net/include/e3iface-inventory.h>
+#include <e3infra/include/malloc-wrapper.h>
 //#define USE_NUMA_NODE 
 /*when allocating lcore resource to io nodes,
 if we define this macro,as a matter of optimization,user should know which socket 
@@ -21,7 +22,7 @@ static void input_and_output_reclaim_func(struct rcu_head * rcu)
 {
 	struct node *pnode=container_of(rcu,struct node,rcu);
 	E3_LOG("delete E3Interface's node %p with name %s\n",pnode,(char*)pnode->name);
-	rte_free(pnode);
+	RTE_FREE(pnode);
 }
 
 struct E3Interface * alloc_e3interface(int priv_size,int socket_id)
@@ -29,7 +30,7 @@ struct E3Interface * alloc_e3interface(int priv_size,int socket_id)
 	int alloc_size=sizeof(struct E3Interface)+priv_size;
 	if(alloc_size&0x3f)
 		alloc_size=(alloc_size&(~0x3f))+0x40;
-	struct E3Interface * e3iface=rte_zmalloc(NULL,alloc_size,socket_id);
+	struct E3Interface * e3iface=RTE_ZMALLOC(NULL,alloc_size,socket_id);
 	E3_LOG("allocate E3Interface :%p\n",e3iface);
 	return e3iface;
 }
@@ -37,7 +38,7 @@ void dealloc_e3interface(struct E3Interface * pif)
 {
 	if(pif){
 		E3_LOG("deallocate E3Interface:%p with name %s\n",pif,(char*)pif->name)
-		rte_free(pif);
+		RTE_FREE(pif);
 	}
 }
 char * link_speed_to_string(uint32_t speed)
@@ -141,8 +142,8 @@ int register_e3interface(const char * params,struct E3Interface_ops * dev_ops,in
 		pinput_nodes[idx]=NULL;
 	}
 	for(idx=0;idx<pe3iface->nr_queues;idx++){
-		pinput_nodes[idx]=rte_zmalloc(NULL,sizeof(struct node),64);
-		poutput_nodes[idx]=rte_zmalloc(NULL,sizeof(struct node),64);
+		pinput_nodes[idx]=RTE_ZMALLOC(NULL,sizeof(struct node),64);
+		poutput_nodes[idx]=RTE_ZMALLOC(NULL,sizeof(struct node),64);
 		if(!pinput_nodes[idx] || !poutput_nodes[idx])
 			break;
 	}
@@ -378,9 +379,9 @@ int register_e3interface(const char * params,struct E3Interface_ops * dev_ops,in
 	error_nodes_dealloc:
 		for(idx=0;idx<pe3iface->nr_queues;idx++){
 			if(pinput_nodes[idx])
-				rte_free(pinput_nodes[idx]);
+				RTE_FREE(pinput_nodes[idx]);
 			if(poutput_nodes[idx])
-				rte_free(poutput_nodes[idx]);
+				RTE_FREE(poutput_nodes[idx]);
 		}
 	error_iface_dealloc:
 		if(pe3iface&&pe3iface->lsc_enabled){
@@ -390,7 +391,7 @@ int register_e3interface(const char * params,struct E3Interface_ops * dev_ops,in
 							NULL);
 		}
 		if(pe3iface)
-			rte_free(pe3iface);
+			RTE_FREE(pe3iface);
 	error_dev_detach:
 		{
 			int release_rc;

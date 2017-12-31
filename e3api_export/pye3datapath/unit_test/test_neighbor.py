@@ -8,6 +8,7 @@ from e3net.common.e3config import add_config_file
 from e3net.common.e3config import load_configs
 from e3net.common.e3config import get_config
 from pye3datapath.common.neighbor import *
+from pye3datapath.e3livedebug import generate_memory_dump
 
 class E3NeighborTest(unittest.TestCase):
     def setUp(self):

@@ -11,10 +11,11 @@
 #include <e3infra/include/lcore-extension.h>
 #include <rte_ring.h>
 #include <rte_cycles.h>
+#include <e3infra/include/malloc-wrapper.h>
 struct node_class * pmac_learning_class;
 void mac_learning_node_class_init(void)
 {
-    struct node_class * pclass=rte_zmalloc(NULL,sizeof(struct node_class),64);
+    struct node_class * pclass=RTE_ZMALLOC(NULL,sizeof(struct node_class),64);
     E3_ASSERT(pclass);
     sprintf((char*)pclass->class_name,MAC_LEARNING_CLASSNAME);
     pclass->class_reclaim_func=NULL;
@@ -59,7 +60,7 @@ int mac_learning_node_process_func(void *arg)
 }
 int register_mac_learning_node(int socket_id,int node_id)
 {
-    struct node * pnode=rte_zmalloc_socket(NULL,sizeof(struct node),64,socket_id);
+    struct node * pnode=RTE_ZMALLOC_SOCKET(NULL,sizeof(struct node),64,socket_id);
     if(!pnode){
         E3_ERROR("can not allocate mempory\n");
         return -E3_ERR_OUT_OF_MEM;
@@ -104,7 +105,7 @@ int register_mac_learning_node(int socket_id,int node_id)
         unregister_node(pnode);
     error_node_dealloc:
         if(pnode)
-            rte_free(pnode);
+            RTE_FREE(pnode);
     return -E3_ERR_GENERIC;
 }
 

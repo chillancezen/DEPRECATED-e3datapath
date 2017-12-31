@@ -15,6 +15,7 @@
 #include <rte_malloc.h>
 #include <e3net/include/mpls-util.h>
 #include <e3net/include/common-nhlfe.h>
+#include <e3infra/include/malloc-wrapper.h>
 
 #define PBP_NODE_BURST_SIZE 48
 
@@ -388,7 +389,7 @@ int provider_backbone_port_iface_delete(struct E3Interface * pif)
 			reset_spine_label_entry(priv->label_base,idx);
 		}
 	}
-	rte_free(priv->label_base);
+	RTE_FREE(priv->label_base);
 	priv->label_base=NULL;
 	E3_LOG("successfully reclaim provider backbone port %d's label entry base\n",pif->port_id);
 	E3_LOG("release provider backbone port %d's private data\n",pif->port_id);

@@ -38,7 +38,7 @@ START_TEST(findex_2_1_6){
 	key.tag3=0x78;
 	delete_index_2_1_6_item_unsafe(base,&key);
 	ck_assert(!base[key.key_index].next);
-	rte_free(base);
+	RTE_FREE(base);
 }
 END_TEST
 ADD_TEST(findex_2_1_6);
@@ -49,7 +49,7 @@ START_TEST(findex_2_4){
     struct findex_2_4_entry *entry=allocate_findex_2_4_entry();
     ck_assert_msg(!!base,"please preserve more memory for fast index test");
     ck_assert_msg(!!entry,"please preserve more memory for fast index test");
-    rte_free(entry);
+    RTE_FREE(entry);
     struct findex_2_4_key key;
     key.key_index=0x234;
     key.tag1=0x23;
@@ -115,7 +115,7 @@ START_TEST(findex_2_4){
         delete_index_2_4_item_unsafe(base,&key);
     }
     ck_assert(!base[key.key_index].next);
-    rte_free(base);
+    RTE_FREE(base);
 }
 END_TEST
 ADD_TEST(findex_2_4)

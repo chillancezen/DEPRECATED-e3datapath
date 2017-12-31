@@ -12,6 +12,7 @@ from pye3datapath.common.neighbor import *
 from pye3datapath.leaf.etherline import *
 from pye3datapath.leaf.etherlan import *
 from pye3datapath.leaf.csport import *
+import time
 class E3CsportTest(unittest.TestCase):
     def setUp(self):
         nidx=register_neighbor('130.140.0.0','00:01:02:03:04:05')
@@ -35,6 +36,7 @@ class E3CsportTest(unittest.TestCase):
         delete_ether_line_service(0)
         delete_ether_lan_service(0)
         reclaim_e3iface(0)
+        time.sleep(3)
         delete_nexthop(0)
         delete_neighbor(0)
     def test_csport_setting(self):

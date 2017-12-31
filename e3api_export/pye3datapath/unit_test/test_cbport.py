@@ -12,6 +12,7 @@ from pye3datapath.common.neighbor import *
 from pye3datapath.leaf.etherline import *
 from pye3datapath.leaf.etherlan import *
 from pye3datapath.leaf.cbport import *
+from pye3datapath.e3livedebug import generate_memory_dump
 import time
 
 class E3CbportTest(unittest.TestCase):
