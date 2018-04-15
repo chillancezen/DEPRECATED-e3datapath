@@ -67,7 +67,9 @@ int register_common_neighbor(struct common_neighbor * neighbor)
 	for(idx=0;idx<MAX_COMMON_NEIGHBORS;idx++){
 		if(!neighbor_base[idx].is_valid)
 			continue;
-		if(neighbor_base[idx].neighbour_ip_as_le==neighbor->neighbour_ip_as_le){
+        if (!strncmp((char*)neighbor_base[idx].name,
+            (char*)neighbor->name,
+            MAX_COMMON_NEIGHBOR_NAME_SIZE)) {
             ret=-E3_ERR_ILLEGAL;
 			goto out;
         }
@@ -80,7 +82,9 @@ int register_common_neighbor(struct common_neighbor * neighbor)
 		goto out;
     }
 	neighbor_base[idx].index=idx;
-	neighbor_base[idx].neighbour_ip_as_le=neighbor->neighbour_ip_as_le;
+    strncpy((char*)neighbor_base[idx].name,
+        (char*)neighbor->name,
+        MAX_COMMON_NEIGHBOR_NAME_SIZE);
 	neighbor_base[idx].ref_cnt=0;
 	neighbor_base[idx].is_valid=1;
 	rte_memcpy(neighbor_base[idx].mac,
@@ -99,7 +103,9 @@ int refresh_common_neighbor_mac(struct common_neighbor * neighbor)
 	for(idx=0;idx<MAX_COMMON_NEIGHBORS;idx++){
 		if(!neighbor_base[idx].is_valid)
 			continue;
-		if(neighbor_base[idx].neighbour_ip_as_le==neighbor->neighbour_ip_as_le)
+        if(!strncmp((char*)neighbor_base[idx].name,
+            (char*)neighbor->name,
+            MAX_COMMON_NEIGHBOR_NAME_SIZE)) 
 			break;
 	}
 	if(idx>=MAX_COMMON_NEIGHBORS){

@@ -153,13 +153,14 @@ uint64_t e3net_api_register_or_update_common_neighbor(uint64_t * api_ret,
 	uint8_t arg109,
 	uint8_t * arg110,
 	uint8_t * arg111);
+uint64_t dump_memory_structure(uint64_t * api_ret);
+uint64_t e3datapath_version(uint64_t * api_ret);
 uint64_t get_e3interface(uint64_t * api_ret,
 	uint16_t arg112,
 	uint8_t * arg113);
 uint64_t list_e3interfaces(uint64_t * api_ret,
 	uint8_t * arg114,
 	uint8_t * arg115);
-uint64_t e3datapath_version(uint64_t * api_ret);
 uint64_t infra_api_list_nodes(uint64_t * api_ret,
 	uint8_t * arg116);
 uint64_t infra_api_get_node(uint64_t * api_ret,

@@ -65,7 +65,7 @@ START_TEST(cbp_generic){
 	memset(mac_cache,0x0,sizeof(mac_cache));
 
 	struct common_neighbor neighbor={
-		.neighbour_ip_as_le=0x12345678,
+        .name = "hello world",
 		.mac={0x12,0x12,0x12,0x12,0x12,0x12},
 	};
 	ck_assert(register_common_neighbor(&neighbor)==0);

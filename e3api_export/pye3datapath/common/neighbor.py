@@ -7,11 +7,11 @@ from pye3datapath.e3client import api_call_exception
 from pye3datapath.e3client import api_return_exception
 from pye3datapath.e3client import register_service_endpoint
 MAX_COMMON_NEIGHBORS=2048
-
+MAX_COMMON_NEIGHBOR_NAME_SIZE = 64
 
 class neighbor(Structure):
     _pack_=1
-    _fields_=[('neighbour_ip_as_le',c_uint8*4),
+    _fields_=[('name',c_char*MAX_COMMON_NEIGHBOR_NAME_SIZE),
                 ('ref_cnt',c_int16),
                 ('index',c_int16),
                 ('mac',c_uint8*6),
@@ -19,11 +19,6 @@ class neighbor(Structure):
                 ('reserved0',c_uint8)]
     def __init__(self):
         pass
-    def _neighbor_ip_to_string(self):
-        return '%d.%d.%d.%d'%(self.neighbour_ip_as_le[3],
-                    self.neighbour_ip_as_le[2],
-                    self.neighbour_ip_as_le[1],
-                    self.neighbour_ip_as_le[0])
     def _mac_to_string(self):
         return '%02x:%02x:%02x:%02x:%02x:%02x'%(self.mac[0],
                 self.mac[1],
@@ -33,7 +28,7 @@ class neighbor(Structure):
                 self.mac[5])
     def __str__(self):
         ret=dict()
-        ret['neighbour_ip_as_le']=self._neighbor_ip_to_string()
+        ret['name'] = self.name.decode()
         ret['ref_cnt']=self.ref_cnt
         ret['index']=self.index
         ret['mac']=self._mac_to_string()
@@ -42,7 +37,7 @@ class neighbor(Structure):
         return str(ret)
     def dump_definition(self):
         print('size of neighbor:',sizeof(neighbor))
-        print(neighbor.neighbour_ip_as_le,'neighbor.neighbour_ip_as_le')
+        print(neighbor.name,'neighbor.name')
         print(neighbor.ref_cnt,'neighbor.ref_cnt')
         print(neighbor.index,'neighbor.index')
         print(neighbor.mac,'neighbor.mac')
@@ -50,7 +45,7 @@ class neighbor(Structure):
         print(neighbor.reserved0,'neighbor.reserved0')
     def clone(self):
         n=neighbor()
-        n.neighbour_ip_as_le=self.neighbour_ip_as_le
+        n.name=self.name
         n.ref_cnt=self.ref_cnt
         n.index=self.index
         n.mac=self.mac
@@ -63,25 +58,25 @@ register a topological neighbor, if successful
 return the actual index which is equal or greater than 0,
 otherwise a negative value is returned
 '''
-def register_neighbor(ip,mac):
+def register_neighbor(name, mac):
     api_ret=c_int64(0)
-    ip_string=create_string_buffer(E3API_IP_STRING_LENGTH)
+    neighbor_name = create_string_buffer(MAX_COMMON_NEIGHBOR_NAME_SIZE)
     mac_string=create_string_buffer(E3API_MAC_STRING_LENGTH)
-    ip_string.value=ip.encode()
+    neighbor_name.value = name.encode()
     mac_string.value=mac.encode()
-    rc=clib.e3net_api_register_or_update_common_neighbor(byref(api_ret),1,ip_string,mac_string)
+    rc=clib.e3net_api_register_or_update_common_neighbor(byref(api_ret),1,neighbor_name,mac_string)
     if rc!=0:
         raise api_call_exception(rc)
     if api_ret.value<0:
         raise api_return_exception('registering common neighbor fails with api_ret:%x'%(api_ret.value))
     return api_ret.value
-def update_neighbor_mac(ip,mac):
+def update_neighbor_mac(name, mac):
     api_ret=c_int64(0)
-    ip_string=create_string_buffer(E3API_IP_STRING_LENGTH)
+    neighbor_name = create_string_buffer(MAX_COMMON_NEIGHBOR_NAME_SIZE)
     mac_string=create_string_buffer(E3API_MAC_STRING_LENGTH)
-    ip_string.value=ip.encode()
+    neighbor_name.value = name.encode()
     mac_string.value=mac.encode()
-    rc=clib.e3net_api_register_or_update_common_neighbor(byref(api_ret),0,ip_string,mac_string)
+    rc=clib.e3net_api_register_or_update_common_neighbor(byref(api_ret),0,neighbor_name,mac_string)
     if rc!=0:
         raise api_call_exception(rc)
     if api_ret.value!=0:
@@ -130,9 +125,9 @@ def tabulate_neighbors():
     for n in list_neighbors():
         table.append([n.index,
                 n.ref_cnt,
-                n._neighbor_ip_to_string(),
+                n.name,
                 n._mac_to_string()])
-    print(tabulate.tabulate(table,['index','ref_cnt','nexthop:ip','nexthop:mac'],tablefmt='psql'))
+    print(tabulate.tabulate(table,['index','ref_cnt','nexthop:name','nexthop:mac'],tablefmt='psql'))
 
      
 if __name__=='__main__':

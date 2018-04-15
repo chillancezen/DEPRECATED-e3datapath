@@ -5,8 +5,9 @@
 #define _COMMON_NHLFE_H
 #include <stdint.h>
 
+#define MAX_COMMON_NEIGHBOR_NAME_SIZE 64
 struct common_neighbor{
-	uint32_t neighbour_ip_as_le;
+    uint8_t name[MAX_COMMON_NEIGHBOR_NAME_SIZE];
 	uint16_t ref_cnt;
 	uint16_t index;
 	uint8_t  mac[6];

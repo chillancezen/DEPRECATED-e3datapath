@@ -466,7 +466,7 @@ void cbp_module_test(void)
 	E3_ASSERT(priv=(struct cbp_private*)pif->private);
 	/*register nexthop*/
 	struct common_neighbor neighbor={
-		.neighbour_ip_as_le=0x12345678,
+        .name = "hello world",
 		.mac={0x12,0x12,0x12,0x12,0x12,0x12},
 	};
 	E3_ASSERT(register_common_neighbor(&neighbor)==0);

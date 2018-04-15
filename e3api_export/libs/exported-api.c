@@ -383,7 +383,7 @@ DECLARE_E3_API(e3_exported_api39)={
 	.args_desc={
 		{.type=e3_arg_type_uint8_t_ptr,.behavior=e3_arg_behavior_input_and_output,.len=2},
 		{.type=e3_arg_type_uint8_t_ptr,.behavior=e3_arg_behavior_output,.len=2},
-		{.type=e3_arg_type_uint8_t_ptr,.behavior=e3_arg_behavior_output,.len=2048},
+		{.type=e3_arg_type_uint8_t_ptr,.behavior=e3_arg_behavior_output,.len=9728},
 		{.type=e3_arg_type_none,.behavior=e3_arg_behavior_none,.len=0},
 	},
 };
@@ -392,7 +392,7 @@ DECLARE_E3_API(e3_exported_api40)={
 	.api_desc="retrieve a common neighbor",
 	.args_desc={
 		{.type=e3_arg_type_uint16_t,.behavior=e3_arg_behavior_input,.len=0},
-		{.type=e3_arg_type_uint8_t_ptr,.behavior=e3_arg_behavior_output,.len=16},
+		{.type=e3_arg_type_uint8_t_ptr,.behavior=e3_arg_behavior_output,.len=76},
 		{.type=e3_arg_type_none,.behavior=e3_arg_behavior_none,.len=0},
 	},
 };
@@ -401,12 +401,26 @@ DECLARE_E3_API(e3_exported_api41)={
 	.api_desc="register or update a common neighbor",
 	.args_desc={
 		{.type=e3_arg_type_uint8_t,.behavior=e3_arg_behavior_input,.len=0},
-		{.type=e3_arg_type_uint8_t_ptr,.behavior=e3_arg_behavior_input,.len=16},
+		{.type=e3_arg_type_uint8_t_ptr,.behavior=e3_arg_behavior_input,.len=64},
 		{.type=e3_arg_type_uint8_t_ptr,.behavior=e3_arg_behavior_input,.len=18},
 		{.type=e3_arg_type_none,.behavior=e3_arg_behavior_none,.len=0},
 	},
 };
 DECLARE_E3_API(e3_exported_api42)={
+	.api_name="dump_memory_structure",
+	.api_desc="dump the memory relevant objects",
+	.args_desc={
+		{.type=e3_arg_type_none,.behavior=e3_arg_behavior_none,.len=0},
+	},
+};
+DECLARE_E3_API(e3_exported_api43)={
+	.api_name="e3datapath_version",
+	.api_desc="retrieve e3 datapath version dword",
+	.args_desc={
+		{.type=e3_arg_type_none,.behavior=e3_arg_behavior_none,.len=0},
+	},
+};
+DECLARE_E3_API(e3_exported_api44)={
 	.api_name="get_e3interface",
 	.api_desc="get the e3interface of a given index,this will copy the structure",
 	.args_desc={
@@ -415,7 +429,7 @@ DECLARE_E3_API(e3_exported_api42)={
 		{.type=e3_arg_type_none,.behavior=e3_arg_behavior_none,.len=0},
 	},
 };
-DECLARE_E3_API(e3_exported_api43)={
+DECLARE_E3_API(e3_exported_api45)={
 	.api_name="list_e3interfaces",
 	.api_desc="enumerate e3 interfaces, return the list of available index",
 	.args_desc={
@@ -424,14 +438,7 @@ DECLARE_E3_API(e3_exported_api43)={
 		{.type=e3_arg_type_none,.behavior=e3_arg_behavior_none,.len=0},
 	},
 };
-DECLARE_E3_API(e3_exported_api44)={
-	.api_name="e3datapath_version",
-	.api_desc="retrieve e3 datapath version dword",
-	.args_desc={
-		{.type=e3_arg_type_none,.behavior=e3_arg_behavior_none,.len=0},
-	},
-};
-DECLARE_E3_API(e3_exported_api45)={
+DECLARE_E3_API(e3_exported_api46)={
 	.api_name="infra_api_list_nodes",
 	.api_desc="enumerate the nodes of all lcores",
 	.args_desc={
@@ -439,7 +446,7 @@ DECLARE_E3_API(e3_exported_api45)={
 		{.type=e3_arg_type_none,.behavior=e3_arg_behavior_none,.len=0},
 	},
 };
-DECLARE_E3_API(e3_exported_api46)={
+DECLARE_E3_API(e3_exported_api47)={
 	.api_name="infra_api_get_node",
 	.api_desc="retrieve a node",
 	.args_desc={
@@ -1624,6 +1631,50 @@ uint64_t e3net_api_register_or_update_common_neighbor(uint64_t * api_ret,
 		return -1;
 	#undef _
 }
+uint64_t dump_memory_structure(uint64_t * api_ret)
+{
+	#define _(con) if(!(con)) goto error;
+	e3_type real_args[MAX_ARGUMENT_SUPPORTED];
+	struct e3_api_client      * client=reference_e3_api_client();
+	struct e3_api_declaration * api=search_e3_api_by_name("dump_memory_structure");
+	void                      * output_list[MAX_ARGUMENT_SUPPORTED+1];
+	_(client);
+	_(api);
+	output_list[0]=api_ret;
+	client->para_output_list=output_list;
+	client->nr_output_list=1;
+	_(!encode_e3_api_request(client->send_mbuf,MAX_MSG_LENGTH,api,real_args));
+	_(!issue_e3_api_request(client));
+	dereference_e3_api_client(client);
+	return 0;
+	error:
+		if(client)
+			dereference_e3_api_client(client);
+		return -1;
+	#undef _
+}
+uint64_t e3datapath_version(uint64_t * api_ret)
+{
+	#define _(con) if(!(con)) goto error;
+	e3_type real_args[MAX_ARGUMENT_SUPPORTED];
+	struct e3_api_client      * client=reference_e3_api_client();
+	struct e3_api_declaration * api=search_e3_api_by_name("e3datapath_version");
+	void                      * output_list[MAX_ARGUMENT_SUPPORTED+1];
+	_(client);
+	_(api);
+	output_list[0]=api_ret;
+	client->para_output_list=output_list;
+	client->nr_output_list=1;
+	_(!encode_e3_api_request(client->send_mbuf,MAX_MSG_LENGTH,api,real_args));
+	_(!issue_e3_api_request(client));
+	dereference_e3_api_client(client);
+	return 0;
+	error:
+		if(client)
+			dereference_e3_api_client(client);
+		return -1;
+	#undef _
+}
 uint64_t get_e3interface(uint64_t * api_ret,
 	uint16_t arg0,
 	uint8_t * arg1)
@@ -1669,28 +1720,6 @@ uint64_t list_e3interfaces(uint64_t * api_ret,
 	output_list[2]=arg1;
 	client->para_output_list=output_list;
 	client->nr_output_list=3;
-	_(!encode_e3_api_request(client->send_mbuf,MAX_MSG_LENGTH,api,real_args));
-	_(!issue_e3_api_request(client));
-	dereference_e3_api_client(client);
-	return 0;
-	error:
-		if(client)
-			dereference_e3_api_client(client);
-		return -1;
-	#undef _
-}
-uint64_t e3datapath_version(uint64_t * api_ret)
-{
-	#define _(con) if(!(con)) goto error;
-	e3_type real_args[MAX_ARGUMENT_SUPPORTED];
-	struct e3_api_client      * client=reference_e3_api_client();
-	struct e3_api_declaration * api=search_e3_api_by_name("e3datapath_version");
-	void                      * output_list[MAX_ARGUMENT_SUPPORTED+1];
-	_(client);
-	_(api);
-	output_list[0]=api_ret;
-	client->para_output_list=output_list;
-	client->nr_output_list=1;
 	_(!encode_e3_api_request(client->send_mbuf,MAX_MSG_LENGTH,api,real_args));
 	_(!issue_e3_api_request(client));
 	dereference_e3_api_client(client);

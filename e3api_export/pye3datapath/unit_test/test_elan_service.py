@@ -10,7 +10,7 @@ from e3net.common.e3config import get_config
 from pye3datapath.common.nexthop import *
 from pye3datapath.common.neighbor import *
 from pye3datapath.leaf.etherlan import *
-
+import time
 
 class E3ELanTest(unittest.TestCase):
     def setUp(self):
@@ -102,12 +102,14 @@ class E3ELanTest(unittest.TestCase):
         elan=get_ether_lan_service(0)
         self.assertTrue(elan.multicast_NHLFE==-1)
         delete_ether_lan_service(0)
-            
+        
+        time.sleep(3)    
         #enumerate e-lan services
         for i in range(MAX_E_LAN_SERVICES):
             n_idx=register_ether_lan_service()
             self.assertTrue(n_idx==i)
         lst=list_ether_lan_services()
+        self.assertTrue(len(lst)==MAX_E_LAN_SERVICES)
         for l in lst:
             elan=get_ether_lan_service(l)
             self.assertTrue(elan.is_valid==1)

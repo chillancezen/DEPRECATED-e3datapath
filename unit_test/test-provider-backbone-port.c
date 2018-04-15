@@ -66,7 +66,7 @@ START_TEST(pbp_generic){
 	*register a neighbor&nexthop
 	*/
 	struct common_neighbor neighbor={
-		.neighbour_ip_as_le=0x12345678,
+        .name = "hello world",
 		.mac={0x12,0x12,0x12,0x12,0x12,0x12},
 	};
 	ck_assert(register_common_neighbor(&neighbor)==0);

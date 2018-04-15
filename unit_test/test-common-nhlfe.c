@@ -10,7 +10,7 @@ START_TEST(common_neighbor_general){
 	int idx=0;
 	int last_offset=0,last_size=0;
 	printf("dump definition of common_neighbor:\n");
-	dump_field(struct common_neighbor,neighbour_ip_as_le);
+	dump_field(struct common_neighbor,name);
 	dump_field(struct common_neighbor,ref_cnt);
 	dump_field(struct common_neighbor,index);
 	dump_field(struct common_neighbor,mac);
@@ -26,16 +26,19 @@ START_TEST(common_neighbor_general){
 	ck_assert(!!_find_common_neighbor(MAX_COMMON_NEIGHBORS-1));
 	ck_assert(!_find_common_neighbor(MAX_COMMON_NEIGHBORS));
 	struct common_neighbor neighbor;
-	neighbor.neighbour_ip_as_le=0x1;
+    int neighbor_name_as_integer = 1;
+    sprintf(neighbor.name, "neighbor-%d", neighbor_name_as_integer);
 	
 	/*
 	*maximmum number of neighbors supported
 	*/
 	for(idx=0;idx<MAX_COMMON_NEIGHBORS;idx++){
-		neighbor.neighbour_ip_as_le++;
+        neighbor_name_as_integer++;
+        sprintf(neighbor.name, "neighbor-%d", neighbor_name_as_integer);
 		ck_assert(register_common_neighbor(&neighbor)>=0);
 	}
-	neighbor.neighbour_ip_as_le++;
+    neighbor_name_as_integer++;
+    sprintf(neighbor.name, "neighbor-%d", neighbor_name_as_integer);
 	ck_assert(register_common_neighbor(&neighbor)<0);
 	for(idx=0;idx<MAX_COMMON_NEIGHBORS;idx++){
 		ck_assert(!delete_common_neighbor(idx));

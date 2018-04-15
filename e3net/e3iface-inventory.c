@@ -85,9 +85,10 @@ e3_type create_e3iface(e3_type service,
 	int    		_model=e3_type_to_uint8_t(model);
 	int    		_role=e3_type_to_uint8_t(role);
 	int			_with_slow_path=e3_type_to_uint8_t(with_slowpath);
-	uint32_t *  _pport=(uint32_t*)e3_type_to_uint8_t_ptr(pport);
+	int32_t *  _pport=(int32_t*)e3_type_to_uint8_t_ptr(pport);
 	e3_type			rc=0;
 	struct E3Interface_ops ops;
+
 	_((_model>=0)&&(_model<E3IFACE_MODEL_MAX_MODELS));
 	_((_role>=0)&&(_role<E3IFACE_ROLE_MAX_ROLES));
 	_(model_defs[_model].is_set);

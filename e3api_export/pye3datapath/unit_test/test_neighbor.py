@@ -25,7 +25,7 @@ class E3NeighborTest(unittest.TestCase):
         self.assertTrue(n.index==0)
         self.assertTrue(n.ref_cnt==0)
         self.assertTrue(n.is_valid==1)
-        self.assertTrue(n._neighbor_ip_to_string()=='130.140.0.0')
+        self.assertTrue(n.name.decode()=='130.140.0.0')
         self.assertTrue(n._mac_to_string()=='00:01:02:03:04:05')
         try:
             register_neighbor('130.140.0.0','00:01:02:03:04:05')
@@ -59,7 +59,7 @@ class E3NeighborTest(unittest.TestCase):
             self.assertTrue(n.index==cnt)
             self.assertTrue(n.is_valid==1)
             self.assertTrue(n.ref_cnt==0)
-            self.assertTrue(n._neighbor_ip_to_string()=='130.140.%d.%d'%(cnt>>8,cnt&0xff))
+            self.assertTrue(n.name.decode()=='130.140.%d.%d'%(cnt>>8,cnt&0xff))
             cnt=cnt+1
         for n in lst:
             delete_neighbor(n.index)

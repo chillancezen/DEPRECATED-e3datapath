@@ -516,7 +516,7 @@ void customer_service_port_module_test(void)
 	E3_ASSERT(priv=(struct csp_private*)pif->private);
 	
 	struct common_neighbor neighbor={
-		.neighbour_ip_as_le=0x12345678,
+        .name = "helloworld",
 		.mac={0x08,0x00,0x27,0x53,0x9d,0x44},/*08:00:27:53:9d:44*/
 	};
 	E3_ASSERT(register_common_neighbor(&neighbor)==0);

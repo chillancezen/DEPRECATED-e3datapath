@@ -8,29 +8,29 @@
 #include <e3infra/include/e3-log.h>
 e3_type e3net_api_register_or_update_common_neighbor(e3_type e3service,
 	e3_type is_to_register,
-	e3_type ip_string,
+	e3_type neighbor_name,
 	e3_type mac_string)
 {
 	uint64_t ret;
 	uint8_t _is_to_register	=e3_type_to_uint8_t(is_to_register);
-	char * _ip_string		=(char *)e3_type_to_uint8_t_ptr(ip_string);
+    char * _neighbor_name = (char *)e3_type_to_uint8_t_ptr(neighbor_name);
 	char * _mac_string		=(char *)e3_type_to_uint8_t_ptr(mac_string);
 
 	struct common_neighbor  neighbor;
-	neighbor.neighbour_ip_as_le=_ip_string_to_u32_le(_ip_string);
+    strncpy((char *)neighbor.name, _neighbor_name, MAX_COMMON_NEIGHBOR_NAME_SIZE);
 	_mac_string_to_byte_array(_mac_string,neighbor.mac);
 	if(_is_to_register){
 		ret=register_common_neighbor(&neighbor);
 		E3_LOG("register common neighbor <%s,%s> with result:%d\n",
 			_mac_string,
-			_ip_string,
+			_neighbor_name,
 			ret);
 		return ret;
 	}
 	ret=refresh_common_neighbor_mac(&neighbor);
 	E3_LOG("update common neighbor <%s,%s> with result:%d\n",
 			_mac_string,
-			_ip_string,
+			_neighbor_name,
 			ret);
 	return ret;
 }
@@ -40,7 +40,7 @@ DECLARE_E3_API(common_neighbor_registeration)={
 	.api_callback_func=(api_callback_func)e3net_api_register_or_update_common_neighbor,
 	.args_desc={
 		{.type=e3_arg_type_uint8_t,.behavior=e3_arg_behavior_input,},
-		{.type=e3_arg_type_uint8_t_ptr,.behavior=e3_arg_behavior_input,.len=E3API_IP_STRING_LENGTH},
+		{.type=e3_arg_type_uint8_t_ptr,.behavior=e3_arg_behavior_input,.len=MAX_COMMON_NEIGHBOR_NAME_SIZE},
 		{.type=e3_arg_type_uint8_t_ptr,.behavior=e3_arg_behavior_input,.len=E3API_MAC_STRING_LENGTH},
 		{.type=e3_arg_type_none,},
 	},
